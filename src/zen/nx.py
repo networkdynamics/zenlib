@@ -4,6 +4,7 @@ This module provides conversion services to and from NetworkX objects.
 
 from graph import Graph
 from digraph import DiGraph
+import networkx
 
 __all__ = ['to_networkx','from_networkx']	
 
@@ -76,6 +77,8 @@ def from_networkx(G):
 	Gdest = None
 	if type(G) == networkx.DiGraph:
 		Gdest = DiGraph()
+	elif type(G) == networkx.Graph:
+		Gdest = Graph()
 	else:
 		raise Exception, 'Unable to convert graph object type %s' % str(type(G))
 	
