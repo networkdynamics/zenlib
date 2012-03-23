@@ -1,0 +1,3 @@
+Use the following command to generate the API documentation for the zen library.  This will build the documentation from the version of zen that is on the PYTHONPATH.
+
+epydoc --html -o pydoc --name Zen --url http://www.ruthsresearch.org/static/zen/pydoc zen

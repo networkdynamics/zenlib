@@ -1,0 +1,20 @@
+# this scn test file has comments in it
+1 1
+# comment after properties
+a 1
+b 2
+# comment in nodes
+c 3
+d 4
+e 5
+# comment at the end of nodes
+=
+# comment before edges
+a b 10
+b c 11
+c a 12
+# comment in the edges
+# comment 2
+c d 13
+d e 14
+# comment at the end

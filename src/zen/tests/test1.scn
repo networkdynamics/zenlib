@@ -1,0 +1,11 @@
+2 1
+a 1 1
+b 1 hello
+c 2 2
+d 2 4
+=
+a b X
+b c Q
+c a 7
+c d Q
+d e F
