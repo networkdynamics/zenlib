@@ -5,6 +5,21 @@ import pickle
 
 from zen import *
 
+class DiGraphCopyTestCase(unittest.TestCase):
+	
+	def test_basic_index_preservation(self):
+		G = DiGraph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(1,3)
+		G.rm_node(2)
+		
+		G2 = G.copy()
+		
+		self.assertEqual(G.node_idx(1),G2.node_idx(1))
+		self.assertEqual(G.node_idx(3),G2.node_idx(3))
+		self.assertEqual(G.edge_idx(1,3),G2.edge_idx(1,3))
+
 class DiGraphReverseTestCase(unittest.TestCase):
 	
 	def test_reverse(self):
