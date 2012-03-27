@@ -9,6 +9,7 @@ from tests.hypergraph import *
 
 # generating functions
 from tests.generating_er import *
+from tests.generating_ba import *
 
 # io
 from tests.edgelist import *

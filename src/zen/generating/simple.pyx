@@ -13,23 +13,29 @@ def barabasi_albert(n, m, **kwargs):
 	Generate a random graph using the Barabasi-Albert preferential attachment model.
 	
 	Required parameters:
-	  - n - the number of nodes to add to the graph
-	  - m - the number of edges a new node will add to the graph
+	  - n: the number of nodes to add to the graph
+	  - m: the number of edges a new node will add to the graph
 	
 	Optional parameters:
-	  -  seed - an integer seed for the random number generator
+	  - seed [=0]: an integer seed for the random number generator
+	  - directed [=False]: whether to build the graph directed.  If True, then the m edges created
+		by a node upon its creation are instantiated as out-edges.  All others are in-edges to that node.
 	
 	Citation:
 	A. L. Barabási and R. Albert "Emergence of scaling in random networks", Science 286, pp 509-512, 1999.
 	"""
 	seed = kwargs.pop('seed',0)
+	directed = kwargs.pop('directed',False)
 	
-	return __inner_barabasi_albert(n, m, seed)
+	if not directed:
+		return __inner_barabasi_albert_udir(n, m, seed)
+	else:
+		return __inner_barabasi_albert_dir(n, m, seed)
 	
 def identity_fxn(i):
 	return i	
 	
-cdef __inner_barabasi_albert(int n, int m, int seed):
+cdef __inner_barabasi_albert_udir(int n, int m, int seed):
 	
 	cdef Graph G = Graph()
 	cdef int new_node_idx, i, e
@@ -72,6 +78,55 @@ cdef __inner_barabasi_albert(int n, int m, int seed):
 					break
 					
 		num_endpoints += m * 2
+		
+	return G
+
+cdef __inner_barabasi_albert_dir(int n, int m, int seed):
+
+	cdef DiGraph G = DiGraph()
+	cdef int new_node_idx, i, e
+	cdef int rnd
+	cdef int num_endpoints
+	cdef int running_sum
+	cdef bool edge_made
+	cdef int node_degree
+	
+	# add nodes
+	G.add_nodes(n, identity_fxn)
+
+	#####
+	# add edges
+	srand(seed)
+
+	# add the first (m+1)th node
+	for i in range(m):
+		G.add_edge_(i,m)
+
+	# add the remaining nodes
+	num_endpoints = 2 * m
+	for new_node_idx in range(m+1,n):
+
+		# this node drops m edges
+		delta_endpoints = 0
+		for e in range(m):
+			rnd = rand() % (num_endpoints-delta_endpoints)
+
+			# now loop through nodes and find the one whose endpoint has the running sum
+			# note that we ignore nodes that we already have a connection to
+			running_sum = 0
+			for i in range(new_node_idx):
+				if G.has_edge_(new_node_idx,i):
+					continue
+
+				node_degree = G.node_info[i].indegree + G.node_info[i].outdegree
+				running_sum += node_degree
+				if running_sum > rnd:
+					G.add_edge_(new_node_idx,i)
+					delta_endpoints += node_degree - 1
+					break
+
+		num_endpoints += m * 2
+		
 	return G
 
 def erdos_renyi(int n,float p,**kwargs): #bint directed=False,bint self_loops=False):
