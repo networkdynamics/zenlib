@@ -4,6 +4,13 @@ import zen
 
 class UndirectedERTestCase(unittest.TestCase):
 	
+	def test_bad_argument(self):
+		try:
+			zen.generating.erdos_renyi(10,0.5,blah=10)
+			self.fail('blah should not be accepted as a keyword argument')
+		except zen.ZenException,e:
+			pass
+			
 	def test_seed(self):
 		G1 = zen.generating.erdos_renyi(10,0.5,seed=10)
 		G2 = zen.generating.erdos_renyi(10,0.5,seed=10)

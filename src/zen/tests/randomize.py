@@ -4,6 +4,16 @@ import random
 
 class RandomizeTestCase(unittest.TestCase):
 	
+	def test_choose_node_bad_arg(self):
+		G = Graph()
+		G.add_edge(1,2)
+		
+		try:
+			choose_node(G,blah=10)
+			self.fail('blah should not be accepted as a keyword argument')
+		except ZenException,e:
+			pass
+	
 	def test_choose_node(self):
 		NUM_NODES = 20
 		FINAL_NUM_NODES = 10
@@ -25,6 +35,16 @@ class RandomizeTestCase(unittest.TestCase):
 		for i in range(NUM_NODES*5):
 			self.assertTrue(choose_node(G) in nodes)
 			self.assertTrue(G.node_object(choose_node_(G)) in nodes)
+	
+	def test_choose_edge_bad_arg(self):
+		G = Graph()
+		G.add_edge(1,2)
+
+		try:
+			choose_edge(G,blah=10)
+			self.fail('blah should not be accepted as a keyword argument')
+		except ZenException,e:
+			pass
 	
 	def test_choose_edge(self):
 		NUM_NODES = 5
@@ -52,6 +72,16 @@ class RandomizeTestCase(unittest.TestCase):
 		for i in range(NUM_NODES*5):
 			self.assertTrue(G.edge_idx(*choose_edge(G)) in edges)
 			self.assertTrue(choose_edge_(G) in edges)
+	
+	def test_shuffle_bad_arg(self):
+		G = Graph()
+		G.add_edge(1,2)
+
+		try:
+			shuffle(G,blah=10)
+			self.fail('blah should not be accepted as a keyword argument')
+		except ZenException,e:
+			pass
 	
 	def test_shuffle(self):
 		G = Graph()

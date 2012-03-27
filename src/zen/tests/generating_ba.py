@@ -4,6 +4,13 @@ import zen
 
 class UndirectedBATestCase(unittest.TestCase):
 	
+	def test_bad_argument(self):
+		try:
+			zen.generating.barabasi_albert(10,3,blah=10)
+			self.fail('blah should not be accepted as a keyword argument')
+		except zen.ZenException,e:
+			pass
+	
 	def test_seed(self):
 		G1 = zen.generating.barabasi_albert(10,3,seed=10)
 		G2 = zen.generating.barabasi_albert(10,3,seed=10)

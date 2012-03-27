@@ -2,6 +2,11 @@
 
 """
 This module provides functions that randomize existing networks.
+
+Since all functions involve calls to the system random number generator, all functions accept the optional arguments
+
+	- seed [=None]: sets the seed to be set in the random generator. If not specified, then no change is made to the
+		random seed.
 """
 
 from graph cimport Graph
@@ -12,14 +17,14 @@ from random import choice, randint
 from random import shuffle as rnd_shuffle
 
 from cpython cimport bool
-from libc.stdlib cimport rand, RAND_MAX
+from libc.stdlib cimport srand, rand, RAND_MAX
 
 cdef extern from "math.h" nogil:
 	double floor( double arg )
 
 __all__ = ['choose_node','choose_node_','choose_edge','choose_edge_','shuffle']
 
-def choose_node(G):
+def choose_node(G,**kwargs):
 	"""
 	Choose a random node object from the graph G.  
 	
@@ -28,14 +33,22 @@ def choose_node(G):
 	selected by selecting a random index into the node array.  The more holes that exist
 	in the node array, the more random tries will be required to find a valid node.
 	"""
+	seed = kwargs.pop('seed',None)
+	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
+		
+	if seed is None:
+		seed = -1
+	
 	if type(G) == Graph:
-		return G.node_object(ug_choose_node_(<Graph>G))
+		return G.node_object(ug_choose_node_(<Graph>G,seed))
 	elif type(G) == DiGraph:
-		return G.node_object(dg_choose_node_(<DiGraph>G))
+		return G.node_object(dg_choose_node_(<DiGraph>G,seed))
 	else:
 		raise ZenException, 'Graph of type %s is not supported' % str(type(G))
 	
-def choose_node_(G):
+def choose_node_(G,**kwargs):
 	"""
 	Choose a random node index from the graph G.  
 	
@@ -44,14 +57,26 @@ def choose_node_(G):
 	selected by selecting a random index into the node array.  The more holes that exist
 	in the node array, the more random tries will be required to find a valid node.
 	"""
+	seed = kwargs.pop('seed',None)
+	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
+		
+	if seed is None:
+		seed = -1
+		
 	if type(G) == Graph:
-		return ug_choose_node_(<Graph>G)
+		return ug_choose_node_(<Graph>G,seed)
 	elif type(G) == DiGraph:
-		return dg_choose_node_(<DiGraph>G)
+		return dg_choose_node_(<DiGraph>G,seed)
 	else:
 		raise ZenException, 'Graph of type %s is not supported' % str(type(G))
 	
-cpdef int ug_choose_node_(Graph G):
+cpdef int ug_choose_node_(Graph G,int seed):
+
+	if seed >= 0:
+		srand(seed)
+
 	cdef float num_idx = G.next_node_idx
 	cdef int nidx = <int>floor(num_idx * (<float>rand() / RAND_MAX))
 	while G.node_info[nidx].exists == False:
@@ -59,7 +84,11 @@ cpdef int ug_choose_node_(Graph G):
 		
 	return nidx
 	
-cpdef int dg_choose_node_(DiGraph G):
+cpdef int dg_choose_node_(DiGraph G,int seed):
+
+	if seed >= 0:
+		srand(seed)
+
 	cdef float num_idx = G.next_node_idx
 	cdef int nidx = <int>floor(num_idx * (<float>rand() / RAND_MAX))
 	while G.node_info[nidx].exists == False:
@@ -67,7 +96,7 @@ cpdef int dg_choose_node_(DiGraph G):
 	
 	return nidx
 
-def choose_edge(G):
+def choose_edge(G,**kwargs):
 	"""
 	Choose a random edge from the graph G.  
 	
@@ -76,14 +105,22 @@ def choose_edge(G):
 	selected by selecting a random index into the edge array.  The more holes that exist
 	in the edge array, the more random tries will be required to find a valid edge.
 	"""
+	seed = kwargs.pop('seed',None)
+	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
+		
+	if seed is None:
+		seed = -1
+	
 	if type(G) == Graph:
-		return G.endpoints(ug_choose_edge_(<Graph>G))
+		return G.endpoints(ug_choose_edge_(<Graph>G,seed))
 	elif type(G) == DiGraph:
-		return G.endpoints(dg_choose_edge_(<DiGraph>G))
+		return G.endpoints(dg_choose_edge_(<DiGraph>G,seed))
 	else:
 		raise ZenException, 'Graph of type %s is not supported' % str(type(G))
 
-def choose_edge_(G):
+def choose_edge_(G,**kwargs):
 	"""
 	Choose a random edge index from the graph G.  
 	
@@ -92,14 +129,26 @@ def choose_edge_(G):
 	selected by selecting a random index into the edge array.  The more holes that exist
 	in the edge array, the more random tries will be required to find a valid edge.
 	"""
+	seed = kwargs.pop('seed',None)
+	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
+		
+	if seed is None:
+		seed = -1
+	
 	if type(G) == Graph:
-		return ug_choose_edge_(<Graph>G)
+		return ug_choose_edge_(<Graph>G,seed)
 	elif type(G) == DiGraph:
-		return dg_choose_edge_(<DiGraph>G)
+		return dg_choose_edge_(<DiGraph>G,seed)
 	else:
 		raise ZenException, 'Graph of type %s is not supported' % str(type(G))
 		
-cpdef int ug_choose_edge_(Graph G):
+cpdef int ug_choose_edge_(Graph G,int seed):
+
+	if seed >= 0:
+		srand(seed)
+	
 	cdef float num_idx = G.next_edge_idx
 	cdef int eidx = <int>floor(num_idx * (<float>rand() / RAND_MAX))
 	while G.edge_info[eidx].exists == False:
@@ -107,7 +156,11 @@ cpdef int ug_choose_edge_(Graph G):
 		
 	return eidx
 
-cpdef int dg_choose_edge_(DiGraph G):
+cpdef int dg_choose_edge_(DiGraph G,int seed):
+
+	if seed >= 0:
+		srand(seed)
+	
 	cdef float num_idx = G.next_edge_idx
 	cdef int eidx = <int>floor(num_idx * (<float>rand() / RAND_MAX))
 	while G.edge_info[eidx].exists == False:
@@ -115,7 +168,7 @@ cpdef int dg_choose_edge_(DiGraph G):
 		
 	return eidx
 	
-def shuffle(G,**kwargs): #bool keep_degree=False):
+def shuffle(G,**kwargs):
 	"""
 	Shuffle the edges in this network.  Keyword arguments can include:
 	
@@ -123,28 +176,32 @@ def shuffle(G,**kwargs): #bool keep_degree=False):
 								 should be retained in the shuffled version
 	  - self_loops True/[False]  indicates whether self-loops should be permitted in the shuffled version
 								 of the network
+	  - seed [=None]: specify the seed that is used by the random number generator.
 	"""
 	
 	# parse parameters
-	keep_degree = False
-	self_loops = False
+	keep_degree = kwargs.pop('keep_degree',False)
+	self_loops = kwargs.pop('self_loops',False)
+	seed = kwargs.pop('seed',None)
 	
-	if 'keep_degree' in kwargs:
-		keep_degree = kwargs['keep_degree']
-		del kwargs['keep_degree']
-	if 'self_loops' in kwargs:
-		self_loops = kwargs['self_loops']
-		del kwargs['self_loops']
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
 	
+	if seed is None:
+		seed = -1
+		
 	# call the appropriate function
 	if type(G) == Graph:
-		return ug_shuffle(<Graph>G,keep_degree,self_loops)
+		return ug_shuffle(<Graph>G,keep_degree,self_loops,seed)
 	elif type(G) == DiGraph:
-		return dg_shuffle(<DiGraph>G,keep_degree,self_loops)
+		return dg_shuffle(<DiGraph>G,keep_degree,self_loops,seed)
 	else:
 		raise InvalidGraphTypeException, 'Unknown graph type %s' % str(type(G))
 	
-cdef Graph ug_shuffle(Graph G,bool keep_degree,bool self_loops):
+cdef Graph ug_shuffle(Graph G,bool keep_degree,bool self_loops,int seed):
+	
+	if seed >= 0:
+		srand(seed)
 	
 	dG = Graph()
 	
@@ -210,7 +267,10 @@ cdef Graph ug_shuffle(Graph G,bool keep_degree,bool self_loops):
 					
 	return dG
 	
-cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool self_loops):
+cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool self_loops,int seed):
+
+	if seed >= 0:
+		srand(seed)
 
 	dG = DiGraph()
 

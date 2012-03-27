@@ -3,6 +3,7 @@ This module implements some of the simple network generation functions.
 """
 from zen.graph cimport Graph
 from zen.digraph cimport DiGraph
+from zen.exceptions import ZenException
 from libc.stdlib cimport RAND_MAX, rand, srand
 from cpython cimport bool
 
@@ -27,6 +28,9 @@ def barabasi_albert(n, m, **kwargs):
 	seed = kwargs.pop('seed',None)
 	directed = kwargs.pop('directed',False)
 	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
+		
 	if seed is None:
 		seed = -1
 	
@@ -149,6 +153,9 @@ def erdos_renyi(int n,float p,**kwargs): #bint directed=False,bint self_loops=Fa
 	self_loops = kwargs.pop('self_loops',False)
 	seed = kwargs.pop('seed',None)
 	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
+		
 	if seed is None:
 		seed = -1
 	
