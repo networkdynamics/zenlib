@@ -4,12 +4,17 @@ import numpy
 import numpy as np
 cimport numpy as np
 
-
 import ctypes
 from exceptions import *
 from graph cimport Graph
 
+from constants import AVG_OF_WEIGHTS, MAX_OF_WEIGHTS, MIN_OF_WEIGHTS, NO_NONE_LIST_OF_DATA, LIST_OF_DATA
+
 cimport libc.stdlib as stdlib
+
+cdef extern from "math.h" nogil:
+	double fmax(double x, double y)
+	double fmin(double x, double y)
 
 # some things not defined in the cython stdlib header
 cdef extern from "stdlib.h" nogil:
@@ -19,7 +24,7 @@ cdef extern from "math.h":
 	double ceil(double x)
 	double floor(double x)
 
-__all__ = ['DiGraph']
+__all__ = ['DiGraph','AVG_OF_WEIGHTS','MAX_OF_WEIGHTS','MIN_OF_WEIGHTS','NO_NONE_LIST_OF_DATA','LIST_OF_DATA']
 
 cdef struct NodeInfo:
 	# This data structure contains node info (in C-struct format) for fast array-based lookup.
@@ -435,13 +440,53 @@ cdef class DiGraph:
 		
 		return
 					
-	cpdef skeleton(self):
+	cpdef skeleton(self,data_merge_fxn=NO_NONE_LIST_OF_DATA,weight_merge_fxn=AVG_OF_WEIGHTS):
 		"""
 		Create an undirected version of this graph.
+		
+		data_merge_fxn decides how the data objects associated with reciprocal
+		edges will be combined into a data object for a single undirected edge.
+		Valid values values are:
+			
+			- NO_NONE_LIST_OF_DATA: a list of the data objects if the both data
+			  objects are not None.  Otherwise, the value will be set to None.
+			- LIST_OF_DATA: a list of the data objects regardless of their values.
+			- an arbitrary function merge(i,j,d1,d2) that returns a single object.
+			  In this instance, d1 is the data associated with edge (i,j) and 
+			  d2 is the data object associated with edge (j,i).  Note that i and j
+			  are node indices, not objects.
+		
+		weight_merge_fxn decides how the values of reciprocal edges will be 
+		combined into a single undirected edge.  Valid values are 
+		
+			- AVG_OF_WEIGHTS: average the two weights
+			- MIN_OF_WEIGHTS: take the min value of the weights
+			- MAX_OF_WEIGHTS: take the max value of the two weights
+			- an arbitrary function merge(i,j,w1,w2) that returns a float. 
+			  In this instance, w1 is the weight associated with edge (i,j) and 
+			  w2 is the weight associated with edge (j,i). Note that i and j are 
+			  node indices, not objects.
 		"""
 		cdef Graph G = Graph()
 		cdef int i,j,eidx,eidx2
-		cdef double weight
+		cdef double weight, weight2
+		
+		cdef int _CUSTOM_WEIGHT_FXN = -1
+		cdef int _AVG_OF_WEIGHTS = AVG_OF_WEIGHTS
+		cdef int _MIN_OF_WEIGHTS = MIN_OF_WEIGHTS
+		cdef int _MAX_OF_WEIGHTS = MAX_OF_WEIGHTS
+		
+		cdef int _CUSTOM_DATA_FXN = -1
+		cdef int _NO_NONE_LIST_OF_DATA = NO_NONE_LIST_OF_DATA
+		cdef int _LIST_OF_DATA = LIST_OF_DATA
+		
+		cdef int weight_merge_switch = _CUSTOM_WEIGHT_FXN
+		if type(weight_merge_fxn) == int:
+			weight_merge_switch = weight_merge_fxn
+		
+		cdef int data_merge_switch = _CUSTOM_DATA_FXN
+		if type(data_merge_fxn) == int:
+			data_merge_switch = data_merge_fxn
 		
 		node_mapping = {}
 		
@@ -462,7 +507,37 @@ cdef class DiGraph:
 				if not G.has_edge_(i,j):
 					eidx2 = G.add_edge_(i,j,edata)
 					G.set_weight_(eidx2,weight)
+				else:
+					eidx2 = G.edge_idx_(i,j)
 					
+					### Merge the weights
+					weight2 = G.weight_(eidx2)
+					
+					if weight_merge_switch == _AVG_OF_WEIGHTS:
+						weight2 = (weight2 + weight) / 2.0
+					elif weight_merge_switch == _MIN_OF_WEIGHTS:
+						weight2 = fmin(weight2,weight)
+					elif weight_merge_switch == _MAX_OF_WEIGHTS:
+						weight2 = fmax(weight2,weight)
+					elif weight_merge_switch == _CUSTOM_WEIGHT_FXN:
+						weight2 = weight_merge_fxn(self.edge_info[eidx].src,self.edge_info[eidx].tgt,weight,weight2)
+					else:
+						raise ZenException, 'Weight merge function switch %d (weight_merge_fxn = %s) is not defined' % (weight_merge_switch,str(weight_merge_fxn))
+					
+					G.set_weight_(eidx2,weight2)
+					
+					### Merge the data
+					edata2 = G.edge_data_(eidx2)
+					if data_merge_switch == _NO_NONE_LIST_OF_DATA and edata is None and edata2 is None:
+						# nothing to do since we don't make lists from double None data objects
+						pass
+					elif data_merge_switch == _NO_NONE_LIST_OF_DATA or data_merge_switch == _LIST_OF_DATA:
+						G.set_edge_data_(eidx2,[edata2,edata])
+					elif data_merge_switch == _CUSTOM_DATA_FXN:
+						G.set_edge_data_(eidx2,data_merge_fxn(self.edge_info[eidx].src,self.edge_info[eidx].tgt,edata,edata2))
+					else:
+						raise ZenException, 'Data merge function switch %d (data_merge_fxn = %s) is not defined' % (data_merge_switch,str(data_merge_fxn))
+						
 		return G
 		
 	cpdef reverse(self):

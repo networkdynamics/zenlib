@@ -59,7 +59,7 @@ cdef class DiGraph:
 	
 	cpdef compact(DiGraph self)
 	
-	cpdef skeleton(self)
+	cpdef skeleton(self,data_merge_fxn=*,weight_merge_fxn=*)
 	
 	cpdef reverse(self)
 	

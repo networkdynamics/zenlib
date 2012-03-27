@@ -5,6 +5,69 @@ import pickle
 
 from zen import *
 
+class DiGraphSkeletonTestCase(unittest.TestCase):
+	
+	def test_basic_weight_merge(self):
+		G = DiGraph()
+		G.add_edge(1,2,weight=5)
+		G.add_edge(2,1,weight=2)
+		
+		avg = (5.0 + 2.0) / 2.0
+		
+		G1 = G.skeleton()
+		self.assertEqual(G1.weight(1,2),avg)
+		
+		G1 = G.skeleton(weight_merge_fxn=AVG_OF_WEIGHTS)
+		self.assertEqual(G1.weight(1,2),avg)
+		
+		G1 = G.skeleton(weight_merge_fxn=MIN_OF_WEIGHTS)
+		self.assertEqual(G1.weight(1,2),2)
+		
+		G1 = G.skeleton(weight_merge_fxn=MAX_OF_WEIGHTS)
+		self.assertEqual(G1.weight(1,2),5)
+		
+	def test_basic_no_none_data_merge(self):
+		G = DiGraph()
+		G.add_edge(1,2,data=None)
+		G.add_edge(2,1,data=None)
+		G.add_edge(2,3,data=None)
+		G.add_edge(3,2,data='hi')
+		
+		G1 = G.skeleton()
+		self.assertEqual(G1.edge_data(1,2),None)
+		self.assertEqual(G1.edge_data(2,3),[None,'hi'])
+		
+	def test_basic_list_data_merge(self):
+		G = DiGraph()
+		G.add_edge(1,2,data=None)
+		G.add_edge(2,1,data=None)
+		G.add_edge(2,3,data=None)
+		G.add_edge(3,2,data='hi')
+
+		G1 = G.skeleton(LIST_OF_DATA)
+		self.assertEqual(G1.edge_data(1,2),[None,None])
+		self.assertEqual(G1.edge_data(2,3),[None,'hi'])
+		
+	def test_basic_cusotm_data_merge(self):
+		G = DiGraph()
+		G.add_edge(1,2,data=1)
+		G.add_edge(2,1,data=2)
+
+		def merge_fxn(i,j,d1,d2):
+			if d1 == 1:
+				self.assertEqual(G.node_object(i),1)
+				self.assertEqual(G.node_object(j),2)
+				self.assertEqual(d2,2)
+			else:
+				self.assertEqual(G.node_object(i),2)
+				self.assertEqual(G.node_object(j),1)
+				self.assertEqual(d2,1)
+				
+			return sorted([d1,d2])
+
+		G1 = G.skeleton(merge_fxn)
+		self.assertEqual(G1.edge_data(1,2),[1,2])
+
 class DiGraphPickleTestCase(unittest.TestCase):
 	
 	def test_basic(self):
