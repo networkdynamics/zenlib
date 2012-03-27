@@ -304,6 +304,8 @@ def store_bitvector(G):
 def write_str(G):
 	"""
 	Write the graph, G, to a binary edge list representation and return this in an ascii string.
+	
+	The graph must be compact in order to be written.  If it is not compact, an exception will be raised.
 	"""
 	
 	if not G.is_compact():
@@ -344,6 +346,8 @@ def write(G, fh):
 	"""
 	Write the graph, G, to the file-like object fh in the binary edge list format.  If `fh` is a string, then it is 
 	interpreted as the name of the file to which the graph will be written.
+	
+	The graph must be compact in order to be written.  If it is not compact, an exception will be raised.
 	"""
 	close_fh = False
 	if type(fh) == types.StringType:
