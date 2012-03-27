@@ -7,6 +7,25 @@ from zen import *
 
 class DiGraphSkeletonTestCase(unittest.TestCase):
 	
+	def test_basic_node_index_preservation(self):
+		G = DiGraph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(3,4)
+		G.rm_node(3)
+		
+		G2 = G.skeleton()
+		
+		self.assertEqual(G.node_idx(1),G2.node_idx(1))
+		self.assertEqual(G.node_idx(2),G2.node_idx(2))
+		self.assertEqual(G.node_idx(4),G2.node_idx(4))
+		
+		n1_1 = G.node_idx(1)
+		n1_2 = G2.node_idx(1)
+		n2_1 = G.node_idx(2)
+		n2_2 = G2.node_idx(2)
+		self.assertTrue(G.has_edge_(n1_2,n2_2))
+	
 	def test_basic_weight_merge(self):
 		G = DiGraph()
 		G.add_edge(1,2,weight=5)

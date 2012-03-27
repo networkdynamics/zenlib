@@ -442,7 +442,8 @@ cdef class DiGraph:
 					
 	cpdef skeleton(self,data_merge_fxn=NO_NONE_LIST_OF_DATA,weight_merge_fxn=AVG_OF_WEIGHTS):
 		"""
-		Create an undirected version of this graph.
+		Create an undirected version of this graph.  Note that node indices will
+		be preserved in the undirected graph that is returned.
 		
 		data_merge_fxn decides how the data objects associated with reciprocal
 		edges will be combined into a data object for a single undirected edge.
@@ -488,19 +489,18 @@ cdef class DiGraph:
 		if type(data_merge_fxn) == int:
 			data_merge_switch = data_merge_fxn
 		
-		node_mapping = {}
-		
 		for i in range(self.next_node_idx):
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
 				ndata = self.node_data_(i)
 				
-				node_mapping[i] = G.add_node(nobj,ndata)
+				# adding the node this way preserves the node indices
+				G.add_node_x(i,G.edge_list_capacity,nobj,ndata)
 		
 		for eidx in range(self.next_edge_idx):
 			if self.edge_info[eidx].exists:
-				i = node_mapping[self.edge_info[eidx].src]
-				j = node_mapping[self.edge_info[eidx].tgt]
+				i = self.edge_info[eidx].src
+				j = self.edge_info[eidx].tgt
 				edata = self.edge_data_(eidx)
 				weight = self.weight_(eidx)
 				
@@ -520,7 +520,7 @@ cdef class DiGraph:
 					elif weight_merge_switch == _MAX_OF_WEIGHTS:
 						weight2 = fmax(weight2,weight)
 					elif weight_merge_switch == _CUSTOM_WEIGHT_FXN:
-						weight2 = weight_merge_fxn(self.edge_info[eidx].src,self.edge_info[eidx].tgt,weight,weight2)
+						weight2 = weight_merge_fxn(i,j,weight,weight2)
 					else:
 						raise ZenException, 'Weight merge function switch %d (weight_merge_fxn = %s) is not defined' % (weight_merge_switch,str(weight_merge_fxn))
 					
@@ -534,7 +534,7 @@ cdef class DiGraph:
 					elif data_merge_switch == _NO_NONE_LIST_OF_DATA or data_merge_switch == _LIST_OF_DATA:
 						G.set_edge_data_(eidx2,[edata2,edata])
 					elif data_merge_switch == _CUSTOM_DATA_FXN:
-						G.set_edge_data_(eidx2,data_merge_fxn(self.edge_info[eidx].src,self.edge_info[eidx].tgt,edata,edata2))
+						G.set_edge_data_(eidx2,data_merge_fxn(i,j,edata,edata2))
 					else:
 						raise ZenException, 'Data merge function switch %d (data_merge_fxn = %s) is not defined' % (data_merge_switch,str(data_merge_fxn))
 						
