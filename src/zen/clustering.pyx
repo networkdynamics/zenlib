@@ -89,28 +89,16 @@ def local(G,**kwargs):
 					associated node id.	
 	"""
 	if type(G) == DiGraph:
-		# parse the results...
-		avg = False
-		ids = False
-		nbunch = None
-		nbunch_ = None
+		# parse the results...		
+		avg = kwargs.pop('avg',False)
+		ids = kwargs.pop('ids',False)
+		if avg and ids:
+			raise ZenException, 'Both ids and avg cannot be given'
 		
-		if 'avg' in kwargs:
-			avg = kwargs['avg']
-			del kwargs['avg']
-		if 'ids' in kwargs:
-			ids = kwargs['ids']
-			del kwargs['ids']
-			if avg and ids:
-				raise Exception, 'Both ids and avg cannot be given'
-		if 'nbunch' in kwargs:
-			nbunch = kwargs['nbunch']
-			del kwargs['nbunch']
-		if 'nbunch_' in kwargs:
-			nbunch_ = kwargs['nbunch_']
-			del kwargs['nbunch_']
-			if nbunch != None and nbunch_ != None:
-				raise Exception, 'Both nbunch and nbunch_ cannot be given'
+		nbunch = kwargs.pop('nbunch',None)
+		nbunch_ = kwargs.pop('nbunch_',None)
+		if nbunch != None and nbunch_ != None:
+			raise ZenException, 'Both nbunch and nbunch_ cannot be given'
 				
 		# if there are extra arguments...
 		if len(kwargs) != 0:
@@ -119,27 +107,15 @@ def local(G,**kwargs):
 		return __lcc_directed(<DiGraph>G,nbunch,nbunch_,avg,ids)
 	elif type(G) == Graph:
 		# parse the results...
-		avg = False
-		ids = False
-		nbunch = None
-		nbunch_ = None
+		avg = kwargs.pop('avg',False)
+		ids = kwargs.pop('ids',False)
+		if avg and ids:
+			raise ZenException, 'Both ids and avg cannot be given'
 		
-		if 'avg' in kwargs:
-			avg = kwargs['avg']
-			del kwargs['avg']
-		if 'ids' in kwargs:
-			ids = kwargs['ids']
-			del kwargs['ids']
-			if avg and ids:
-				raise Exception, 'Both ids and avg cannot be given'
-		if 'nbunch' in kwargs:
-			nbunch = kwargs['nbunch']
-			del kwargs['nbunch']
-		if 'nbunch_' in kwargs:
-			nbunch_ = kwargs['nbunch_']
-			del kwargs['nbunch_']
-			if nbunch != None and nbunch_ != None:
-				raise Exception, 'Both nbunch and nbunch_ cannot be given'
+		nbunch = kwargs.pop('nbunch',None)
+		nbunch_ = kwargs.pop('nbunch_',None)
+		if nbunch != None and nbunch_ != None:
+			raise ZenException, 'Both nbunch and nbunch_ cannot be given'
 				
 		# if there are extra arguments...
 		if len(kwargs) != 0:

@@ -90,6 +90,9 @@ def read(filename,**kwargs):
 	merge_graph = kwargs.pop('merge_graph',None)
 	weighted = kwargs.pop('weighted',False)
 	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown keyword arguments: %s' % ', '.join(kwargs.keys())
+	
 	return __inner_read(filename,directed,node_obj_fxn,ignore_duplicate_edges,merge_graph,weighted)
 	
 cpdef __inner_read(char* filename,directed,node_obj_fxn,bool ignore_duplicate_edges,G,weighted):	

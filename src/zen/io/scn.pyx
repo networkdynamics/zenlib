@@ -78,6 +78,9 @@ def write(G,filename,**kwargs):
 	node_data_fxn = kwargs.pop('node_data_fxn',None)
 	edge_data_fxn = kwargs.pop('edge_data_fxn',None)
 	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown keyword arguments: %s' % ', '.join(kwargs.keys())
+		
 	__inner_write(G,filename,num_node_props,num_edge_props,node_data_fxn,edge_data_fxn,use_node_indices)
 
 cpdef __inner_write(G,filename,num_node_props,num_edge_props,node_data_fxn,edge_data_fxn,bool use_node_indices):
@@ -256,6 +259,9 @@ def read(filename,**kwargs):
 	ignore_duplicate_edges = kwargs.pop('ignore_duplicate_edges',False)
 	merge_graph = kwargs.pop('merge_graph',None)
 	max_line_len = kwargs.pop('max_line_len',500)
+	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown keyword arguments: %s' % ', '.join(kwargs.keys())
 	
 	if directed is True or (directed is None and type(merge_graph) == DiGraph):
 		return parse_directed_scn(filename,max_line_len,node_obj_fxn,ignore_duplicate_edges,merge_graph)

@@ -67,6 +67,9 @@ def read(filename,**kwargs):
 	node_obj_fxn = kwargs.pop('node_obj_fxn',str)
 	merge_graph = kwargs.pop('merge_graph',None)
 	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown keyword arguments: %s' % ', '.join(kwargs.keys())
+	
 	return __inner_read(filename,node_obj_fxn,merge_graph)
 	
 cpdef __inner_read(filename,node_obj_fxn,merge_graph):

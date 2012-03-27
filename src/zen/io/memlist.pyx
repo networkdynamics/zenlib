@@ -85,6 +85,9 @@ def read(char* filename,**kwargs):
 	weighted = kwargs.pop('weighted',False)
 	node_obj_fxn = kwargs.pop('node_obj_fxn',None)
 	
+	if len(kwargs) > 0:
+		raise ZenException, 'Unknown keyword arguments: %s' % ', '.join(kwargs.keys())
+	
 	return __inner_read(filename,directed,ignore_duplicate_edges,weighted,node_obj_fxn)
 	
 cpdef __inner_read(char* filename,bool directed,bool ignore_duplicates,bool weighted,node_obj_fxn):
