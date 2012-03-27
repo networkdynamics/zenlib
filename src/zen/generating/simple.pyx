@@ -24,8 +24,11 @@ def barabasi_albert(n, m, **kwargs):
 	Citation:
 	A. L. Barabási and R. Albert "Emergence of scaling in random networks", Science 286, pp 509-512, 1999.
 	"""
-	seed = kwargs.pop('seed',0)
+	seed = kwargs.pop('seed',None)
 	directed = kwargs.pop('directed',False)
+	
+	if seed is None:
+		seed = -1
 	
 	if not directed:
 		return __inner_barabasi_albert_udir(n, m, seed)
@@ -49,7 +52,8 @@ cdef __inner_barabasi_albert_udir(int n, int m, int seed):
 	
 	#####
 	# add edges
-	srand(seed)
+	if seed >= 0:
+		srand(seed)
 	
 	# add the first (m+1)th node
 	for i in range(m):
@@ -96,7 +100,8 @@ cdef __inner_barabasi_albert_dir(int n, int m, int seed):
 
 	#####
 	# add edges
-	srand(seed)
+	if seed >= 0:
+		srand(seed)
 
 	# add the first (m+1)th node
 	for i in range(m):
@@ -138,11 +143,14 @@ def erdos_renyi(int n,float p,**kwargs): #bint directed=False,bint self_loops=Fa
 		
 		- self_loops [=False]: indicates whether self-loops are permitted in the generated graph.
 		
-		- seed [=0]: the seed provided to the random generator used to drive the graph construction.
+		- seed [=None]: the seed provided to the random generator used to drive the graph construction.
 	"""
 	directed = kwargs.pop('directed',False)
 	self_loops = kwargs.pop('self_loops',False)
-	seed = kwargs.pop('seed',0)
+	seed = kwargs.pop('seed',None)
+	
+	if seed is None:
+		seed = -1
 	
 	if directed:
 		return __erdos_renyi_directed(n,p,self_loops,seed)
@@ -154,7 +162,8 @@ cpdef __erdos_renyi_undirected(int num_nodes,float p,bint self_loops,int seed):
 	cdef int i, j, first_j
 	cdef float rnd
 	
-	srand(seed)
+	if seed >= 0:
+		srand(seed)
 	
 	# add nodes
 	for i in range(num_nodes):
@@ -180,7 +189,8 @@ cpdef __erdos_renyi_directed(int num_nodes,float p,bint self_loops,int seed):
 	cdef int i, j
 	cdef float rnd
 
-	srand(seed)
+	if seed >= 0:
+		srand(seed)
 	
 	# add nodes
 	for i in range(num_nodes):
