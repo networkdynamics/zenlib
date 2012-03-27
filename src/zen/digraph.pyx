@@ -548,24 +548,22 @@ cdef class DiGraph:
 		cdef int i,j,eidx,eidx2
 		cdef double weight
 
-		node_mapping = {}
-
 		for i in range(self.next_node_idx):
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
 				ndata = self.node_data_(i)
 
-				node_mapping[i] = G.add_node(nobj,ndata)
+				# this way of adding nodes preserves the node index
+				G.add_node_x(i,G.edge_list_capacity,G.edge_list_capacity,nobj,ndata)
 
 		for eidx in range(self.next_edge_idx):
 			if self.edge_info[eidx].exists:
-				i = node_mapping[self.edge_info[eidx].src]
-				j = node_mapping[self.edge_info[eidx].tgt]
+				i = self.edge_info[eidx].src
+				j = self.edge_info[eidx].tgt
 				edata = self.edge_data_(eidx)
 				weight = self.weight_(eidx)
 
-				eidx2 = G.add_edge_(j,i,edata)
-				G.set_weight_(eidx2,weight)
+				eidx2 = G.add_edge_x(eidx,j,i,edata,weight)
 
 		return G
 
@@ -1043,12 +1041,23 @@ cdef class DiGraph:
 			raise ZenException, 'Both source and destination nodes must exist (%d,%d)' % (src,tgt)
 			
 		cdef int eidx
+		
+		# recycle an edge index if possible
 		if self.first_free_edge != -1:
 			eidx = self.first_free_edge
 			self.first_free_edge = self.edge_info[eidx].src
 		else:
 			eidx = self.next_edge_idx
 			self.next_edge_idx += 1
+		
+		self.add_edge_x(eidx,src,tgt,data,weight)
+		
+		return eidx
+		
+	cpdef int add_edge_x(DiGraph self, int eidx, int src, int tgt, data, double weight) except -1:
+		
+		if eidx >= self.next_edge_idx:
+			self.next_edge_idx = eidx + 1
 		
 		if data is not None:
 			self.edge_data_lookup[eidx] = data
@@ -1080,6 +1089,7 @@ cdef class DiGraph:
 		#####
 		# Done
 		self.num_edges += 1
+		
 		return eidx
 	
 	cdef __insert_edge_into_outelist(DiGraph self, int src, int eidx, int tgt):

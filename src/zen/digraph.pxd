@@ -109,6 +109,8 @@ cdef class DiGraph:
 	
 	cpdef int add_edge_(DiGraph self, int src, int tgt, data=*, double weight=*) except -1
 	
+	cpdef int add_edge_x(DiGraph self, int eidx, int src, int tgt, data, double weight) except -1
+	
 	cdef __insert_edge_into_outelist(DiGraph self, int src, int eidx, int tgt)
 	
 	cdef __insert_edge_into_inelist(DiGraph self, int tgt, int eidx, int src)
