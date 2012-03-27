@@ -4,6 +4,18 @@ import zen
 
 class UndirectedERTestCase(unittest.TestCase):
 	
+	def test_seed(self):
+		G1 = zen.generating.erdos_renyi(10,0.5,seed=10)
+		G2 = zen.generating.erdos_renyi(10,0.5,seed=10)
+		
+		for e in G1.edges_iter():
+			if not G2.has_edge(*e):
+				self.fail('Graphs generated using same seed are different.')
+				
+		for e in G2.edges_iter():
+			if not G1.has_edge(*e):
+				self.fail('Graphs generated using same seed are different.')
+	
 	def test_complete(self):
 		G = zen.generating.erdos_renyi(5,1.0,self_loops=True)
 		

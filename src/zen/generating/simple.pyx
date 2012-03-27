@@ -74,19 +74,32 @@ cdef __inner_barabasi_albert(int n, int m, int seed):
 		num_endpoints += m * 2
 	return G
 
-cpdef erdos_renyi(int num_nodes,float p,bint directed=False,bint self_loops=False):
+def erdos_renyi(int n,float p,**kwargs): #bint directed=False,bint self_loops=False):
 	"""
 	Generate an erdos-renyi graph with num_nodes nodes, each edge existing with probability p.
+	
+	Optional arguments are:
+		- directed [=False]: indicates whether the network generated is directed.
+		
+		- self_loops [=False]: indicates whether self-loops are permitted in the generated graph.
+		
+		- seed [=0]: the seed provided to the random generator used to drive the graph construction.
 	"""
+	directed = kwargs.pop('directed',False)
+	self_loops = kwargs.pop('self_loops',False)
+	seed = kwargs.pop('seed',0)
+	
 	if directed:
-		return __erdos_renyi_directed(num_nodes,p,self_loops)
+		return __erdos_renyi_directed(n,p,self_loops,seed)
 	else:
-		return __erdos_renyi_undirected(num_nodes,p,self_loops)
+		return __erdos_renyi_undirected(n,p,self_loops,seed)
 
-cpdef __erdos_renyi_undirected(int num_nodes,float p,bint self_loops):
+cpdef __erdos_renyi_undirected(int num_nodes,float p,bint self_loops,int seed):
 	cdef Graph G = Graph()
 	cdef int i, j, first_j
 	cdef float rnd
+	
+	srand(seed)
 	
 	# add nodes
 	for i in range(num_nodes):
@@ -107,11 +120,13 @@ cpdef __erdos_renyi_undirected(int num_nodes,float p,bint self_loops):
 	
 	return G
 	
-cpdef __erdos_renyi_directed(int num_nodes,float p,bint self_loops):
+cpdef __erdos_renyi_directed(int num_nodes,float p,bint self_loops,int seed):
 	cdef DiGraph G = DiGraph()
 	cdef int i, j
 	cdef float rnd
 
+	srand(seed)
+	
 	# add nodes
 	for i in range(num_nodes):
 		G.add_node(i)
