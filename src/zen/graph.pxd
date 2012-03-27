@@ -90,6 +90,8 @@ cdef class Graph:
 	
 	cpdef int add_edge_(Graph self, int u, int v, data=*, double weight=*) except -1
 	
+	cpdef int add_edge_x(self, int eidx, int u, int v, data, double weight) except -1
+	
 	cdef int __endpoint(Graph self, EdgeInfo ei, int this_nidx)
 	
 	cdef int find_elist_insert_pos(Graph self, int* elist, int elist_len, int this_nidx, int nidx)

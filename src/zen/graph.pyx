@@ -235,29 +235,30 @@ cdef class Graph:
 	cpdef copy(Graph self):
 		"""
 		Create a copy of this graph.
+		
+		Note that node and edge indices are preserved in this copy.
 		"""
 		cdef Graph G = Graph()
 		cdef int i,j,eidx,eidx2
 		cdef double weight
-	
-		node_mapping = {}
 	
 		for i in range(self.next_node_idx):
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
 				ndata = self.node_data_(i)
 			
-				node_mapping[i] = G.add_node(nobj,ndata)
+				# this will preserve node index
+				G.add_node_x(i,G.edge_list_capacity,nobj,ndata)
 	
 		for eidx in range(self.next_edge_idx):
 			if self.edge_info[eidx].exists:
-				i = node_mapping[self.edge_info[eidx].u]
-				j = node_mapping[self.edge_info[eidx].v]
+				i = self.edge_info[eidx].u
+				j = self.edge_info[eidx].v
 				edata = self.edge_data_(eidx)
 				weight = self.weight_(eidx)
 			
-				eidx2 = G.add_edge_(i,j,edata)
-				G.set_weight_(eidx2,weight)
+				# this will preserve edge index
+				G.add_edge_x(eidx,i,j,edata,weight)
 				
 		return G
 		
@@ -887,7 +888,16 @@ cdef class Graph:
 		else:
 			eidx = self.next_edge_idx
 			self.next_edge_idx += 1
-		
+	
+		self.add_edge_x(eidx,u,v,data,weight)
+
+		return eidx
+
+	cpdef int add_edge_x(self, int eidx, int u, int v, data, double weight) except -1:
+
+		if eidx >= self.next_edge_idx:
+			self.next_edge_idx = eidx + 1
+				
 		if data is not None:
 			self.edge_data_lookup[eidx] = data
 		
@@ -902,7 +912,6 @@ cdef class Graph:
 		
 		####
 		# connect up the edges to nodes
-		#cdef int new_capacity
 		
 		# u
 		self.__insert_edge_into_edgelist(u,eidx,v)

@@ -276,29 +276,28 @@ cdef class DiGraph:
 	cpdef copy(DiGraph self):
 		"""
 		Create a copy of this graph.
+		
+		Note that node and edge indices are preserved.
 		"""
 		cdef DiGraph G = DiGraph()
 		cdef int i,j,eidx,eidx2
 		cdef double weight
-
-		node_mapping = {}
 
 		for i in range(self.next_node_idx):
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
 				ndata = self.node_data_(i)
 
-				node_mapping[i] = G.add_node(nobj,ndata)
+				G.add_node_x(i,G.edge_list_capacity,G.edge_list_capacity,nobj,ndata)
 
 		for eidx in range(self.next_edge_idx):
 			if self.edge_info[eidx].exists:
-				i = node_mapping[self.edge_info[eidx].src]
-				j = node_mapping[self.edge_info[eidx].tgt]
+				i = self.edge_info[eidx].src
+				j = self.edge_info[eidx].tgt
 				edata = self.edge_data_(eidx)
 				weight = self.weight_(eidx)
 
-				eidx2 = G.add_edge_(i,j,edata)
-				G.set_weight_(eidx2,weight)
+				G.add_edge_x(eidx,i,j,edata,weight)
 
 		return G
 				
