@@ -5,6 +5,18 @@ import random
 
 class BELTestCase(unittest.TestCase):
 
+	def test_undirected_not_compact(self):
+		G = Graph()
+		G.add_node(1)
+		G.add_node(2)
+		G.rm_node(1)
+		
+		try:
+			x = bel.write_str(G)
+			self.fail('bel.write_str should have raised an exception. G is not compact.')
+		except ZenException,e:
+			pass
+			
 	def test_directed_rw1(self):
 		G = DiGraph()
 		x = range(100)

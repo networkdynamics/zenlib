@@ -61,6 +61,7 @@ The general idea is drawn from variable length integer encoding which has been u
 """
 
 from zen.constants import *
+from zen.exceptions import *
 from zen.graph import Graph
 from zen.digraph import DiGraph
 
