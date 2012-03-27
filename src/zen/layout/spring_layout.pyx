@@ -22,6 +22,7 @@ cdef extern from "math.h":
 	
 cdef inline float fast_max(float a, float b): return a if a >= b else b
 cdef inline float fast_min(float a, float b): return a if a <= b else b
+
 cpdef layout(GV,num_iterations=100,bbox=(0.,0.,100.,100.)):
 	"""
 	Use spring force layout to layout the nodes in graph (or view) GV.
