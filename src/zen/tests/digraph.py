@@ -5,6 +5,34 @@ import pickle
 
 from zen import *
 
+class DiGraphReverseTestCase(unittest.TestCase):
+	
+	def test_reverse(self):
+		G = DiGraph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_node(4)
+		
+		G = G.reverse()
+		
+		self.assertTrue(4 in G)
+		self.assertTrue(G.has_edge(2,1))
+		self.assertFalse(G.has_edge(1,2))
+		self.assertTrue(G.has_edge(3,2))
+		
+	def test_reverse_index_preservations(self):
+		G = DiGraph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_node(3,4)
+		G.rm_node(3)
+		
+		G2 = G.reverse()
+		
+		self.assertEquals(G.node_idx(1),G2.node_idx(1))
+		self.assertEqual(G.node_idx(2),G2.node_idx(2))
+		self.assertEqual(G.edge_idx(1,2),G2.edge_idx(2,1))
+
 class DiGraphSkeletonTestCase(unittest.TestCase):
 	
 	def test_basic_node_index_preservation(self):
@@ -288,19 +316,6 @@ class DiGraphTestCase(unittest.TestCase):
 		G.add_edge(1,6)
 
 		self.assertEqual(G.edge_capacity,5)
-		
-	def test_reverse(self):
-		G = DiGraph()
-		G.add_edge(1,2)
-		G.add_edge(2,3)
-		G.add_node(4)
-		
-		G = G.reverse()
-		
-		self.assertTrue(4 in G)
-		self.assertTrue(G.has_edge(2,1))
-		self.assertFalse(G.has_edge(1,2))
-		self.assertTrue(G.has_edge(3,2))
 	
 	def test_basicadding(self):
 		G = DiGraph()

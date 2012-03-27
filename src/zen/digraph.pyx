@@ -543,6 +543,8 @@ cdef class DiGraph:
 	cpdef reverse(self):
 		"""
 		Create a directed graph with identical content in which edges are reverse directions.
+		
+		Note that node and edge indices are preserved in the reversed graph.
 		"""
 		cdef DiGraph G = DiGraph()
 		cdef int i,j,eidx,eidx2
