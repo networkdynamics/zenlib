@@ -21,6 +21,10 @@ __all__ = ['floyd_warshall',
 		'dp2path_',
 		'single_source_shortest_path_',
 		'single_source_shortest_path'
+		'all_pairs_dijkstra',
+		'all_pairs_dijkstra_',
+		'all_pairs_dijkstra_length',
+		'all_pairs_dijkstra_length_'
 		]
 
 cpdef single_source_shortest_path(G,source,target=None):
@@ -546,3 +550,26 @@ cpdef floyd_warshall_u_(Graph G):
 					P[ni,nj] = tmp
 
 	return P			
+
+cpdef all_pairs_dijkstra(G):
+	"""
+	Compute the shortest paths between all sets of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
+	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
+	"""
+	R = dict()
+	for n in G.nodes_iter():
+		R[n] = dijkstra(G,n)
+		
+	return R
+	
+cpdef all_pairs_dijkstra_(G):
+	"""
+	TODO
+	"""
+	pass
+	
+cpdef all_pairs_dijkstra_length(G):
+	pass
+
+cpdef all_pairs_dijkstra_length_(G):
+	pass
