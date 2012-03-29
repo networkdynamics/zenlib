@@ -38,8 +38,8 @@ cpdef single_source_shortest_path(G,source,target=None):
 	"""
 	cdef int i, num_nodes
 	cdef int src_idx, tgt_idx
-	cdef np.ndarray[np.double_t, ndim=1] D = np.zeros(G.num_nodes, np.double) # final distance
-	cdef np.ndarray[np.int_t, ndim=1] P = np.zeros(G.num_nodes, np.int)# predecessors
+	cdef np.ndarray[np.double_t, ndim=1] D # final distance
+	cdef np.ndarray[np.int_t, ndim=1] P # predecessors
 	
 	num_nodes = len(G)
 	src_idx = G.node_idx(source)
@@ -79,22 +79,40 @@ cpdef single_source_shortest_path_(G,int source,int target=-1):
 	size are on the order of the number of nodes in the network.  Thus for very large networks,
 	dijkstra's algorithm may be faster.
 	
-	Return values are a distance and predecessor array.  If the target is specified, the algorithm
+	Return values are a distance and predecessor numpy arrays.  If the target is specified, the algorithm
 	halts when the target node is reached.  In this case, the distance and predecessor arrays will
 	be partially completed.
 	"""
 	if type(G) == Graph:
-		return single_source_shortest_path_u_(<Graph> G,source,target)
+		return single_source_shortest_path_u_(<Graph> G,source,target,True)
 	else:
-		return single_source_shortest_path_d_(<DiGraph> G,source,target)
+		return single_source_shortest_path_d_(<DiGraph> G,source,target,True)
 		
-cpdef single_source_shortest_path_u_(Graph G,int source,int target):
+cpdef single_source_shortest_path_length(G,int source,int target=-1):
+	"""
+	This function computes the single source shortest path in an unweighted network
+	by trading space for speed.  The algorithm requires several blocks of memory whose
+	size are on the order of the number of nodes in the network.  Thus for very large networks,
+	dijkstra's algorithm may be faster.
+
+	Return value is a distance numpy array.  If the target is specified, the algorithm
+	halts when the target node is reached.  In this case, the distance array will
+	be partially completed.
+	"""
+	if type(G) == Graph:
+		return single_source_shortest_path_u_(<Graph> G,source,target,False)
+	else:
+		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)		
+		
+cpdef single_source_shortest_path_u_(Graph G,int source,int target,bool gen_predecessors):
 	
 	cdef np.ndarray[np.double_t, ndim=1] distance = np.zeros(G.num_nodes, np.double) # final distance
 	distance.fill(float('infinity'))
 	
-	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.zeros(G.num_nodes, np.int) # predecessors
-	predecessor.fill(-1)
+	cdef np.ndarray[np.int_t, ndim=1] predecessor
+	if gen_predecessors:
+		predecessor = np.zeros(G.num_nodes, np.int) # predecessors
+		predecessor.fill(-1)
 	
 	cdef np.ndarray[np.int_t, ndim=1] seen = np.zeros(G.num_nodes, np.int)
 	cdef np.ndarray[np.int_t, ndim=1] curr_level = np.zeros(G.num_nodes, np.int)
@@ -107,7 +125,8 @@ cpdef single_source_shortest_path_u_(Graph G,int source,int target):
 	next_level_size = 1
 	next_level[0] = source
 	distance[source] = 0
-	predecessor[source] = -1
+	if gen_predecessors:
+		predecessor[source] = -1
 	seen[source] = True
 	curr_depth = 1
 	
@@ -129,7 +148,8 @@ cpdef single_source_shortest_path_u_(Graph G,int source,int target):
 				seen[vidx] = True
 				
 				distance[vidx] = curr_depth
-				predecessor[vidx] = uidx
+				if gen_predecessors:
+					predecessor[vidx] = uidx
 					
 				next_level[next_level_size] = vidx
 				next_level_size += 1
@@ -145,14 +165,19 @@ cpdef single_source_shortest_path_u_(Graph G,int source,int target):
 			
 		curr_depth += 1
 	
-	return distance, predecessor
+	if gen_predecessors:
+		return distance, predecessor
+	else:
+		return distance
 	
-cpdef single_source_shortest_path_d_(DiGraph G,int source,int target):
+cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_predecessors):
 
 	cdef np.ndarray[np.double_t, ndim=1] distance = np.zeros(G.num_nodes, np.double) # final distance
 	distance.fill(float('infinity'))
-	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.zeros(G.num_nodes, np.int) # predecessors
-	predecessor.fill(-1)
+	cdef np.ndarray[np.int_t, ndim=1] predecessor
+	if gen_predecessors:
+		predecessor = np.zeros(G.num_nodes, np.int) # predecessors
+		predecessor.fill(-1)
 
 	cdef np.ndarray[np.int_t, ndim=1] seen = np.zeros(G.num_nodes, np.int)
 	cdef np.ndarray[np.int_t, ndim=1] curr_level = np.zeros(G.num_nodes, np.int)
@@ -165,7 +190,8 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target):
 	next_level_size = 1
 	next_level[0] = source
 	distance[source] = 0
-	predecessor[source] = -1
+	if gen_predecessor:
+		predecessor[source] = -1
 	seen[source] = True
 	curr_depth = 1
 
@@ -187,7 +213,8 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target):
 				seen[vidx] = True
 
 				distance[vidx] = curr_depth
-				predecessor[vidx] = uidx
+				if gen_predecessor:
+					predecessor[vidx] = uidx
 
 				next_level[next_level_size] = vidx
 				next_level_size += 1
@@ -203,7 +230,10 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target):
 
 		curr_depth += 1
 
-	return distance, predecessor
+	if gen_predecessor:
+		return distance, predecessor
+	else:
+		return distance
 		
 cpdef dijkstra(G, start, end=None):
 	""" 
@@ -611,10 +641,34 @@ cpdef all_pairs_dijkstra_path_(G):
 	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
 	on the shortest path from x.  All node identifiers are node indicies.
 	"""
-	pass
+	cdef int next_node_idx = G.next_node_idx
+	cdef int nidx
 	
+	cdef np.ndarray[np.double_t, ndim=1] distances = np.empty([next_node_idx], dtype=np.double) # final distance
+	cdef np.ndarray[np.int_t, ndim=1] predecessors = np.empty([next_node_idx], dtype=np.int) # predecessors
+
+	for nidx in range(next_node_idx):
+		D,P = dijkstra_(G,nidx)
+		distances[nidx,:] = D
+		predecessors[nidx,:] = P
+
+	return distances, predecessors
+
 cpdef all_pairs_dijkstra_path_length(G):
 	pass
 
 cpdef all_pairs_dijkstra_path_length_(G):
-	pass
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
+	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
+	"""
+	cdef int next_node_idx = G.next_node_idx
+	cdef int nidx
+	
+	cdef np.ndarray[np.double_t, ndim=1] distances = np.empty([next_node_idx], dtype=np.double) # final distance
+
+	for nidx in range(next_node_idx):
+		D,P = dijkstra_(G,nidx)
+		distances[nidx,:] = D
+
+	return distances
