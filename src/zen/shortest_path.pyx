@@ -9,8 +9,10 @@ from zen.exceptions import ZenException
 from zen.util.fiboheap cimport FiboHeap
 
 __all__ = [
-		'single_source_shortest_path_',
 		'single_source_shortest_path',
+		'single_source_shortest_path_',		
+		'single_source_shortest_path_length',
+		'single_source_shortest_path_length_',		
 		'dijkstra',
 		'dijkstra_',
 		'pred2path',
@@ -102,7 +104,23 @@ cpdef single_source_shortest_path_length(G,int source,int target=-1):
 	if type(G) == Graph:
 		return single_source_shortest_path_u_(<Graph> G,source,target,False)
 	else:
-		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)		
+		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)	
+		
+cpdef single_source_shortest_path_length_(G,int source,int target=-1):
+	"""
+	This function computes the single source shortest path in an unweighted network
+	by trading space for speed.  The algorithm requires several blocks of memory whose
+	size are on the order of the number of nodes in the network.  Thus for very large networks,
+	dijkstra's algorithm may be faster.
+
+	Return value is a distance numpy arrays.  If the target is specified, the algorithm
+	halts when the target node is reached.  In this case, the distance array will
+	be partially completed.
+	"""
+	if type(G) == Graph:
+		return single_source_shortest_path_u_(<Graph> G,source,target,False)
+	else:
+		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)	
 		
 cpdef single_source_shortest_path_u_(Graph G,int source,int target,bool gen_predecessors):
 	
@@ -190,7 +208,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_pr
 	next_level_size = 1
 	next_level[0] = source
 	distance[source] = 0
-	if gen_predecessor:
+	if gen_predecessors:
 		predecessor[source] = -1
 	seen[source] = True
 	curr_depth = 1
@@ -213,7 +231,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_pr
 				seen[vidx] = True
 
 				distance[vidx] = curr_depth
-				if gen_predecessor:
+				if gen_predecessors:
 					predecessor[vidx] = uidx
 
 				next_level[next_level_size] = vidx
@@ -230,7 +248,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_pr
 
 		curr_depth += 1
 
-	if gen_predecessor:
+	if gen_predecessors:
 		return distance, predecessor
 	else:
 		return distance
@@ -297,13 +315,13 @@ cpdef dijkstra_(G, int start_idx, int end_idx=-1):
 	If any indexes are -1, then there was no distance / no predecessor
 	"""
 	if type(G) == DiGraph:
-		return dijkstra_d_(<DiGraph> G, start_idx, end_idx)
+		return dijkstra_d_(<DiGraph> G, start_idx, end_idx, True)
 	elif type(G) == Graph:
-		return dijkstra_u_(<Graph> G, start_idx, end_idx)
+		return dijkstra_u_(<Graph> G, start_idx, end_idx, True)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
-cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
+cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bool gen_predecessors):
 	"""
 	Dijkstra algorithm for directed graphs.
 	
@@ -311,7 +329,10 @@ cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
 	"""
 	
 	cdef np.ndarray[np.double_t, ndim=1] distance = np.empty([G.num_nodes], dtype=np.double) # final distance
-	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
+	cdef np.ndarray[np.int_t, ndim=1] predecessor
+	if gen_predecessors:
+		predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
+		
 	cdef np.ndarray[object, ndim=1] fiboheap_nodes = np.empty([G.num_nodes], dtype=object) # holds all of our FiboHeap Nodes Pointers
 	
 	cdef int edge_idx, node_idx
@@ -323,13 +344,17 @@ cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
 	#set of all nodes in Graph, since all nodes are not optimized they are in the Q.
 	for i from 0<= i < G.num_nodes:
 		distance[i] = infinity
-		predecessor[i] = -1
+		if gen_predecessors:
+			predecessor[i] = -1
+			
 		if i != start_idx:
 			fiboheap_nodes[i]=Q.insert(infinity, i) #float('infinity'), i)
 			
 	fiboheap_nodes[start_idx] = Q.insert(0, start_idx)
 	distance[start_idx] = 0
-	predecessor[start_idx] = -1
+	
+	if gen_predecessors:
+		predecessor[start_idx] = -1
 	
 	while Q.get_node_count() != 0:
 		node_idx = Q.extract()
@@ -343,24 +368,30 @@ cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
 			vw_distance = dist + G.weight_(edge_idx)
 			if distance[w] == infinity or (vw_distance < distance[w]): #Relax
 				distance[w] = vw_distance
-				predecessor[w] = node_idx
+				if gen_predecessors:
+					predecessor[w] = node_idx
 				Q.decrease_key(fiboheap_nodes[w], vw_distance)
 	
 	# TODO: do we need to cleanup the fiboheap_nodes array?
 		
-	return (distance, predecessor)
+	if gen_predecessors:
+		return distance, predecessor
+	else:
+		return distance
 
 def dijkstra_cmp(x,y):
 	return cmp(x.cost,y.cost)
 	
-cpdef dijkstra_u_(Graph G, int start_idx, int end_idx=-1):
+cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bool gen_predecessors):
 	"""
 	Dijkstra algorithm for undirected graphs.
 	
     Returns an array of distances and predecessors.
 	"""
 	cdef np.ndarray[np.double_t, ndim=1] distance = np.empty([G.num_nodes], dtype=np.double) # final distance
-	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
+	cdef np.ndarray[np.int_t, ndim=1] predecessor
+	if gen_predecessors:
+		predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
 	cdef np.ndarray[object, ndim=1] fiboheap_nodes = np.empty([G.num_nodes], dtype=object) # holds all of our FiboHeap Nodes Pointers
 	
 		
@@ -373,13 +404,15 @@ cpdef dijkstra_u_(Graph G, int start_idx, int end_idx=-1):
 	#set of all nodes in Graph, since all nodes are not optimized they are in the Q.
 	for i from 0<= i < G.num_nodes:
 		distance[i] = infinity
-		predecessor[i] = -1
+		if gen_predecessors:
+			predecessor[i] = -1
 		if i != start_idx:
 			fiboheap_nodes[i]=Q.insert(infinity, i)
 			
 	fiboheap_nodes[start_idx] = Q.insert(0, start_idx)
 	distance[start_idx] = 0
-	predecessor[start_idx] = -1
+	if gen_predecessors:
+		predecessor[start_idx] = -1
 	
 	while Q.get_node_count() != 0:
 		node_idx = Q.extract()
@@ -394,10 +427,14 @@ cpdef dijkstra_u_(Graph G, int start_idx, int end_idx=-1):
 			vw_distance =  dist + G.weight_(edge_idx)
 			if distance[w] == infinity or (vw_distance < distance[w]): #Relax
 				distance[w] = vw_distance
-				predecessor[w] = node_idx
+				if gen_predecessors:
+					predecessor[w] = node_idx
 				Q.decrease_key(<object>fiboheap_nodes[w], vw_distance)
 	
-	return (distance, predecessor)
+	if gen_predecessors:
+		return distance, predecessor
+	else:
+		return distance
 
 cpdef pred2path(start_obj, end_obj, R):
 	"""
