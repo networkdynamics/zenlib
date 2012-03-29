@@ -25,7 +25,7 @@ cpdef double total_weight(Graph graph):
 	return(tweight)
 		
 	
-cpdef double modularity( graph, communities,weighted=False):
+cpdef double modularity(graph, communities, weighted=False):
     
 	cdef double modularity_value=0.0
 	cdef int i
@@ -43,9 +43,6 @@ cpdef double modularity( graph, communities,weighted=False):
 		
 	for nodes in node_collections: # nodes is a community
 		node_indices = np.zeros(len(nodes), np.int)
-		
-		
-	
     
     	# Loop through the list of nodes, get each index
 		i = 0
@@ -63,7 +60,7 @@ cpdef double modularity( graph, communities,weighted=False):
 		
 	return(modularity_value)
 #
-cpdef double subgraph_modularity_weighted(Graph graph,np.ndarray[np.int_t, ndim=1]  node_indices,np.ndarray[np.int_t, ndim=1] node_assignment,double tweight):
+cpdef double subgraph_modularity_weighted(Graph graph, np.ndarray[np.int_t, ndim=1] node_indices, np.ndarray[np.int_t, ndim=1] node_assignment, double tweight):
 	cdef double l_c=0.0
 	cdef double d_c=0.0
 	cdef double m = tweight
@@ -93,7 +90,7 @@ cpdef double subgraph_modularity_weighted(Graph graph,np.ndarray[np.int_t, ndim=
 
 
 	
-cpdef double subgraph_modularity(Graph graph,np.ndarray[np.int_t, ndim=1]  node_indices,np.ndarray[np.int_t, ndim=1] node_assignment):
+cpdef double subgraph_modularity(Graph graph, np.ndarray[np.int_t, ndim=1] node_indices, np.ndarray[np.int_t, ndim=1] node_assignment):
 	cdef int l_c=0
 	cdef int d_c=0
 	cdef int m = graph.num_edges
