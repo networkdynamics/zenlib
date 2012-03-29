@@ -31,8 +31,8 @@ class UWSSSPTestCase(unittest.TestCase):
 		self.assertEqual(D['b'][0], 1)
 		self.assertEqual(D['d'][0], 2)
         
-		self.assertFalse('x' in D) 
-		self.assertFalse('y' in D) 
+		self.assertEqual(D['x'], (float('infinity'),None)) 
+		self.assertEqual(D['y'], (float('infinity'),None)) 
 
 	def test_unreachable(self):
         
@@ -42,7 +42,7 @@ class UWSSSPTestCase(unittest.TestCase):
 
 		d,p = single_source_shortest_path(G, 's', 'x')
 		
-		self.assertEquals(None, d)
+		self.assertEquals(float('infinity'), d)
 		self.assertEquals(None, p)
 
 	def test_sssp_directed(self):
@@ -67,8 +67,8 @@ class UWSSSPTestCase(unittest.TestCase):
 		self.assertEqual(D['s'], (0, None))
 		self.assertEqual(D['y'], (1, 's'))
         
-		self.assertFalse('a' in D) 
-		self.assertFalse('b' in D) 
+		self.assertEqual(D['a'], (float('infinity'),None)) 
+		self.assertEqual(D['b'], (float('infinity'),None)) 
 
 	def test_spsp_directed(self):
 		# following example from CLRS book page 596

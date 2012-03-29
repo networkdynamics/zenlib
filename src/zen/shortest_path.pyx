@@ -1,10 +1,5 @@
 #cython: embedsignature=True
 
-cdef extern from "stdlib.h":
-	void free(void* ptr)
-	void* malloc(size_t size)
-
-
 import heapq 
 from digraph cimport DiGraph
 from graph cimport Graph
@@ -13,18 +8,19 @@ cimport numpy as np
 from zen.exceptions import ZenException
 from zen.util.fiboheap cimport FiboHeap
 
-__all__ = ['floyd_warshall',
-		'floyd_warshall_',
-		'dijkstra', 
-		'dijkstra_',
-		'dp2path',
-		'dp2path_',
+__all__ = [
 		'single_source_shortest_path_',
-		'single_source_shortest_path'
-		'all_pairs_dijkstra',
-		'all_pairs_dijkstra_',
-		'all_pairs_dijkstra_length',
-		'all_pairs_dijkstra_length_'
+		'single_source_shortest_path',
+		'dijkstra',
+		'dijkstra_',
+		'pred2path',
+		'pred2path_',
+		'floyd_warshall',
+		'floyd_warshall_',
+		'all_pairs_dijkstra_path',
+		'all_pairs_dijkstra_path_',
+		'all_pairs_dijkstra_path_length',
+		'all_pairs_dijkstra_path_length_'
 		]
 
 cpdef single_source_shortest_path(G,source,target=None):
@@ -38,8 +34,7 @@ cpdef single_source_shortest_path(G,source,target=None):
 	from the source and p is the predecessor of node x on the path to the source. 
 	
 	If the target is specified, the return value is the distance from source to target and the path
-	from source to target, returned as a list of nodes along the path.  Nodes that have no path to
-	the source will not appear in the dictionary.
+	from source to target, returned as a list of nodes along the path.
 	"""
 	cdef int i, num_nodes
 	cdef int src_idx, tgt_idx
@@ -57,9 +52,7 @@ cpdef single_source_shortest_path(G,source,target=None):
 	if target is None:
 		Dist = dict()
 		for i in range(num_nodes):
-			if P[i] < 0 and i != src_idx:
-				continue
-			elif P[i] >= 0:
+			if P[i] >= 0:
 				pred = G.node_object(P[i])
 			else:
 				pred = None
@@ -70,10 +63,7 @@ cpdef single_source_shortest_path(G,source,target=None):
 	else:
 		d = D[tgt_idx]
 		p = None
-		if d == -1:
-			d = None
-			p = None
-		else:
+		if d != float('infinity'):
 			p = []
 			i = tgt_idx
 			while i >= 0:
@@ -101,7 +91,7 @@ cpdef single_source_shortest_path_(G,int source,int target=-1):
 cpdef single_source_shortest_path_u_(Graph G,int source,int target):
 	
 	cdef np.ndarray[np.double_t, ndim=1] distance = np.zeros(G.num_nodes, np.double) # final distance
-	distance.fill(-1)
+	distance.fill(float('infinity'))
 	
 	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.zeros(G.num_nodes, np.int) # predecessors
 	predecessor.fill(-1)
@@ -160,7 +150,7 @@ cpdef single_source_shortest_path_u_(Graph G,int source,int target):
 cpdef single_source_shortest_path_d_(DiGraph G,int source,int target):
 
 	cdef np.ndarray[np.double_t, ndim=1] distance = np.zeros(G.num_nodes, np.double) # final distance
-	distance.fill(-1)
+	distance.fill(float('infinity'))
 	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.zeros(G.num_nodes, np.int) # predecessors
 	predecessor.fill(-1)
 
@@ -218,7 +208,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target):
 cpdef dijkstra(G, start, end=None):
 	""" 
 	if end is not None: returns (distance, path) from start to end.
-	if end is not reachable, (None, None) is returned.
+	if end is not reachable, (inf, None) is returned.
 
 	if end is None, returns a dictionary where D[x] = (distance to x, predecessor to x)
 	"""
@@ -239,9 +229,6 @@ cpdef dijkstra(G, start, end=None):
 		result = {}
 	
 		for i in xrange(distance.size):
-			
-			if distance[i] < 0: # unable to reach node with index i or node i does not exist; 
-				continue #skip this index
 
 			pred_idx = predecessor[i]
 
@@ -260,8 +247,16 @@ cpdef dijkstra(G, start, end=None):
 		return result
 	
 	else:
-		# return the distance value as well as the path as a list of node objects/
-		return dp2path(G, start_idx, end_idx, distance, predecessor)
+		# return the distance value as well as the path as a list of node objects
+		if start_idx == end_idx:
+			return 0, []
+			
+		path = pred2path_(start_idx, end_idx, predecessor)
+		if path is None:
+			return float('infinity'), None
+		else:
+			return distance[end_idx], [G.node_object(x) for x in path]
+		
 	
 cpdef dijkstra_(G, int start_idx, int end_idx=-1):
 	"""
@@ -289,7 +284,6 @@ cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
 	cdef np.ndarray[np.int_t, ndim=1] predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
 	cdef np.ndarray[object, ndim=1] fiboheap_nodes = np.empty([G.num_nodes], dtype=object) # holds all of our FiboHeap Nodes Pointers
 	
-		
 	cdef int edge_idx, node_idx
 	cdef int w,i
 	cdef double vw_distance, dist
@@ -298,7 +292,7 @@ cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
 	Q = FiboHeap()
 	#set of all nodes in Graph, since all nodes are not optimized they are in the Q.
 	for i from 0<= i < G.num_nodes:
-		distance[i] = -1
+		distance[i] = infinity
 		predecessor[i] = -1
 		if i != start_idx:
 			fiboheap_nodes[i]=Q.insert(infinity, i) #float('infinity'), i)
@@ -310,17 +304,19 @@ cpdef dijkstra_d_(DiGraph G, int start_idx, int end_idx=-1):
 	while Q.get_node_count() != 0:
 		node_idx = Q.extract()
 		dist = distance[node_idx]
-		if dist == -1:
+		if dist == infinity:
 			break #all remaining vertices are inaccessible from source
 		
 		for i in xrange(G.node_info[node_idx].outdegree):
 			edge_idx = G.node_info[node_idx].outelist[i]
 			w = G.edge_info[edge_idx].tgt
 			vw_distance = dist + G.weight_(edge_idx)
-			if distance[w] == -1 or (vw_distance < distance[w]): #Relax
+			if distance[w] == infinity or (vw_distance < distance[w]): #Relax
 				distance[w] = vw_distance
 				predecessor[w] = node_idx
 				Q.decrease_key(fiboheap_nodes[w], vw_distance)
+	
+	# TODO: do we need to cleanup the fiboheap_nodes array?
 		
 	return (distance, predecessor)
 
@@ -346,7 +342,7 @@ cpdef dijkstra_u_(Graph G, int start_idx, int end_idx=-1):
 	Q = FiboHeap()
 	#set of all nodes in Graph, since all nodes are not optimized they are in the Q.
 	for i from 0<= i < G.num_nodes:
-		distance[i] = -1
+		distance[i] = infinity
 		predecessor[i] = -1
 		if i != start_idx:
 			fiboheap_nodes[i]=Q.insert(infinity, i)
@@ -358,7 +354,7 @@ cpdef dijkstra_u_(Graph G, int start_idx, int end_idx=-1):
 	while Q.get_node_count() != 0:
 		node_idx = Q.extract()
 		dist = distance[node_idx]
-		if dist == -1:
+		if dist == infinity:
 			break #all remaining vertices are inaccessible from source
 		
 		
@@ -366,51 +362,76 @@ cpdef dijkstra_u_(Graph G, int start_idx, int end_idx=-1):
 			edge_idx = G.node_info[node_idx].elist[i]
 			w = G.endpoint_(edge_idx, node_idx)
 			vw_distance =  dist + G.weight_(edge_idx)
-			if distance[w] == -1 or (vw_distance < distance[w]): #Relax
+			if distance[w] == infinity or (vw_distance < distance[w]): #Relax
 				distance[w] = vw_distance
 				predecessor[w] = node_idx
 				Q.decrease_key(<object>fiboheap_nodes[w], vw_distance)
 	
 	return (distance, predecessor)
 
-cpdef dp2path(G, int start_idx, int end_idx, distance, predecessor):
+cpdef pred2path(start_obj, end_obj, R):
 	"""
-	Transform the output of dijkstra_, which consists of a distance array D and a predecessor array P, 
-	into (distance, path), where path is a list of encountered node objects from start_idx to end_idx.
+	Construct a shortest path from start_obj to end_obj using the output of a shortest path
+	function, R. The path is a list of encountered node objects from start_obj to end_obj.
+  	"""
+	if type(R[start_obj]) == dict:
+		R = R[start_obj]
+		return _pred2path_sssp_output(start_obj,end_obj,R)
+	else:
+		return _pred2path_sssp_output(start_obj,end_obj,R)
+			
+cdef _pred2path_sssp_output(start_obj, end_obj, R):
 
-	start_idx and end_idx must be node indexes for valid nodes in the graph.
-  """
+	if R[end_obj][1] == None:
+		return None # that node is not reachable
 
-	if distance[end_idx] < 0:
-		return (None, None) # that node is not reachable
+	if start_obj == end_obj:
+		return [] # silly case
 
-	if start_idx == end_idx:
-		return (0, []) # silly case
+	path = [end_obj]
+	n = R[end_obj][1]
+	while n != start_obj:
+		path.append(n)
+		n = R[n][1]
 
-	path = [G.node_object(end_idx)]
-	n = predecessor[end_idx]
-	while n != start_idx:
-		path.append(G.node_object(n))
-		n = predecessor[n]
-
-	path.append(G.node_object(start_idx))
+	path.append(start_obj)
 	path.reverse()
 
-	return (distance[end_idx], path)
+	return path
 
-cpdef dp2path_(G, int start_idx, int end_idx, distance, predecessor):
+cpdef pred2path_(int start_idx, int end_idx, np.ndarray predecessor):
 	"""
-	Transform the output of dijkstra_, which consists of a distance array D and a predecessor array P, 
-	into (distance, path), where path is a list of encountered node indexes from start_idx to end_idx.
+	Construct a shortest path from start_idx to end_idx using the predecessor output of a shortest
+	path algorithm.	The path returned is a list of encountered node indexes from start_idx to end_idx.
 
 	start_idx and end_idx must be node indexes for valid nodes in the graph.
-  """
+  	"""
+	# NOTE(druths): It would generally be preferable for this function to return a path as a numpy array
+	# since this would be more consistent with the index-oriented return policies.  However, the reason 
+	# a numpy array is not returned by this function is because the length of the path (and thus of the 
+	# numpy array) cannot be deduced from the predecessor object without traversing it.  This would incur
+	# add additional time costs.  
+	#    It's worth noting that it *might* be faster to traverse it once, get
+	# the length of the path, and then build a numpy array rather than build a list (since this requires)
+	# multiple calls into the Python VM.  This is a topic that should be investigated further.
+	
+	if predecessor.ndim == 1:
+		return _pred2path_sssp_output_(start_idx, end_idx, <np.ndarray> predecessor)
+	elif predecessor.ndim == 2:
+		return _pred2path_apsp_output_(start_idx, end_idx, <np.ndarray> predecessor)
+	else:
+		raise ZenException, 'distance and predecessor numpy objects must have 1 or 2 dimensions'
 
-	if distance[end_idx] < 0:
-		return (None, None) # that node is not reachable
+cdef _pred2path_sssp_output_(int start_idx, int end_idx, np.ndarray[np.int_t, ndim=1] predecessor):
+	"""
+	This reconstructs a numpy path from the distance, predecessor output of a single source shortest
+	path algorithm.  The path is a list of the node indicies.
+	"""
+	if predecessor[end_idx] == -1:
+		return None
 
 	if start_idx == end_idx:
-		return (0, []) # silly case
+		return []
 
 	path = [end_idx]
 	n = predecessor[end_idx]
@@ -421,7 +442,29 @@ cpdef dp2path_(G, int start_idx, int end_idx, distance, predecessor):
 	path.append(start_idx)
 	path.reverse()
 
-	return (distance[end_idx], path)
+	return path
+	
+cdef _pred2path_apsp_output_(int start_idx, int end_idx, np.ndarray[np.int_t, ndim=2] predecessor):
+	"""
+	This reconstructs a numpy path from the distance, predecessor output of a all-pairs source shortest
+	path algorithm.
+	"""
+	if predecessor[start_idx,end_idx] == -1:
+		return None
+
+	if start_idx == end_idx:
+		return [] # silly case
+
+	path = [end_idx]
+	n = predecessor[start_idx,end_idx]
+	while n != start_idx:
+		path.append(n)
+		n = predecessor[start_idx,n]
+
+	path.append(start_idx)
+	path.reverse()
+
+	return path
 	
 cpdef flag_unreachable(np.ndarray A):
 	cdef int i
@@ -551,9 +594,9 @@ cpdef floyd_warshall_u_(Graph G):
 
 	return P			
 
-cpdef all_pairs_dijkstra(G):
+cpdef all_pairs_dijkstra_path(G):
 	"""
-	Compute the shortest paths between all sets of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
+	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
 	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
 	"""
 	R = dict()
@@ -562,14 +605,16 @@ cpdef all_pairs_dijkstra(G):
 		
 	return R
 	
-cpdef all_pairs_dijkstra_(G):
+cpdef all_pairs_dijkstra_path_(G):
 	"""
-	TODO
+	Compute the shortest paths between all pairs of nodes in G.  The result is two NxN matricies, D and P, containing pairwise distances
+	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
+	on the shortest path from x.  All node identifiers are node indicies.
 	"""
 	pass
 	
-cpdef all_pairs_dijkstra_length(G):
+cpdef all_pairs_dijkstra_path_length(G):
 	pass
 
-cpdef all_pairs_dijkstra_length_(G):
+cpdef all_pairs_dijkstra_path_length_(G):
 	pass

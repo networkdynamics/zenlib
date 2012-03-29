@@ -37,8 +37,8 @@ class DijkstraTestCase(unittest.TestCase):
 		self.assertEqual(D['t'], (13, 'd'))
 		self.assertEqual(D['f'], (14, 'a'))
         
-		self.assertFalse('x' in D) 
-		self.assertFalse('y' in D) 
+		self.assertEqual(D['x'], (float('infinity'),None)) 
+		self.assertEqual(D['y'], (float('infinity'),None)) 
 
 	def test_source_is_end(self):
         
@@ -58,7 +58,7 @@ class DijkstraTestCase(unittest.TestCase):
 
 		d, p = dijkstra(G, 's', 'x')
 		
-		self.assertEquals(None, d)
+		self.assertEquals(float('infinity'), d)
 		self.assertEquals(None, p)
 
 	def test_sssp_directed(self):
@@ -86,8 +86,8 @@ class DijkstraTestCase(unittest.TestCase):
 		self.assertEqual(D['x'], (9, 't'))
 		self.assertEqual(D['z'], (7, 'y'))
         
-		self.assertFalse('a' in D) 
-		self.assertFalse('b' in D) 
+		self.assertEqual(D['a'], (float('infinity'),None)) 
+		self.assertEqual(D['b'], (float('infinity'),None)) 
 
 	def test_spsp_directed(self):
 		# following example from CLRS book page 596
