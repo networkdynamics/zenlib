@@ -29,6 +29,12 @@ class UndirectedBATestCase(unittest.TestCase):
 		self.assertEqual(type(G1),zen.Graph)
 		self.assertEqual(len(G1),10)
 		
+	def test_same_num_edges(self):
+		G1 = zen.generating.barabasi_albert(50,10,directed=True)
+		G2 = zen.generating.barabasi_albert(50,10,directed=True)
+
+		self.assertEqual(G1.size(),G2.size())
+		
 class DirectedBATestCase(unittest.TestCase):
 	
 	def test_directed(self):
@@ -36,3 +42,9 @@ class DirectedBATestCase(unittest.TestCase):
 
 		self.assertEqual(type(G1),zen.DiGraph)
 		self.assertEqual(len(G1),10)
+		
+	def test_same_num_edges(self):
+		G1 = zen.generating.barabasi_albert(50,10,directed=True)
+		G2 = zen.generating.barabasi_albert(50,10,directed=True)
+		
+		self.assertEqual(G1.size(),G2.size())

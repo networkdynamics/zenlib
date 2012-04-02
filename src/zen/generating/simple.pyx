@@ -82,6 +82,14 @@ cdef __inner_barabasi_albert_udir(int n, int m, int seed):
 				running_sum += G.node_info[i].degree
 				if running_sum > rnd:
 					G.add_edge_(new_node_idx,i)
+					
+					# this node can no longer be selected.  So we remove this node's degree
+					# from the total degree of the network - making sure that a node will get
+					# selected next time.  We decrease by 1 because the node's degree has just
+					# been updated by 1 because it gained an endpoint from the node being
+					# added.  This edge isn't included in the number of endpoints until the 
+					# node has finished being added (since the node can't connect to itself).
+					# As a result the delta endpoints must not include this edge either.
 					delta_endpoints += G.node_info[i].degree - 1
 					break
 					
@@ -131,7 +139,11 @@ cdef __inner_barabasi_albert_dir(int n, int m, int seed):
 				running_sum += node_degree
 				if running_sum > rnd:
 					G.add_edge_(new_node_idx,i)
-					delta_endpoints += node_degree - 1
+					
+					# this node can no longer be selected.  So we remove this node's degree
+					# from the total degree of the network - making sure that a node will get
+					# selected next time.
+					delta_endpoints += node_degree
 					break
 
 		num_endpoints += m * 2
