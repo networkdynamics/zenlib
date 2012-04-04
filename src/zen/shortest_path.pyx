@@ -13,12 +13,18 @@ __all__ = [
 		'single_source_shortest_path_',		
 		'single_source_shortest_path_length',
 		'single_source_shortest_path_length_',		
-		'dijkstra',
-		'dijkstra_',
+		'dijkstra_path',
+		'dijkstra_path_length',
+		'dijkstra_path_',
+		'dijkstra_path_length_',
 		'pred2path',
 		'pred2path_',
 		'floyd_warshall',
 		'floyd_warshall_',
+		'all_pairs_shortest_path',
+		'all_pairs_shortest_path_',
+		'all_pairs_shortest_path_length',
+		'all_pairs_shortest_path_length_',
 		'all_pairs_dijkstra_path',
 		'all_pairs_dijkstra_path_',
 		'all_pairs_dijkstra_path_length',
@@ -74,6 +80,38 @@ cpdef single_source_shortest_path(G,source,target=None):
 			
 		return d,p
 
+cpdef single_source_shortest_path_length(G,source,target=None):
+	"""
+	This function computes the single source shortest path in an unweighted network
+	by trading space for speed.  The algorithm requires several blocks of memory whose
+	size are on the order of the number of nodes in the network.  Thus for very large networks,
+	dijkstra's algorithm may be faster.
+
+	Return value is a dictionary, D, where D[x] is the distance of node x from the source.
+
+	If the target is specified, the return value is the distance from source to target
+	"""
+	cdef int i, num_nodes
+	cdef int src_idx, tgt_idx
+	cdef np.ndarray[np.double_t, ndim=1] D # final distance
+
+	num_nodes = len(G)
+	src_idx = G.node_idx(source)
+	tgt_idx = -1
+	if target is not None:
+		tgt_idx = G.node_idx(target)
+
+	D = single_source_shortest_path_length_(G,src_idx,tgt_idx)
+
+	if target is None:
+		Dist = dict()
+		for i in range(num_nodes):
+			Dist[G.node_object(i)] = D[i]
+
+		return Dist
+	else:
+		return D[tgt_idx]
+				
 cpdef single_source_shortest_path_(G,int source,int target=-1):
 	"""
 	This function computes the single source shortest path in an unweighted network
@@ -90,7 +128,7 @@ cpdef single_source_shortest_path_(G,int source,int target=-1):
 	else:
 		return single_source_shortest_path_d_(<DiGraph> G,source,target,True)
 		
-cpdef single_source_shortest_path_length(G,int source,int target=-1):
+cpdef single_source_shortest_path_length_(G,int source,int target=-1):
 	"""
 	This function computes the single source shortest path in an unweighted network
 	by trading space for speed.  The algorithm requires several blocks of memory whose
@@ -104,23 +142,7 @@ cpdef single_source_shortest_path_length(G,int source,int target=-1):
 	if type(G) == Graph:
 		return single_source_shortest_path_u_(<Graph> G,source,target,False)
 	else:
-		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)	
-		
-cpdef single_source_shortest_path_length_(G,int source,int target=-1):
-	"""
-	This function computes the single source shortest path in an unweighted network
-	by trading space for speed.  The algorithm requires several blocks of memory whose
-	size are on the order of the number of nodes in the network.  Thus for very large networks,
-	dijkstra's algorithm may be faster.
-
-	Return value is a distance numpy arrays.  If the target is specified, the algorithm
-	halts when the target node is reached.  In this case, the distance array will
-	be partially completed.
-	"""
-	if type(G) == Graph:
-		return single_source_shortest_path_u_(<Graph> G,source,target,False)
-	else:
-		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)	
+		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)		
 		
 cpdef single_source_shortest_path_u_(Graph G,int source,int target,bool gen_predecessors):
 	
@@ -253,7 +275,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_pr
 	else:
 		return distance
 		
-cpdef dijkstra(G, start, end=None):
+cpdef dijkstra_path(G, start, end=None):
 	""" 
 	if end is not None: returns (distance, path) from start to end.
 	if end is not reachable, (inf, None) is returned.
@@ -270,7 +292,7 @@ cpdef dijkstra(G, start, end=None):
 	
 	start_idx = G.node_idx(start)
 
-	distance, predecessor = dijkstra_(G, G.node_idx(start), end_idx)
+	distance, predecessor = dijkstra_path_(G, G.node_idx(start), end_idx)
 
 	if end == None: # single source
 		# store in a dictionary
@@ -304,9 +326,43 @@ cpdef dijkstra(G, start, end=None):
 			return float('infinity'), None
 		else:
 			return distance[end_idx], [G.node_object(x) for x in path]
+			
+cpdef dijkstra_path_length(G, start, end=None):
+	""" 
+	if end is not None: returns distance from start to end.
+	if end is not reachable, inf is returned.
+
+	if end is None, returns a dictionary where D[x] = distance to x
+	"""
+	cdef int i, pred_idx, end_idx, n
+
+	# compute the result
+	if end in G:
+		end_idx = G.node_idx(end)
+	else:
+		end_idx = -1
+
+	start_idx = G.node_idx(start)
+
+	distance = dijkstra_path_length_(G, G.node_idx(start), end_idx)
+
+	if end == None: # single source
+		# store in a dictionary
+		result = {}
+
+		for i in xrange(distance.size):
+			node = G.node_object(i)
+			assert node != None, 'node with index %d does not exist' % i
+
+			result[node] = distance[i]
+
+		return result
+	else:
+		# return the distance value as well as the path as a list of node objects
+		return distance[end_idx]
 		
 	
-cpdef dijkstra_(G, int start_idx, int end_idx=-1):
+cpdef dijkstra_path_(G, int start_idx, int end_idx=-1):
 	"""
 	Return a distance array D and predecessor array P where D[i] is the length of the shortest path 
 	from node with index start_idx to the node with index i and P[i] is the precedecessor index for node with 
@@ -318,6 +374,20 @@ cpdef dijkstra_(G, int start_idx, int end_idx=-1):
 		return dijkstra_d_(<DiGraph> G, start_idx, end_idx, True)
 	elif type(G) == Graph:
 		return dijkstra_u_(<Graph> G, start_idx, end_idx, True)
+	else:
+		raise ZenException, 'Graph of type %s not supported' % str(type(G))
+		
+cpdef dijkstra_path_length_(G, int start_idx, int end_idx=-1):
+	"""
+	Return a distance array D where D[i] is the length of the shortest path 
+	from node with index start_idx to the node with index i.
+
+	If any indexes are -1, then there was no distance / no predecessor
+	"""
+	if type(G) == DiGraph:
+		return dijkstra_d_(<DiGraph> G, start_idx, end_idx, False)
+	elif type(G) == Graph:
+		return dijkstra_u_(<Graph> G, start_idx, end_idx, False)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
@@ -661,6 +731,91 @@ cpdef floyd_warshall_u_(Graph G):
 
 	return P			
 
+cpdef all_pairs_shortest_path(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
+	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
+	"""
+	R = dict()
+	for n in G.nodes_iter():
+		R[n] = single_source_shortest_path(G,n)
+		
+	return R
+	
+cpdef all_pairs_shortest_path_length(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is 
+	the length of the shortest path from x to y.
+	"""
+	R = dict()
+	for n in G.nodes_iter():
+		R[n] = single_source_shortest_path_length(G,n)
+	
+	return R
+	
+cpdef all_pairs_shortest_path_(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is two NxN matricies, D and P, containing pairwise distances
+	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
+	on the shortest path from x.  All node identifiers are node indicies.
+	"""
+	cdef int nidx
+	
+	cdef np.ndarray[np.double_t, ndim=2] distances
+	cdef np.ndarray[np.int_t, ndim=2] predecessors
+	
+	if type(G) == Graph:
+		UG = <Graph> G
+		distances = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.double) # final distance
+		predecessors = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.int)
+		
+		for nidx in range(UG.next_node_idx):
+			if UG.node_info[nidx].exists:
+				D,P = single_source_shortest_path_(G,nidx)
+				distances[nidx,:] = D
+				predecessors[nidx,:] = P
+	elif type(G) == DiGraph:
+		DG = <Graph> G
+		distances = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.double) # final distance
+		predecessors = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.int)
+
+		for nidx in range(DG.next_node_idx):
+			if DG.node_info[nidx].exists:
+				D,P = single_source_shortest_path_(G,nidx)
+				distances[nidx,:] = D
+				predecessors[nidx,:] = P
+
+	return distances, predecessors
+	
+cpdef all_pairs_shortest_path_length_(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
+	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
+	"""
+	cdef int nidx
+	cdef Graph UG
+	cdef DiGraph DG
+	cdef np.ndarray[np.double_t, ndim=2] distances
+	
+	if type(G) == Graph:
+		UG = <Graph> G
+		distances = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.double) # final distance
+
+		for nidx in range(UG.next_node_idx):
+			if UG.node_info[nidx].exists:
+				D = single_source_shortest_path_length_(G,nidx)
+				distances[nidx,:] = D
+	elif type(G) == DiGraph:
+		DG = <Graph> G
+		distances = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.double) # final distance
+
+		for nidx in range(DG.next_node_idx):
+			if DG.node_info[nidx].exists:
+				D = single_source_shortest_path_length_(G,nidx)
+				distances[nidx,:] = D
+
+	return distances
+
 cpdef all_pairs_dijkstra_path(G):
 	"""
 	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
@@ -668,7 +823,7 @@ cpdef all_pairs_dijkstra_path(G):
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = dijkstra(G,n)
+		R[n] = dijkstra_path(G,n)
 		
 	return R
 	
@@ -678,34 +833,70 @@ cpdef all_pairs_dijkstra_path_(G):
 	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
 	on the shortest path from x.  All node identifiers are node indicies.
 	"""
-	cdef int next_node_idx = G.next_node_idx
 	cdef int nidx
 	
-	cdef np.ndarray[np.double_t, ndim=1] distances = np.empty([next_node_idx], dtype=np.double) # final distance
-	cdef np.ndarray[np.int_t, ndim=1] predecessors = np.empty([next_node_idx], dtype=np.int) # predecessors
+	cdef np.ndarray[np.double_t, ndim=2] distances
+	cdef np.ndarray[np.int_t, ndim=2] predecessors
+	
+	if type(G) == Graph:
+		UG = <Graph> G
+		distances = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.double) # final distance
+		predecessors = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.int)
+		
+		for nidx in range(UG.next_node_idx):
+			if UG.node_info[nidx].exists:
+				D,P = dijkstra_path_(G,nidx)
+				distances[nidx,:] = D
+				predecessors[nidx,:] = P
+	elif type(G) == DiGraph:
+		DG = <Graph> G
+		distances = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.double) # final distance
+		predecessors = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.int)
 
-	for nidx in range(next_node_idx):
-		D,P = dijkstra_(G,nidx)
-		distances[nidx,:] = D
-		predecessors[nidx,:] = P
+		for nidx in range(DG.next_node_idx):
+			if DG.node_info[nidx].exists:
+				D,P = dijkstra_path_(G,nidx)
+				distances[nidx,:] = D
+				predecessors[nidx,:] = P
 
 	return distances, predecessors
 
 cpdef all_pairs_dijkstra_path_length(G):
-	pass
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is 
+	the length of the shortest path from x to y.
+	"""
+	R = dict()
+	for n in G.nodes_iter():
+		R[n] = dijkstra_path_length(G,n)
+	
+	return R
 
 cpdef all_pairs_dijkstra_path_length_(G):
 	"""
 	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
 	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
 	"""
-	cdef int next_node_idx = G.next_node_idx
 	cdef int nidx
+	cdef Graph UG
+	cdef DiGraph DG
+	cdef np.ndarray[np.double_t, ndim=2] distances
 	
-	cdef np.ndarray[np.double_t, ndim=1] distances = np.empty([next_node_idx], dtype=np.double) # final distance
+	if type(G) == Graph:
+		UG = <Graph> G
+		distances = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.double) # final distance
 
-	for nidx in range(next_node_idx):
-		D,P = dijkstra_(G,nidx)
-		distances[nidx,:] = D
+		for nidx in range(UG.next_node_idx):
+			if UG.node_info[nidx].exists:
+				D = dijkstra_path_length_(G,nidx)
+				distances[nidx,:] = D
+	elif type(G) == DiGraph:
+		DG = <Graph> G
+		distances = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.double) # final distance
+
+		for nidx in range(DG.next_node_idx):
+			if DG.node_info[nidx].exists:
+				D = dijkstra_path_length_(G,nidx)
+				distances[nidx,:] = D
 
 	return distances
