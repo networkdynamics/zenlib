@@ -571,7 +571,7 @@ cdef class Graph:
 		"""
 		return nobj in self.node_idx_lookup
 	
-	cpdef int node_idx(Graph self,nobj):
+	cpdef int node_idx(Graph self,nobj) except -1:
 		"""
 		Return the node index associated with the node object.
 		

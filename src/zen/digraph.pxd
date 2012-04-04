@@ -69,7 +69,7 @@ cdef class DiGraph:
 	
 	cpdef add_node_x(DiGraph self,int node_idx,int in_edge_list_capacity,int out_edge_list_capacity,nobj,data)
 	
-	cpdef int node_idx(DiGraph self,nobj)
+	cpdef int node_idx(DiGraph self,nobj) except -1
 	
 	cpdef node_object(DiGraph self,int nidx)
 	
