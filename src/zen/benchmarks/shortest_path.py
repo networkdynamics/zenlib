@@ -4,6 +4,37 @@ import zen as zn
 import igraph as ig
 import random
 
+class AllPairsBenchmark(Benchmark):
+
+	def __init__(self):
+		Benchmark.__init__(self,'All Pairs Comparison')
+		
+		self.NUM_NODES = 200
+		self.NUM_SOURCES = 20
+		self.P = 0.05
+		
+	def setup(self):
+		# build an ER network
+		self.ER_G = zn.Graph()	
+
+		for i in range(self.NUM_NODES):
+			self.ER_G.add_node(i)
+
+		# add edges
+		for i in range(self.NUM_NODES):
+			for j in range(i+1,self.NUM_NODES):
+				if random.random() < self.P:
+					self.ER_G.add_edge_(i,j)
+
+	def bm_floyd_warshall(self):
+		zn.floyd_warshall_path_length_(self.ER_G)
+		
+	def bm_apsp(self):
+		zn.all_pairs_shortest_path_length_(self.ER_G)
+		
+	def bm_apsp_dijkstra(self):
+		zn.all_pairs_dijkstra_path_length_(self.ER_G)
+
 class UUERSSSPBenchmark(Benchmark):
 	
 	def __init__(self):
@@ -87,11 +118,11 @@ class UERDijkstraBenchmark(Benchmark):
 
 	def bm_zen(self):
 		for i in self.sources:
-			zn.dijkstra(self.ER_G, i)
+			zn.dijkstra_path(self.ER_G, i)
 
 	def bm_zenopt(self):
 		for i in self.sources:
-			zn.dijkstra_(self.ER_G, i)
+			zn.dijkstra_path_(self.ER_G, i)
 
 	def setup_networkx(self):
 		self.nx_ER_G = nx.Graph()
@@ -139,10 +170,10 @@ class UERFloydWarshallBenchmark(Benchmark):
 					self.ER_G.add_edge_(i,j)
 
 	def bm_zen(self):
-		zn.floyd_warshall(self.ER_G)
+		zn.floyd_warshall_path_length(self.ER_G)
 
 	def bm_zenopt(self):
-		zn.floyd_warshall_(self.ER_G)
+		zn.floyd_warshall_path_length_(self.ER_G)
 
 	def setup_networkx(self):
 		self.nx_ER_G = nx.Graph()
@@ -189,10 +220,10 @@ class UUERAPSPBenchmark(Benchmark):
 					self.ER_G.add_edge_(i,j)
 
 	def bm_zen(self):
-		zn.floyd_warshall(self.ER_G)
+		zn.all_pairs_shortest_path_length(self.ER_G)
 
 	def bm_zenopt(self):
-		zn.floyd_warshall_(self.ER_G)
+		zn.all_pairs_shortest_path_length_(self.ER_G)
 
 	def setup_networkx(self):
 		self.nx_ER_G = nx.Graph()
