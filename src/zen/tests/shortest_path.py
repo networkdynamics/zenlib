@@ -14,7 +14,7 @@ class Pred2PathTestCase(unittest.TestCase):
 		G.add_edge(2,3)
 		G.add_node(4)
 		
-		D,P = dijkstra_(G,0)
+		D,P = dijkstra_path_(G,0)
 		
 		self.assertEquals(pred2path_(0,2,P),[0,1,2])
 		
@@ -26,7 +26,7 @@ class Pred2PathTestCase(unittest.TestCase):
 		G.add_edge(2,3)
 		G.add_node(4)
 		
-		R = dijkstra(G,1)
+		R = dijkstra_path(G,1)
 		
 		self.assertEquals(pred2path(1,3,R),[1,2,3])
 		

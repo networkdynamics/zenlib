@@ -37,7 +37,7 @@ class FloydWarshallPath_TestCase(unittest.TestCase):
 		self.assertEqual(D[0,0],0)
 		
 		self.assertEqual(P[0,1],0)
-		self.assertEqual(P[0,2],1)
+		self.assertEqual(P[0,2],0)
 		self.assertEqual(P[2,0],2)
 		self.assertEqual(P[0,0],-1)
 		
@@ -53,7 +53,7 @@ class FloydWarshallPath_TestCase(unittest.TestCase):
 		self.assertEqual(D[0,2],float('infinity'))
 		self.assertEqual(D[1,2],float('infinity'))
 		
-		self.assertEqual(P[0,1],1)
+		self.assertEqual(P[0,1],0)
 		self.assertEqual(P[0,2],-1)
 		self.assertEqual(P[1,2],-1)
 

@@ -23,6 +23,10 @@ __all__ = [
 		'floyd_warshall_path_length',
 		'floyd_warshall_path_',
 		'floyd_warshall_path_length_',
+		'bellman_ford_path',
+		'bellman_ford_path_',
+		'bellman_ford_path_length',
+		'bellman_ford_path_length_',
 		'all_pairs_shortest_path',
 		'all_pairs_shortest_path_',
 		'all_pairs_shortest_path_length',
@@ -146,14 +150,14 @@ cpdef single_source_shortest_path_length_(G,int source,int target=-1):
 	else:
 		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)		
 		
-cpdef single_source_shortest_path_u_(Graph G,int source,int target,bool gen_predecessors):
+cpdef single_source_shortest_path_u_(Graph G,int source,int target,bint gen_predecessors):
 	
-	cdef np.ndarray[np.double_t, ndim=1] distance = np.zeros(G.num_nodes, np.double) # final distance
+	cdef np.ndarray[np.double_t, ndim=1] distance = np.empty(G.num_nodes, np.double) # final distance
 	distance.fill(float('infinity'))
 	
 	cdef np.ndarray[np.int_t, ndim=1] predecessor
 	if gen_predecessors:
-		predecessor = np.zeros(G.num_nodes, np.int) # predecessors
+		predecessor = np.empty(G.num_nodes, np.int) # predecessors
 		predecessor.fill(-1)
 	
 	cdef np.ndarray[np.int_t, ndim=1] seen = np.zeros(G.num_nodes, np.int)
@@ -163,6 +167,7 @@ cpdef single_source_shortest_path_u_(Graph G,int source,int target,bool gen_pred
 	cdef int next_level_size
 	cdef int curr_depth
 	cdef int eidx, uidx, vidx
+	cdef int i, ec
 	
 	next_level_size = 1
 	next_level[0] = source
@@ -212,13 +217,13 @@ cpdef single_source_shortest_path_u_(Graph G,int source,int target,bool gen_pred
 	else:
 		return distance
 	
-cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_predecessors):
+cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bint gen_predecessors):
 
-	cdef np.ndarray[np.double_t, ndim=1] distance = np.zeros(G.num_nodes, np.double) # final distance
+	cdef np.ndarray[np.double_t, ndim=1] distance = np.empty(G.num_nodes, np.double) # final distance
 	distance.fill(float('infinity'))
 	cdef np.ndarray[np.int_t, ndim=1] predecessor
 	if gen_predecessors:
-		predecessor = np.zeros(G.num_nodes, np.int) # predecessors
+		predecessor = np.empty(G.num_nodes, np.int) # predecessors
 		predecessor.fill(-1)
 
 	cdef np.ndarray[np.int_t, ndim=1] seen = np.zeros(G.num_nodes, np.int)
@@ -228,6 +233,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bool gen_pr
 	cdef int next_level_size
 	cdef int curr_depth
 	cdef int eidx, uidx, vidx
+	cdef int i, ec
 
 	next_level_size = 1
 	next_level[0] = source
@@ -393,7 +399,7 @@ cpdef dijkstra_path_length_(G, int start_idx, int end_idx=-1):
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
-cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bool gen_predecessors):
+cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bint gen_predecessors):
 	"""
 	Dijkstra algorithm for directed graphs.
 	
@@ -454,7 +460,7 @@ cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bool gen_predecessors):
 def dijkstra_cmp(x,y):
 	return cmp(x.cost,y.cost)
 	
-cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bool gen_predecessors):
+cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bint gen_predecessors):
 	"""
 	Dijkstra algorithm for undirected graphs.
 	
@@ -505,6 +511,207 @@ cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bool gen_predecessors):
 	
 	if gen_predecessors:
 		return distance, predecessor
+	else:
+		return distance
+
+cpdef bellman_ford_path(G, start):
+	""" 
+	Returns a dictionary where R[x] = (distance to x, predecessor to x)
+	"""
+	cdef int i, pred_idx, n
+	
+	start_idx = G.node_idx(start)
+
+	distance, predecessor = bellman_ford_path_(G, start_idx)
+
+	# store in a dictionary
+	result = {}
+
+	for i in xrange(distance.size):
+
+		pred_idx = predecessor[i]
+
+		if pred_idx < 0:
+			pred = None 
+		else:
+			pred = G.node_object(pred_idx)
+			assert pred != None, 'predecessor node with index %d does not exist' % pred_idx
+
+		node = G.node_object(i)
+
+		assert node != None, 'node with index %d does not exist' % i
+	
+		result[node] = (distance[i], pred)
+
+	return result
+
+cpdef bellman_ford_path_length(G, start):
+	""" 
+	Returns a dictionary where D[x] = distance to x
+	"""
+	cdef int i, pred_idx, n
+	
+	start_idx = G.node_idx(start)
+
+	distance = bellman_ford_path_length_(G, start_idx)
+
+	# store in a dictionary
+	result = {}
+
+	for i in xrange(distance.size):
+		node = G.node_object(i)
+
+		assert node != None, 'node with index %d does not exist' % i
+	
+		result[node] = distance[i]
+
+	return result
+
+cpdef bellman_ford_path_(G, int start_idx):
+	"""
+	Return a distance array D and predecessor array P where D[i] is the length of the shortest path 
+	from node with index start_idx to the node with index i and P[i] is the precedecessor index for node with 
+	index i
+
+	If any indexes are -1, then there was no distance / no predecessor
+	"""
+	if type(G) == DiGraph:
+		return bellman_ford_d_(<DiGraph> G, start_idx, True)
+	elif type(G) == Graph:
+		return bellman_ford_u_(<Graph> G, start_idx, True)
+	else:
+		raise ZenException, 'Graph of type %s not supported' % str(type(G))
+
+cpdef bellman_ford_path_length_(G, int start_idx):
+	"""
+	Return a distance array D and predecessor array P where D[i] is the length of the shortest path 
+	from node with index start_idx to the node with index i and P[i] is the precedecessor index for node with 
+	index i
+
+	If any indexes are -1, then there was no distance / no predecessor
+	"""
+	if type(G) == DiGraph:
+		return bellman_ford_d_(<DiGraph> G, start_idx, False)
+	elif type(G) == Graph:
+		return bellman_ford_u_(<Graph> G, start_idx, False)
+	else:
+		raise ZenException, 'Graph of type %s not supported' % str(type(G))
+
+cdef bellman_ford_d_(DiGraph G, int start_idx, bint gen_predecessors):
+	"""
+	Bellman ford algorithm for directed graphs
+
+    Returns an array of distances and predecessors.
+	"""
+	cdef np.ndarray[np.double_t, ndim=1] distance = np.empty([G.num_nodes], dtype=np.double) # final distance
+	cdef np.ndarray[np.int_t, ndim=1] predecessor
+	if gen_predecessors:
+		predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
+		predecessor.fill(-1)
+		
+	cdef int edge_idx, node_idx
+	cdef int i,j
+	cdef double w
+	cdef int u,v
+	cdef double infinity = float('infinity')
+	
+	# initialize
+	distance.fill(infinity)
+	distance[start_idx] = 0
+	
+	# relax edges repeatedly
+	for i in range(G.next_node_idx):
+		if not G.node_info[i].exists:
+			continue
+			
+		for j in range(G.next_edge_idx):
+			if not G.edge_info[j].exists:
+				continue
+				
+			u = G.edge_info[j].src
+			v = G.edge_info[j].tgt
+			w = G.edge_info[j].weight
+			
+			if distance[u] + w < distance[v]:
+				distance[v] = distance[u] + w
+				if gen_predecessors:
+					predecessor[v] = u
+	
+	# check for negative-weight cycles
+	for i in range(G.next_edge_idx):
+		if not G.edge_info[i].exists:
+			continue
+			
+		u = G.edge_info[j].src
+		v = G.edge_info[j].tgt
+		w = G.edge_info[j].weight
+		
+		if distance[u] + w < distance[v]:
+			raise ZenException, 'Graph contains a negative-weight cycle'
+
+	if gen_predecessors:
+		return distance,predecessor
+	else:
+		return distance
+
+cdef bellman_ford_u_(Graph G, int start_idx, bint gen_predecessors):
+	"""
+	Bellman ford algorithm for undirected graphs
+
+    Returns an array of distances and predecessors.
+	"""
+	cdef np.ndarray[np.double_t, ndim=1] distance = np.empty([G.num_nodes], dtype=np.double) # final distance
+	cdef np.ndarray[np.int_t, ndim=1] predecessor
+	if gen_predecessors:
+		predecessor = np.empty([G.num_nodes], dtype=np.int) # predecessors
+		predecessor.fill(-1)
+		
+	cdef int edge_idx, node_idx
+	cdef int i,j
+	cdef double w
+	cdef int u,v
+	cdef double infinity = float('infinity')
+	
+	# initialize
+	distance.fill(infinity)
+	distance[start_idx] = 0
+	
+	# relax edges repeatedly
+	for i in range(G.next_node_idx):
+		if not G.node_info[i].exists:
+			continue
+			
+		for j in range(G.next_edge_idx):
+			if not G.edge_info[j].exists:
+				continue
+				
+			u = G.edge_info[j].u
+			v = G.edge_info[j].v
+			w = G.edge_info[j].weight
+			
+			if distance[u] + w < distance[v]:
+				distance[v] = distance[u] + w
+				if gen_predecessors:
+					predecessor[v] = u
+			elif distance[v] + w < distance[u]:
+				distance[u] = distance[v] + w
+				if gen_predecessors:
+					predecessor[u] = v
+	
+	# check for negative-weight cycles
+	for i in range(G.next_edge_idx):
+		if not G.edge_info[i].exists:
+			continue
+			
+		u = G.edge_info[j].u
+		v = G.edge_info[j].v
+		w = G.edge_info[j].weight
+		
+		if distance[u] + w < distance[v] or distance[v] + w < distance[u]:
+			raise ZenException, 'Graph contains a negative-weight cycle'
+
+	if gen_predecessors:
+		return distance,predecessor
 	else:
 		return distance
 
@@ -620,7 +827,7 @@ cpdef floyd_warshall_path(G):
 	cdef int i,j
 
 	# compute the result
-	P = floyd_warshall_path_length_(G)
+	D,P = floyd_warshall_path_(G)
 
 	# store it in a dictionary
 	result = {}
@@ -631,8 +838,8 @@ cpdef floyd_warshall_path(G):
 
 	for i in range(len(nodes_lookup)):
 		for j in range(i,len(nodes_lookup)):
-			result[nodes_lookup[i,1]][nodes_lookup[j,1]] = P[nodes_lookup[i,0],nodes_lookup[j,0]]
-			result[nodes_lookup[j,1]][nodes_lookup[i,1]] = P[nodes_lookup[j,0],nodes_lookup[i,0]]
+			result[nodes_lookup[i,1]][nodes_lookup[j,1]] = (D[nodes_lookup[i,0],nodes_lookup[j,0]],G.node_object(P[nodes_lookup[i,0],nodes_lookup[j,0]]))
+			result[nodes_lookup[j,1]][nodes_lookup[i,1]] = (D[nodes_lookup[j,0],nodes_lookup[i,0]],G.node_object(P[nodes_lookup[j,0],nodes_lookup[i,0]]))
 
 	return result
 
@@ -644,7 +851,7 @@ cpdef floyd_warshall_path_length(G):
 	cdef int i,j
 
 	# compute the result
-	P = floyd_warshall_path_length_(G)
+	D = floyd_warshall_path_length_(G)
 
 	# store it in a dictionary
 	result = {}
@@ -655,8 +862,8 @@ cpdef floyd_warshall_path_length(G):
 
 	for i in range(len(nodes_lookup)):
 		for j in range(i,len(nodes_lookup)):
-			result[nodes_lookup[i,1]][nodes_lookup[j,1]] = P[nodes_lookup[i,0],nodes_lookup[j,0]]
-			result[nodes_lookup[j,1]][nodes_lookup[i,1]] = P[nodes_lookup[j,0],nodes_lookup[i,0]]
+			result[nodes_lookup[i,1]][nodes_lookup[j,1]] = D[nodes_lookup[i,0],nodes_lookup[j,0]]
+			result[nodes_lookup[j,1]][nodes_lookup[i,1]] = D[nodes_lookup[j,0],nodes_lookup[i,0]]
 
 	return result
 

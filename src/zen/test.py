@@ -24,8 +24,9 @@ from tests.clustering import *
 from tests.centrality import *
 
 # shortest paths
-#from tests.shortest_path import *
-#from tests.floyd_warshall import *
+from tests.shortest_path import *
+from tests.floyd_warshall import *
+from tests.bellman_ford import *
 from tests.dijkstra import *
 from tests.unweighted_sssp import *
 
