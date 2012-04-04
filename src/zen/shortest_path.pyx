@@ -34,7 +34,11 @@ __all__ = [
 		'all_pairs_dijkstra_path',
 		'all_pairs_dijkstra_path_',
 		'all_pairs_dijkstra_path_length',
-		'all_pairs_dijkstra_path_length_'
+		'all_pairs_dijkstra_path_length_',
+		'all_pairs_bellman_ford_path',
+		'all_pairs_bellman_ford_path_',
+		'all_pairs_bellman_ford_path_length',
+		'all_pairs_bellman_ford_path_length_'
 		]
 
 cpdef single_source_shortest_path(G,source,target=None):
@@ -1164,6 +1168,91 @@ cpdef all_pairs_dijkstra_path_length_(G):
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
 				D = dijkstra_path_length_(G,nidx)
+				distances[nidx,:] = D
+
+	return distances
+	
+cpdef all_pairs_bellman_ford_path(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
+	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
+	"""
+	R = dict()
+	for n in G.nodes_iter():
+		R[n] = bellman_ford_path(G,n)
+
+	return R
+
+cpdef all_pairs_bellman_ford_path_(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is two NxN matricies, D and P, containing pairwise distances
+	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
+	on the shortest path from x.  All node identifiers are node indicies.
+	"""
+	cdef int nidx
+
+	cdef np.ndarray[np.double_t, ndim=2] distances
+	cdef np.ndarray[np.int_t, ndim=2] predecessors
+
+	if type(G) == Graph:
+		UG = <Graph> G
+		distances = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.double) # final distance
+		predecessors = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.int)
+
+		for nidx in range(UG.next_node_idx):
+			if UG.node_info[nidx].exists:
+				D,P = bellman_ford_path_(G,nidx)
+				distances[nidx,:] = D
+				predecessors[nidx,:] = P
+	elif type(G) == DiGraph:
+		DG = <Graph> G
+		distances = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.double) # final distance
+		predecessors = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.int)
+
+		for nidx in range(DG.next_node_idx):
+			if DG.node_info[nidx].exists:
+				D,P = bellman_ford_path_(G,nidx)
+				distances[nidx,:] = D
+				predecessors[nidx,:] = P
+
+	return distances, predecessors
+
+cpdef all_pairs_bellman_ford_path_length(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is 
+	the length of the shortest path from x to y.
+	"""
+	R = dict()
+	for n in G.nodes_iter():
+		R[n] = bellman_ford_path_length(G,n)
+
+	return R
+
+cpdef all_pairs_bellman_ford_path_length_(G):
+	"""
+	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
+	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
+	"""
+	cdef int nidx
+	cdef Graph UG
+	cdef DiGraph DG
+	cdef np.ndarray[np.double_t, ndim=2] distances
+
+	if type(G) == Graph:
+		UG = <Graph> G
+		distances = np.empty([UG.next_node_idx,UG.next_node_idx], dtype=np.double) # final distance
+
+		for nidx in range(UG.next_node_idx):
+			if UG.node_info[nidx].exists:
+				D = bellman_ford_path_length_(G,nidx)
+				distances[nidx,:] = D
+	elif type(G) == DiGraph:
+		DG = <Graph> G
+		distances = np.empty([DG.next_node_idx,DG.next_node_idx], dtype=np.double) # final distance
+
+		for nidx in range(DG.next_node_idx):
+			if DG.node_info[nidx].exists:
+				D = bellman_ford_path_length_(G,nidx)
 				distances[nidx,:] = D
 
 	return distances

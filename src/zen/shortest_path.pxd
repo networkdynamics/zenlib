@@ -14,6 +14,11 @@ cpdef dijkstra_path_length(G, start, end=?)
 cpdef dijkstra_path_(G, int start_idx, int end_idx=?)
 cpdef dijkstra_path_length_(G, int start_idx, int end_idx=?)
 
+cpdef bellman_ford_path(G, start)
+cpdef bellman_ford_path_length(G, start)
+cpdef bellman_ford_path_(G, int start_idx)
+cpdef bellman_ford_path_length_(G, int start_idx)
+
 cpdef pred2path(start_obj, end_obj, R)
 cpdef pred2path_(int start_idx, int end_idx, np.ndarray predecessor)
 
@@ -31,5 +36,10 @@ cpdef all_pairs_dijkstra_path(G)
 cpdef all_pairs_dijkstra_path_length(G)
 cpdef all_pairs_dijkstra_path_(G)
 cpdef all_pairs_dijkstra_path_length_(G)
+
+cpdef all_pairs_bellman_ford_path(G)
+cpdef all_pairs_bellman_ford_path_length(G)
+cpdef all_pairs_bellman_ford_path_(G)
+cpdef all_pairs_bellman_ford_path_length_(G)
 
 

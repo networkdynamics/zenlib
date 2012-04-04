@@ -3,241 +3,241 @@ from zen import *
 import networkx
 import random
 
-# class AllPairsBellmanFordPathLength_TestCase(unittest.TestCase):
-# 	
-# 	def test_apdp_undirected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D = all_pairs_bellman_ford_path_length_(G)
-# 		
-# 		self.assertEqual(D[0,0],0)
-# 		self.assertEqual(D[0,1],1)
-# 		self.assertEqual(D[0,2],2)
-# 		self.assertEqual(D[0,3],2)
-# 		self.assertEqual(D[1,2],1)
-# 		self.assertEqual(D[1,3],1)
-# 		self.assertEqual(D[2,3],2)
-# 		
-# 	def test_apdp_directed(self):
-# 		G = DiGraph()
-# 
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D = all_pairs_bellman_ford_path_length_(G)
-# 
-# 		self.assertEqual(D[0,0],0)
-# 		self.assertEqual(D[0,1],1)
-# 		self.assertEqual(D[0,2],2)
-# 		self.assertEqual(D[0,3],2)
-# 		self.assertEqual(D[1,2],1)
-# 		self.assertEqual(D[1,3],1)
-# 		self.assertEqual(D[2,3],float('infinity'))
-# 		
-# 	def test_disconnected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_node(4)
-# 
-# 		D = all_pairs_bellman_ford_path_length_(G)
-# 		
-# 		self.assertEqual(D[0,3],float('infinity'))
-# 		self.assertEqual(D[1,3],float('infinity'))
-# 		self.assertEqual(D[2,3],float('infinity'))
-# 
-# class AllPairsBellmanFordPath_TestCase(unittest.TestCase):
-# 	
-# 	def test_apdp_undirected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D,P = all_pairs_bellman_ford_path_(G)
-# 		
-# 		self.assertEqual(D[0,0],0)
-# 		self.assertEqual(D[0,1],1)
-# 		self.assertEqual(D[0,2],2)
-# 		self.assertEqual(D[0,3],2)
-# 		self.assertEqual(D[1,2],1)
-# 		self.assertEqual(D[1,3],1)
-# 		self.assertEqual(D[2,3],2)
-# 		
-# 		self.assertEqual(P[0,0],-1)
-# 		self.assertEqual(P[0,1],0)
-# 		self.assertEqual(P[0,2],1)
-# 		self.assertEqual(P[0,3],1)
-# 		self.assertEqual(P[1,2],1)
-# 		self.assertEqual(P[1,3],1)
-# 		self.assertEqual(P[2,3],1)
-# 		
-# 	def test_apdp_directed(self):
-# 		G = DiGraph()
-# 
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D,P = all_pairs_bellman_ford_path_(G)
-# 
-# 		self.assertEqual(D[0,0],0)
-# 		self.assertEqual(D[0,1],1)
-# 		self.assertEqual(D[0,2],2)
-# 		self.assertEqual(D[0,3],2)
-# 		self.assertEqual(D[1,2],1)
-# 		self.assertEqual(D[1,3],1)
-# 		self.assertEqual(D[2,3],float('infinity'))
-# 
-# 		self.assertEqual(P[0,0],-1)
-# 		self.assertEqual(P[0,1],0)
-# 		self.assertEqual(P[0,2],1)
-# 		self.assertEqual(P[0,3],1)
-# 		self.assertEqual(P[1,2],1)
-# 		self.assertEqual(P[1,3],1)
-# 		self.assertEqual(P[2,3],-1)
-# 		
-# 	def test_disconnected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_node(4)
-# 
-# 		D,P = all_pairs_bellman_ford_path_(G)
-# 		
-# 		self.assertEqual(D[0,3],float('infinity'))
-# 		self.assertEqual(D[1,3],float('infinity'))
-# 		self.assertEqual(D[2,3],float('infinity'))
-# 		
-# 		self.assertEqual(P[0,3],-1)
-# 		self.assertEqual(P[1,3],-1)
-# 		self.assertEqual(P[2,3],-1)
-# 
-# class AllPairsBellmanFordPathLengthTestCase(unittest.TestCase):
-# 	
-# 	def test_apdp_undirected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D = all_pairs_bellman_ford_path_length(G)
-# 		
-# 		self.assertEqual(D[1][1],0)
-# 		self.assertEqual(D[1][2],1)
-# 		self.assertEqual(D[1][3],2)
-# 		self.assertEqual(D[1][4],2)
-# 		self.assertEqual(D[2][3],1)
-# 		self.assertEqual(D[2][4],1)
-# 		self.assertEqual(D[3][4],2)
-# 		
-# 	def test_apdp_directed(self):
-# 		G = DiGraph()
-# 
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D = all_pairs_bellman_ford_path_length(G)
-# 
-# 		self.assertEqual(D[1][1],0)
-# 		self.assertEqual(D[1][2],1)
-# 		self.assertEqual(D[1][3],2)
-# 		self.assertEqual(D[1][4],2)
-# 		self.assertEqual(D[2][3],1)
-# 		self.assertEqual(D[2][4],1)
-# 		self.assertEqual(D[3][4],float('infinity'))
-# 		
-# 	def test_disconnected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_node(4)
-# 
-# 		D = all_pairs_bellman_ford_path_length(G)
-# 		
-# 		self.assertEqual(D[1][4],float('infinity'))
-# 		self.assertEqual(D[2][4],float('infinity'))
-# 		self.assertEqual(D[3][4],float('infinity'))
-# 
-# class AllPairsBellmanFordPathTestCase(unittest.TestCase):
-# 	
-# 	def test_apdp_undirected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D = all_pairs_bellman_ford_path(G)
-# 		
-# 		self.assertEqual(D[1][1][0],0)
-# 		self.assertEqual(D[1][2][0],1)
-# 		self.assertEqual(D[1][3][0],2)
-# 		self.assertEqual(D[1][4][0],2)
-# 		self.assertEqual(D[2][3][0],1)
-# 		self.assertEqual(D[2][4][0],1)
-# 		self.assertEqual(D[3][4][0],2)
-# 		
-# 		self.assertEqual(D[1][1][1],None)
-# 		self.assertEqual(D[1][2][1],1)
-# 		self.assertEqual(D[1][3][1],2)
-# 		self.assertEqual(D[1][4][1],2)
-# 		self.assertEqual(D[2][3][1],2)
-# 		self.assertEqual(D[2][4][1],2)
-# 		self.assertEqual(D[3][4][1],2)
-# 		
-# 	def test_apdp_directed(self):
-# 		G = DiGraph()
-# 
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_edge(2,4)
-# 
-# 		D = all_pairs_bellman_ford_path(G)
-# 
-# 		self.assertEqual(D[1][1][0],0)
-# 		self.assertEqual(D[1][2][0],1)
-# 		self.assertEqual(D[1][3][0],2)
-# 		self.assertEqual(D[1][4][0],2)
-# 		self.assertEqual(D[2][3][0],1)
-# 		self.assertEqual(D[2][4][0],1)
-# 		self.assertEqual(D[3][4][0],float('infinity'))
-# 
-# 		self.assertEqual(D[1][1][1],None)
-# 		self.assertEqual(D[1][2][1],1)
-# 		self.assertEqual(D[1][3][1],2)
-# 		self.assertEqual(D[1][4][1],2)
-# 		self.assertEqual(D[2][3][1],2)
-# 		self.assertEqual(D[2][4][1],2)
-# 		self.assertEqual(D[3][4][1],None)
-# 		
-# 	def test_disconnected(self):
-# 		G = Graph()
-# 		
-# 		G.add_edge(1,2)
-# 		G.add_edge(2,3)
-# 		G.add_node(4)
-# 
-# 		D = all_pairs_bellman_ford_path(G)
-# 		
-# 		self.assertEqual(D[1][4][0],float('infinity'))
-# 		self.assertEqual(D[2][4][0],float('infinity'))
-# 		self.assertEqual(D[3][4][0],float('infinity'))
-# 		
-# 		self.assertEqual(D[1][4][1],None)
-# 		self.assertEqual(D[2][4][1],None)
-# 		self.assertEqual(D[3][4][1],None)
+class AllPairsBellmanFordPathLength_TestCase(unittest.TestCase):
+	
+	def test_apdp_undirected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path_length_(G)
+		
+		self.assertEqual(D[0,0],0)
+		self.assertEqual(D[0,1],1)
+		self.assertEqual(D[0,2],2)
+		self.assertEqual(D[0,3],2)
+		self.assertEqual(D[1,2],1)
+		self.assertEqual(D[1,3],1)
+		self.assertEqual(D[2,3],2)
+		
+	def test_apdp_directed(self):
+		G = DiGraph()
+
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path_length_(G)
+
+		self.assertEqual(D[0,0],0)
+		self.assertEqual(D[0,1],1)
+		self.assertEqual(D[0,2],2)
+		self.assertEqual(D[0,3],2)
+		self.assertEqual(D[1,2],1)
+		self.assertEqual(D[1,3],1)
+		self.assertEqual(D[2,3],float('infinity'))
+		
+	def test_disconnected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_node(4)
+
+		D = all_pairs_bellman_ford_path_length_(G)
+		
+		self.assertEqual(D[0,3],float('infinity'))
+		self.assertEqual(D[1,3],float('infinity'))
+		self.assertEqual(D[2,3],float('infinity'))
+
+class AllPairsBellmanFordPath_TestCase(unittest.TestCase):
+	
+	def test_apdp_undirected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D,P = all_pairs_bellman_ford_path_(G)
+		
+		self.assertEqual(D[0,0],0)
+		self.assertEqual(D[0,1],1)
+		self.assertEqual(D[0,2],2)
+		self.assertEqual(D[0,3],2)
+		self.assertEqual(D[1,2],1)
+		self.assertEqual(D[1,3],1)
+		self.assertEqual(D[2,3],2)
+		
+		self.assertEqual(P[0,0],-1)
+		self.assertEqual(P[0,1],0)
+		self.assertEqual(P[0,2],1)
+		self.assertEqual(P[0,3],1)
+		self.assertEqual(P[1,2],1)
+		self.assertEqual(P[1,3],1)
+		self.assertEqual(P[2,3],1)
+		
+	def test_apdp_directed(self):
+		G = DiGraph()
+
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D,P = all_pairs_bellman_ford_path_(G)
+
+		self.assertEqual(D[0,0],0)
+		self.assertEqual(D[0,1],1)
+		self.assertEqual(D[0,2],2)
+		self.assertEqual(D[0,3],2)
+		self.assertEqual(D[1,2],1)
+		self.assertEqual(D[1,3],1)
+		self.assertEqual(D[2,3],float('infinity'))
+
+		self.assertEqual(P[0,0],-1)
+		self.assertEqual(P[0,1],0)
+		self.assertEqual(P[0,2],1)
+		self.assertEqual(P[0,3],1)
+		self.assertEqual(P[1,2],1)
+		self.assertEqual(P[1,3],1)
+		self.assertEqual(P[2,3],-1)
+		
+	def test_disconnected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_node(4)
+
+		D,P = all_pairs_bellman_ford_path_(G)
+		
+		self.assertEqual(D[0,3],float('infinity'))
+		self.assertEqual(D[1,3],float('infinity'))
+		self.assertEqual(D[2,3],float('infinity'))
+		
+		self.assertEqual(P[0,3],-1)
+		self.assertEqual(P[1,3],-1)
+		self.assertEqual(P[2,3],-1)
+
+class AllPairsBellmanFordPathLengthTestCase(unittest.TestCase):
+	
+	def test_apdp_undirected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path_length(G)
+		
+		self.assertEqual(D[1][1],0)
+		self.assertEqual(D[1][2],1)
+		self.assertEqual(D[1][3],2)
+		self.assertEqual(D[1][4],2)
+		self.assertEqual(D[2][3],1)
+		self.assertEqual(D[2][4],1)
+		self.assertEqual(D[3][4],2)
+		
+	def test_apdp_directed(self):
+		G = DiGraph()
+
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path_length(G)
+
+		self.assertEqual(D[1][1],0)
+		self.assertEqual(D[1][2],1)
+		self.assertEqual(D[1][3],2)
+		self.assertEqual(D[1][4],2)
+		self.assertEqual(D[2][3],1)
+		self.assertEqual(D[2][4],1)
+		self.assertEqual(D[3][4],float('infinity'))
+		
+	def test_disconnected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_node(4)
+
+		D = all_pairs_bellman_ford_path_length(G)
+		
+		self.assertEqual(D[1][4],float('infinity'))
+		self.assertEqual(D[2][4],float('infinity'))
+		self.assertEqual(D[3][4],float('infinity'))
+
+class AllPairsBellmanFordPathTestCase(unittest.TestCase):
+	
+	def test_apdp_undirected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path(G)
+		
+		self.assertEqual(D[1][1][0],0)
+		self.assertEqual(D[1][2][0],1)
+		self.assertEqual(D[1][3][0],2)
+		self.assertEqual(D[1][4][0],2)
+		self.assertEqual(D[2][3][0],1)
+		self.assertEqual(D[2][4][0],1)
+		self.assertEqual(D[3][4][0],2)
+		
+		self.assertEqual(D[1][1][1],None)
+		self.assertEqual(D[1][2][1],1)
+		self.assertEqual(D[1][3][1],2)
+		self.assertEqual(D[1][4][1],2)
+		self.assertEqual(D[2][3][1],2)
+		self.assertEqual(D[2][4][1],2)
+		self.assertEqual(D[3][4][1],2)
+		
+	def test_apdp_directed(self):
+		G = DiGraph()
+
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path(G)
+
+		self.assertEqual(D[1][1][0],0)
+		self.assertEqual(D[1][2][0],1)
+		self.assertEqual(D[1][3][0],2)
+		self.assertEqual(D[1][4][0],2)
+		self.assertEqual(D[2][3][0],1)
+		self.assertEqual(D[2][4][0],1)
+		self.assertEqual(D[3][4][0],float('infinity'))
+
+		self.assertEqual(D[1][1][1],None)
+		self.assertEqual(D[1][2][1],1)
+		self.assertEqual(D[1][3][1],2)
+		self.assertEqual(D[1][4][1],2)
+		self.assertEqual(D[2][3][1],2)
+		self.assertEqual(D[2][4][1],2)
+		self.assertEqual(D[3][4][1],None)
+		
+	def test_disconnected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_node(4)
+
+		D = all_pairs_bellman_ford_path(G)
+		
+		self.assertEqual(D[1][4][0],float('infinity'))
+		self.assertEqual(D[2][4][0],float('infinity'))
+		self.assertEqual(D[3][4][0],float('infinity'))
+		
+		self.assertEqual(D[1][4][1],None)
+		self.assertEqual(D[2][4][1],None)
+		self.assertEqual(D[3][4][1],None)
 
 class BellmanFordPathLengthTestCase(unittest.TestCase):
 	
