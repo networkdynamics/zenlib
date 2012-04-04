@@ -19,8 +19,10 @@ __all__ = [
 		'dijkstra_path_length_',
 		'pred2path',
 		'pred2path_',
-		'floyd_warshall',
-		'floyd_warshall_',
+		'floyd_warshall_path',
+		'floyd_warshall_path_length',
+		'floyd_warshall_path_',
+		'floyd_warshall_path_length_',
 		'all_pairs_shortest_path',
 		'all_pairs_shortest_path_',
 		'all_pairs_shortest_path_length',
@@ -610,68 +612,111 @@ cpdef flag_unreachable(np.ndarray A):
 		if A[i] == -1:
 			A[i] = -2 # -2 means unreachable 
 
-cpdef floyd_warshall(G):
+cpdef floyd_warshall_path(G):
 	"""
-	Return a dictionary, D, of node object tuples (x,y), where D[(x,y)] = the length of the
-	shortest path connecting node x to node y.
+	Return a dictionary of dictionaries, R, where R[x][y] is a tuple (d,p).  d is the length
+	of the shortest path from x to y and p is the preceeding node to y on the path from x to y.
 	"""
 	cdef int i,j
-	
+
 	# compute the result
-	P = floyd_warshall_(G)
-	
+	P = floyd_warshall_path_length_(G)
+
 	# store it in a dictionary
 	result = {}
 	nodes_lookup = G.nodes_(obj=True)
-	
+
+	for i in range(len(nodes_lookup)):
+		result[nodes_lookup[i,1]] = dict()
+
 	for i in range(len(nodes_lookup)):
 		for j in range(i,len(nodes_lookup)):
-			result[(nodes_lookup[i,1],nodes_lookup[j,1])] = P[nodes_lookup[i,0],nodes_lookup[j,0]]
-			result[(nodes_lookup[j,1],nodes_lookup[i,1])] = P[nodes_lookup[j,0],nodes_lookup[i,0]]
-			
+			result[nodes_lookup[i,1]][nodes_lookup[j,1]] = P[nodes_lookup[i,0],nodes_lookup[j,0]]
+			result[nodes_lookup[j,1]][nodes_lookup[i,1]] = P[nodes_lookup[j,0],nodes_lookup[i,0]]
+
 	return result
-	
-cpdef floyd_warshall_(G):
+
+cpdef floyd_warshall_path_length(G):
 	"""
-	Return a distance matrix P where P[i,j] is the length of the shortest path 
+	Return a dictionary of dictionaries, D, where D[x][y] is the length of the shortest path from
+	x to y.
+	"""
+	cdef int i,j
+
+	# compute the result
+	P = floyd_warshall_path_length_(G)
+
+	# store it in a dictionary
+	result = {}
+	nodes_lookup = G.nodes_(obj=True)
+
+	for i in range(len(nodes_lookup)):
+		result[nodes_lookup[i,1]] = dict()
+
+	for i in range(len(nodes_lookup)):
+		for j in range(i,len(nodes_lookup)):
+			result[nodes_lookup[i,1]][nodes_lookup[j,1]] = P[nodes_lookup[i,0],nodes_lookup[j,0]]
+			result[nodes_lookup[j,1]][nodes_lookup[i,1]] = P[nodes_lookup[j,0],nodes_lookup[i,0]]
+
+	return result
+
+cpdef floyd_warshall_path_(G):
+	"""
+	Return a distance matrix D and a predecessor matrix P.
+	D[i,j] is the length of the shortest path from node with index i to the node with index j.
+	P[i,j] is the node preceeding j on a shortest path from i to j.
+	"""
+	if type(G) == DiGraph:
+		return floyd_warshall_d_(<DiGraph> G,True)
+	elif type(G) == Graph:
+		return floyd_warshall_u_(<Graph> G,True)
+	
+cpdef floyd_warshall_path_length_(G):
+	"""
+	Return a distance matrix D where D[i,j] is the length of the shortest path 
 	from node with index i to the node with index j.
 	"""
 	if type(G) == DiGraph:
-		return floyd_warshall_d_(<DiGraph> G)
+		return floyd_warshall_d_(<DiGraph> G,False)
 	elif type(G) == Graph:
-		return floyd_warshall_u_(<Graph> G)
+		return floyd_warshall_u_(<Graph> G,False)
 	else:
 		raise Exception, 'Graphs of type %s not supported' % str(type(G))
 
-cpdef floyd_warshall_d_(DiGraph G):
+cpdef floyd_warshall_d_(DiGraph G,bool gen_predecessors):
 	"""
 	Floyd-Warshall algorithm for directed graphs.
 	
-	Return a distance matrix P where P[i,j] is the length of the shortest path 
+	Return a distance matrix D where D[i,j] is the length of the shortest path 
 	from node with index i to the node with index j.
 	"""
 	cdef int i,j,k
 	cdef int ni,nj,nk
-	cdef np.ndarray[np.double_t, ndim=2] P
+	cdef np.ndarray[np.double_t, ndim=2] D
+	cdef np.ndarray[np.int_t, ndim=2] P
 	cdef np.ndarray[np.int_t, ndim=1] nodes
 	cdef int num_nodes
 	cdef double tmp
-	#cdef np.ndarray[np.int_t, ndim=1] nodes
 	
 	nodes = G.nodes_()
 	num_nodes = len(nodes)
-	max_num_nodes = nodes.max() + 1
 	
-	P = np.ones( (max_num_nodes, max_num_nodes), dtype=np.double)
-	P = P * float('infinity')
+	D = np.empty( (G.next_node_idx, G.next_node_idx), dtype=np.double)
+	D.fill(float('infinity'))
+	
+	if gen_predecessors:
+		P = np.empty( (G.next_node_idx, G.next_node_idx), dtype=np.int)
+		P.fill(-1)
 	
 	# initialize the path matrix
 	for i in range(num_nodes):
 		ni = nodes[i]
-		P[ni,ni] = 0
+		D[ni,ni] = 0
 		for j in range(G.node_info[i].outdegree):
 			nj = G.edge_info[G.node_info[i].outelist[j]].tgt
-			P[ni,nj] = 1
+			D[ni,nj] = 1
+			if gen_predecessors:
+				P[ni,nj] = ni
 	
 	# compute shortest paths...
 	for i in range(num_nodes):
@@ -680,43 +725,53 @@ cpdef floyd_warshall_d_(DiGraph G):
 			nj = nodes[j]
 			for k in range(num_nodes):
 				nk = nodes[k]
-				tmp = P[ni,nk] + P[nk,nj]
-				if tmp < P[ni,nj]:
-					P[ni,nj] = tmp
-			
-	return P
+				tmp = D[ni,nk] + D[nk,nj]
+				if tmp < D[ni,nj]:
+					D[ni,nj] = tmp
+					if gen_predecessors:
+						P[ni,nj] = nk
+	
+	if gen_predecessors:
+		return D,P
+	else:
+		return D
 
-cpdef floyd_warshall_u_(Graph G):
+cpdef floyd_warshall_u_(Graph G,bool gen_predecessors):
 	"""
 	Floyd-Warshall algorithm for directed graphs.
 
-	Return a distance matrix P where P[i,j] is the length of the shortest path 
+	Return a distance matrix D where D[i,j] is the length of the shortest path 
 	from node with index i to the node with index j.
 	"""
 	cdef int i,j,k
 	cdef int ni,nj,nk
-	cdef np.ndarray[np.double_t, ndim=2] P
+	cdef np.ndarray[np.double_t, ndim=2] D
+	cdef np.ndarray[np.int_t, ndim=2] P
 	cdef np.ndarray[np.int_t, ndim=1] nodes
 	cdef int num_nodes
 	cdef double tmp
-	#cdef np.ndarray[np.int_t, ndim=1] nodes
 
 	nodes = G.nodes_()
 	num_nodes = len(nodes)
-	max_num_nodes = nodes.max() + 1
 
-	P = np.ones( (max_num_nodes, max_num_nodes), dtype=np.double)
-	P = P * float('infinity')
+	D = np.empty( (G.next_node_idx,G.next_node_idx), dtype=np.double)
+	D.fill(float('infinity'))
+
+	if gen_predecessors:
+		P = np.empty( (G.next_node_idx, G.next_node_idx), dtype=np.int)
+		P.fill(-1)
 
 	# initialize the path matrix
 	for i in range(num_nodes):
 		ni = nodes[i]
-		P[ni,ni] = 0
+		D[ni,ni] = 0
 		for j in range(G.node_info[i].degree):
 			nj = G.edge_info[G.node_info[i].elist[j]].u
 			if nj == ni:
 				nj = G.edge_info[G.node_info[i].elist[j]].v
-			P[ni,nj] = 1
+			D[ni,nj] = 1
+			if gen_predecessors:
+				P[ni,nj] = ni
 
 	# compute shortest paths...
 	for i in range(num_nodes):
@@ -725,11 +780,16 @@ cpdef floyd_warshall_u_(Graph G):
 			nj = nodes[j]
 			for k in range(num_nodes):
 				nk = nodes[k]
-				tmp = P[ni,nk] + P[nk,nj]
-				if tmp < P[ni,nj]:
-					P[ni,nj] = tmp
+				tmp = D[ni,nk] + D[nk,nj]
+				if tmp < D[ni,nj]:
+					D[ni,nj] = tmp
+					if gen_predecessors:
+						P[ni,nj] = nk
 
-	return P			
+	if gen_predecessors:
+		return D,P
+	else:
+		return D			
 
 cpdef all_pairs_shortest_path(G):
 	"""

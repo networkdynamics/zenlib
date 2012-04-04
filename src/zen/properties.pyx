@@ -226,6 +226,6 @@ cpdef diameter(G):
 	"""
 	Return the diameter of the graph - the longest shortest path in the graph.
 	"""
-	P = floyd_warshall_(G)
-	#return np.max(P)
+	P = floyd_warshall_path_length_(G)
+	
 	return <int> ma.masked_equal(P,float('infinity')).max()
