@@ -24,10 +24,12 @@ graph [
 		source 1
 		target 2
 		label "Edge from node 1 to node 2"
+		value 2
 	]
 	edge [
 		source 2
 		target 3
 		label "Edge from node 2 to node 3"
+		value 3
 	]
 ]

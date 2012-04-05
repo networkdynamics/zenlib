@@ -61,5 +61,15 @@ class GMLReadTestCase(unittest.TestCase):
 		
 		self.assertEqual(G.node_data('N1')['listVar'],[1,'a',3.2])
 		
+	def test_weight_fxn(self):
+		fname = path.join(path.dirname(__file__),'test3.gml')
+		G = gml.read(fname,weight_fxn=lambda data:data['value'])
+		
+		self.assertEqual(len(G),3)
+		self.assertEqual(G.size(),2)
+		
+		self.assertEqual(G.weight('N1','N2'),2)
+		self.assertEqual(G.weight('N2','N3'),3)
+		
 if __name__ == '__main__':
 	unittest.main()
