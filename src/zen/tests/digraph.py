@@ -170,6 +170,33 @@ class DiGraphPickleTestCase(unittest.TestCase):
 		
 class DiGraphTestCase(unittest.TestCase):
 
+	def test_add_node_x_error(self):
+		G = DiGraph()
+		
+		# put a node into the graph
+		idx = G.add_node()
+		
+		# try to overwrite that node
+		try:
+			G.add_node_x(idx,G.edge_list_capacity,G.edge_list_capacity,None,None)
+			self.fail('Attempt to overwrite node using G.add_node_x succeeded')
+		except ZenException:
+			pass
+			
+	def test_add_edge_x_error(self):
+		G = DiGraph()
+
+		# put a node into the graph
+		idx = G.add_edge(1,2)
+		G.add_node(3)
+
+		# try to overwrite that node
+		try:
+			G.add_edge_x(idx,1,2,None,1)
+			self.fail('Attempt to overwrite edge using G.add_edge_x succeeded')
+		except ZenException:
+			pass
+			
 	def test_add_nodes(self):
 		G = DiGraph()
 		G.add_nodes(10)
