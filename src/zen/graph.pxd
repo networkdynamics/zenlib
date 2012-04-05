@@ -39,7 +39,7 @@ cdef class Graph:
 	cdef edge_data_lookup
 	cdef int first_free_edge
 	
-	cdef int edge_list_capacity
+	cdef readonly int edge_list_capacity
 	
 	# methods
 	cpdef copy(Graph self)
@@ -54,7 +54,7 @@ cdef class Graph:
 		
 	cpdef np.ndarray[np.int_t] add_nodes(Graph self,int num_nodes,node_obj_fxn=*)
 	
-	cpdef int add_node(Graph self,nobj=*,data=*)
+	cpdef int add_node(Graph self,nobj=*,data=*) except -1
 	
 	cpdef add_node_x(Graph self,int node_idx,int edge_list_capacity,nobj,data)
 	
@@ -90,7 +90,7 @@ cdef class Graph:
 	
 	cpdef int add_edge_(Graph self, int u, int v, data=*, double weight=*) except -1
 	
-	cpdef int add_edge_x(self, int eidx, int u, int v, data, double weight) except -1
+	cpdef add_edge_x(self, int eidx, int u, int v, data, double weight)
 	
 	cdef int __endpoint(Graph self, EdgeInfo ei, int this_nidx)
 	

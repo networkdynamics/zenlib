@@ -236,14 +236,11 @@ cdef class DiGraph:
 		# restore edge_info
 		self.edge_info = <EdgeInfo*> stdlib.malloc(sizeof_EdgeInfo*self.edge_capacity)
 		for i,entry in enumerate(state['edge_info']):
-			if entry[0] is True:
-				exists,src,tgt,weight = entry
-				self.edge_info[i].exists = exists
-				self.edge_info[i].src = src
-				self.edge_info[i].tgt = tgt
-				self.edge_info[i].weight = weight
-			else:
-				self.edge_info[i].exists = exists
+			exists,src,tgt,weight = entry
+			self.edge_info[i].exists = exists
+			self.edge_info[i].src = src
+			self.edge_info[i].tgt = tgt
+			self.edge_info[i].weight = weight
 
 		return
 	
@@ -654,9 +651,16 @@ cdef class DiGraph:
 	cpdef add_node_x(DiGraph self,int node_idx,int in_edge_list_capacity,int out_edge_list_capacity,nobj,data):
 		cdef int i
 		
-		if node_idx >= self.next_node_idx:
-			self.next_node_idx = node_idx + 1
+		if node_idx < self.node_capacity and self.node_info[node_idx].exists:
+			raise ZenException, 'Adding node at index %d will overwrite an existing node' % node_idx
 			
+		if node_idx >= self.next_node_idx:
+			# TODO: Add all skipped over nodes to the free node list
+			self.next_node_idx = node_idx + 1
+		else:
+			# TODO: Fix the hole in the free node list that will be created
+			pass
+
 		self.num_changes += 1
 		
 		if nobj is not None:
@@ -1057,9 +1061,16 @@ cdef class DiGraph:
 		
 	cpdef int add_edge_x(DiGraph self, int eidx, int src, int tgt, data, double weight) except -1:
 		
+		if eidx < self.edge_capacity and self.edge_info[eidx].exists:
+			raise ZenException, 'Adding edge at index %d will overwrite an existing edge' % eidx
+			
 		if eidx >= self.next_edge_idx:
+			# TODO: Add all skipped-over-edges to the free edge list
 			self.next_edge_idx = eidx + 1
-		
+		else:
+			# TODO: Fix the hole in the free edge list that will be created
+			pass
+			
 		if data is not None:
 			self.edge_data_lookup[eidx] = data
 		

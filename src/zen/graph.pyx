@@ -212,14 +212,11 @@ cdef class Graph:
 		# restore edge_info
 		self.edge_info = <EdgeInfo*> stdlib.malloc(sizeof_EdgeInfo*self.edge_capacity)
 		for i,entry in enumerate(state['edge_info']):
-			if entry[0] is True:
-				exists,u,v,weight = entry
-				self.edge_info[i].exists = exists
-				self.edge_info[i].u = u
-				self.edge_info[i].v = v
-				self.edge_info[i].weight = weight
-			else:
-				self.edge_info[i].exists = exists
+			exists,u,v,weight = entry
+			self.edge_info[i].exists = exists
+			self.edge_info[i].u = u
+			self.edge_info[i].v = v
+			self.edge_info[i].weight = weight
 				
 		return
 	
@@ -493,7 +490,7 @@ cdef class Graph:
 			
 		return indexes
 		
-	cpdef int add_node(Graph self,nobj=None,data=None):
+	cpdef int add_node(Graph self,nobj=None,data=None) except -1:
 		"""
 		Add a node to this graph.
 		
@@ -531,7 +528,11 @@ cdef class Graph:
 		"""
 		cdef int i
 		
+		if node_idx < self.node_capacity and self.node_info[node_idx].exists == True:
+			raise ZenException, 'Adding node at index %d will overwrite an existing node' % node_idx
+		
 		if node_idx >= self.next_node_idx:
+			# TODO: Add all skipped over nodes to the free node list
 			self.next_node_idx = node_idx + 1
 		
 		self.num_changes += 1
@@ -787,12 +788,8 @@ cdef class Graph:
 			del self.node_idx_lookup[nobj]
 		
 		# keep track of the free node
-		if self.first_free_node == -1:
-			self.first_free_node = nidx
-			self.node_info[nidx].degree = -1
-		else:
-			self.node_info[nidx].degree = self.first_free_node
-			self.first_free_node = nidx
+		self.node_info[nidx].degree = self.first_free_node
+		self.first_free_node = nidx
 						
 		self.num_nodes -= 1
 	
@@ -893,11 +890,18 @@ cdef class Graph:
 
 		return eidx
 
-	cpdef int add_edge_x(self, int eidx, int u, int v, data, double weight) except -1:
+	cpdef add_edge_x(self, int eidx, int u, int v, data, double weight):
+	
+		if eidx < self.edge_capacity and self.edge_info[eidx].exists == True:
+			raise ZenException, 'Adding edge at index %d will overwrite an existing edge' % eidx
 
 		if eidx >= self.next_edge_idx:
+			# TODO: Add all skipped-over-edges to the free edge list
 			self.next_edge_idx = eidx + 1
-				
+		else:
+			# TODO: Fix the hole in the free edge list that will be created
+			pass
+			
 		if data is not None:
 			self.edge_data_lookup[eidx] = data
 		
@@ -928,7 +932,8 @@ cdef class Graph:
 		#####
 		# Done
 		self.num_edges += 1
-		return eidx
+		
+		return
 	
 	cdef __insert_edge_into_edgelist(Graph self, int u, int eidx, int v):
 		"""
@@ -1028,12 +1033,8 @@ cdef class Graph:
 			del self.edge_data_lookup[eidx]
 		
 		# add the edge to the list of free edges
-		if self.first_free_edge == -1:
-			self.first_free_edge = eidx
-			self.edge_info[eidx].u = -1
-		else:
-			self.edge_info[eidx].u = self.first_free_edge
-			self.first_free_edge = eidx
+		self.edge_info[eidx].u = self.first_free_edge
+		self.first_free_edge = eidx
 		
 		self.num_edges -= 1
 		
