@@ -46,7 +46,7 @@ cdef class DiGraph:
 	cdef edge_data_lookup
 	cdef int first_free_edge
 	
-	cdef int edge_list_capacity
+	cdef readonly int edge_list_capacity
 	
 	# methods
 	cpdef np.ndarray[np.double_t] matrix(self)
