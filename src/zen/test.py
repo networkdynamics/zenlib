@@ -17,6 +17,7 @@ from tests.memlist import *
 from tests.rdot import *
 from tests.scn import *
 from tests.bel import *
+from tests.gml import *
 
 # analysis & properties
 from tests.properties import *

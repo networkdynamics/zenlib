@@ -34,7 +34,11 @@ specific, several are perserved across some/all storage systems.
 		this argument is set to a valid Zen network object, then the read method will attempt to load the data into the 
 		existing network.  The directionality of the existing graph will be used to decide on the interpretation of the 
 		directionality of the source data read.  If the source data has an explicit directionality that disagrees with the
-		network object provided, an error will be raised.  If 
+		network object provided, an error will be raised.
+		
+	- weight_fxn [= None]: in formats for which data may be loaded for edges, but weights are not explicitly defined,
+		this function can be used to assign weight values to edges based on their data.  The function accepts the edge data
+		argument and returns the numerical weight.
 
 == Write keyword arguments ==
 
@@ -49,3 +53,4 @@ import rdot
 import scn
 import bel
 import memlist
+import gml
