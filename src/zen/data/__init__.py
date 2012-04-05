@@ -6,6 +6,7 @@ such a way that the node indices always correspond to the same nodes.
 import os
 import os.path
 import zen.io.scn as scn
+import zen.io.gml as gml
 
 __all__ = ['les_miserable','karate_club','florentine','axis_allies']
 
@@ -13,7 +14,8 @@ def les_miserable():
 	"""
 	Source: D. E. Knuth, The Stanford GraphBase: A Platform for Combinatorial Computing, Addison-Wesley, Reading, MA (1993).
 	"""
-	pass
+	fname = os.path.join(os.path.dirname(__file__),'lesmis.gml')
+	return gml.read(fname,weight_fxn=lambda x: x['value'])
 	
 def karate_club():
 	"""

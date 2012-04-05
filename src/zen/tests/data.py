@@ -16,3 +16,13 @@ class DataTestCase(unittest.TestCase):
 		self.assertFalse(G.is_directed())
 		self.assertEqual(len(G),34)
 		self.assertEqual(G.size(),78)
+		
+	def test_les_miserable(self):
+		G = les_miserable()
+		
+		self.assertFalse(G.is_directed())
+		self.assertEqual(len(G),77)
+		self.assertEqual(G.size(),254)
+		
+if __name__ == '__main__':
+	unittest.main()
