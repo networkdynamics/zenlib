@@ -73,6 +73,10 @@ cdef class DiGraph:
 	
 	cpdef node_object(DiGraph self,int nidx)
 	
+	cpdef set_node_object(self,curr_node_obj,new_node_obj)
+	
+	cpdef set_node_object_(self,node_idx,new_node_obj)
+	
 	cpdef set_node_data(DiGraph self,nobj,data)
 	
 	cpdef node_data(DiGraph self,nobj)

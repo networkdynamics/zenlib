@@ -719,7 +719,41 @@ cdef class DiGraph:
 			return self.node_obj_lookup[nidx]
 		else:
 			return None
-		
+	
+	cpdef set_node_object(self,curr_node_obj,new_node_obj):
+		"""
+		Change the node object associated with a specific node.  The new object
+		must be unique among all other node objects.
+		"""
+		if curr_node_obj == new_node_obj:
+			return
+		else:
+			if new_node_obj in self.node_idx_lookup:
+				raise ZenException, 'Node object %s is not unique' % str(new_node_obj)
+			else:
+				self.node_idx_lookup[new_node_obj] = self.node_idx_lookup[curr_node_obj]
+				del self.node_idx_lookup[curr_node_obj]
+				self.node_obj_lookup[self.node_idx_lookup[new_node_obj]] = new_node_obj
+
+	cpdef set_node_object_(self,node_idx,new_node_obj):
+		"""
+		Set or change the node object associated with a specific node.  The new object
+		must be unique among all other node objects.
+		"""
+		if node_idx >= self.node_capacity or not self.node_info[node_idx].exists:
+			raise ZenException, 'Invalid node idx %d' % node_idx
+
+		if new_node_obj == self.node_object(node_idx):
+			return
+
+		if new_node_obj in self.node_idx_lookup:
+			raise ZenException, 'Node object %s is not unique' % str(new_node_obj)
+
+		if node_idx in self.node_obj_lookup:
+			del self.node_idx_lookup[self.node_obj_lookup[node_idx]]
+		self.node_idx_lookup[new_node_obj] = node_idx
+		self.node_obj_lookup[node_idx] = new_node_obj
+					
 	cpdef node_data(DiGraph self,nobj):
 		"""
 		Return the data object that is associated with the node object.

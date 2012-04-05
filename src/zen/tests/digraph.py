@@ -5,6 +5,16 @@ import pickle
 
 from zen import *
 
+class DiGraphRelabelTestCase(unittest.TestCase):
+	
+	def test_change_node_obj(self):
+		G = DiGraph()
+		G.add_node(1,data=1)
+		G.set_node_object(1,2)
+		
+		self.assertFalse(1 in G)
+		self.assertTrue(2 in G)
+		
 class DiGraphCopyTestCase(unittest.TestCase):
 	
 	def test_basic_index_preservation(self):
@@ -850,3 +860,6 @@ class DiGraphTestCase(unittest.TestCase):
 			self.assertFalse(r)
 		except:
 			self.fail('No error should be thrown')
+			
+if __name__ == '__main__':
+	unittest.main()
