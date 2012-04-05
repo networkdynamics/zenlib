@@ -5,6 +5,16 @@ import pickle
 
 from zen import *
 
+class GraphRelabelTestCase(unittest.TestCase):
+	
+	def test_change_node_obj(self):
+		G = Graph()
+		G.add_node(1,data=1)
+		G.set_node_object(1,2)
+		
+		self.assertFalse(1 in G)
+		self.assertTrue(2 in G)
+
 class GraphCopyTestCase(unittest.TestCase):
 	
 	def test_basic_index_preservation(self):

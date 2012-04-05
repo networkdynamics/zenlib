@@ -62,6 +62,10 @@ cdef class Graph:
 	
 	cpdef node_object(Graph self,int nidx)
 	
+	cpdef set_node_object(self,curr_node_obj,new_node_obj)
+	
+	cpdef set_node_object_(self,node_idx,node_obj)
+	
 	cpdef set_node_data(Graph self,nobj,data)
 	
 	cpdef node_data(Graph self,nobj)
