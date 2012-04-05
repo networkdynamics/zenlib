@@ -1,5 +1,6 @@
 """
-This package contains various network data sets.  Convenience functions are provided for loading them.
+This package contains various network data sets.  Convenience functions are provided for loading them.  The convenience functions load the data in
+such a way that the node indices always correspond to the same nodes.
 """
 
 import os
@@ -9,10 +10,19 @@ import zen.io.scn as scn
 __all__ = ['les_miserable','karate_club','florentine','axis_allies']
 
 def les_miserable():
+	"""
+	Source: D. E. Knuth, The Stanford GraphBase: A Platform for Combinatorial Computing, Addison-Wesley, Reading, MA (1993).
+	"""
 	pass
 	
 def karate_club():
-	pass
+	"""
+	Load and return an undirected social network of friendships among 34 members of a karate club in the 1970s.
+	
+	Source: W. W. Zachary, An information flow model for conflict and fission in small groups, Journal of Anthropological Research 33, 452-473 (1977).
+	"""
+	fname = os.path.join(os.path.dirname(__file__),'karate.scn')
+	return scn.read(fname,directed=False)
 	
 def florentine():
 	"""
