@@ -266,7 +266,7 @@ def read(filename,**kwargs):
 	if directed is True or (directed is None and type(merge_graph) == DiGraph):
 		return parse_directed_scn(filename,max_line_len,node_obj_fxn,ignore_duplicate_edges,merge_graph)
 	else:
-		raise ZenException, 'Undirected graphs are not yet supported'
+		return parse_undirected_scn(filename,max_line_len,node_obj_fxn,ignore_duplicate_edges,merge_graph)
 			
 cdef parse_directed_scn(char* filename,int max_line_len,node_obj_fxn,bool ignore_duplicate_edges,merge_graph):
 	
@@ -409,7 +409,149 @@ cdef parse_directed_scn(char* filename,int max_line_len,node_obj_fxn,bool ignore
 	fclose(fh)
 	
 	return G
-	
+
+cdef parse_undirected_scn(char* filename,int max_line_len,node_obj_fxn,bool ignore_duplicate_edges,merge_graph):
+
+	cdef Graph G = None
+
+	if merge_graph is None:
+		G = Graph()
+	elif type(merge_graph) == Graph:
+		G = merge_graph
+	else:
+		raise ZenException, 'The merge_graph must be a Graph if undirected information will be read from scn source'
+
+	# open the file
+	cdef FILE* fh
+
+	fh = fopen(filename,'r')
+
+	if fh == NULL:
+		raise ZenException, 'Unable to open file %s' % filename
+
+	# make the string buffer
+	last_str_buffer = '0'*max_line_len
+	str_buffer = '0'*max_line_len
+
+	cdef char* buffer = str_buffer
+
+	cdef int start1, start2, end1, end2
+	cdef int line_no = 0
+	cdef int buf_len
+	cdef int i
+	cdef bool reading_nodes = True
+	cdef int nid1, nid2
+
+	# read the number of properties
+	while (1):
+		fgets(buffer,max_line_len,fh)
+		if buffer[0] != '#': 
+			break # ignore comments until line with number of properties
+
+	buf_len = len(buffer)
+
+	start1 = 0
+	for i in range(start1+1,buf_len):
+		if isspace(<int>buffer[i]):
+			break
+	end1 = i
+	start2 = end1+1
+	for i in range(start2+1,buf_len):
+		if isspace(<int>buffer[i]):
+			break
+	end2 = i
+
+	cdef int num_node_props = int(buffer[start1:end1])
+	cdef int num_edge_props = int(buffer[start2:end2])
+
+	while not feof(fh):
+		line_no += 1
+
+		fgets(buffer,max_line_len,fh)		
+		buf_len = len(buffer)
+
+		if buffer[0] == '#':
+			continue # ignore comments in node or edge section
+
+		# check the success
+		if buffer[buf_len-1] != '\n' and not feof(fh):
+			raise ZenException, 'Line %d exceeded maximum line length (%d)' % (line_no,max_line_len)
+
+		# make sure we aren't reprocessing a line of input
+		if buffer[buf_len-1] == '\n' and feof(fh):
+			break
+
+		# skip whitespace
+		if isspace(<int>buffer[0]):
+			continue
+
+		# check for the node to edge switch
+		if buffer[0] == '=':
+			reading_nodes = False
+			continue
+
+		start1 = 0
+
+		for i in range(start1+1,buf_len):
+			if isspace(<int>buffer[i]):
+				break
+		end1 = i
+
+		if reading_nodes:
+			if node_obj_fxn is None:
+				name = buffer[start1:end1]
+			else:
+				name = node_obj_fxn(buffer[start1:end1])
+			props = None
+			if num_node_props > 0:
+				props = process_properties(buffer,buf_len,end1+1,line_no,num_node_props)
+
+			G.add_node(name,props)
+		else:
+			start2 = end1+1
+
+			for i in range(start2+1,buf_len):
+				if isspace(<int>buffer[i]):
+					break
+			end2 = i
+
+			if end2 == buf_len-1 and not isspace(<int>buffer[end2]):
+				end2 += 1
+
+			if node_obj_fxn is None:
+				name1 = buffer[start1:end1]
+				name2 = buffer[start2:end2]
+			else:
+				name1 = node_obj_fxn(buffer[start1:end1])
+				name2 = node_obj_fxn(buffer[start2:end2])
+
+			props = None
+			if num_edge_props > 0 and (end2+1 < buf_len and not isspace(<int>buffer[end2+1])):
+				props = process_properties(buffer,buf_len,end2+1,line_no,num_edge_props)
+
+			nid1 = -1
+			nid2 = -1
+
+			# handle any nodes that didn't have a definition line
+			if name1 in G.node_idx_lookup:
+				nid1 = G.node_idx_lookup[name1]
+			else:
+				nid1 = G.add_node(name1)
+
+			if name2 in G.node_idx_lookup:
+				nid2 = G.node_idx_lookup[name2]
+			else:
+				nid2 = G.add_node(name2)
+
+			if ignore_duplicate_edges and G.has_edge_(nid1,nid2):
+				continue
+
+			G.add_edge_(nid1,nid2,props)
+
+	fclose(fh)
+
+	return G
+			
 cdef process_properties(char* buffer, int buf_len, int i, int line_no, int num_props):
 	"""
 	Upon entry, buffer[idx] = '['.  In other words, this function should only

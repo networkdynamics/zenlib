@@ -39,6 +39,9 @@ from hypergraph import *
 # import generation routines
 import generating
 
+# import built-in data
+import data
+
 # import utilities
 from exceptions import *
 from constants import *

@@ -54,5 +54,8 @@ from tests.layout import *
 # drawing
 from tests.drawing import *
 
+# built-in data
+from tests.data import *
+
 if __name__ == '__main__':
 	unittest.main()
