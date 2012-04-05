@@ -12,6 +12,8 @@ __all__ = ['les_miserable','karate_club','florentine','axis_allies']
 
 def les_miserable():
 	"""
+	Load and return an undirected network of the coappearances among the characters in the novel _Les Miserable_.
+	
 	Source: D. E. Knuth, The Stanford GraphBase: A Platform for Combinatorial Computing, Addison-Wesley, Reading, MA (1993).
 	"""
 	fname = os.path.join(os.path.dirname(__file__),'lesmis.gml')
