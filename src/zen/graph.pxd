@@ -26,6 +26,7 @@ cdef class Graph:
 	cdef readonly int num_nodes
 	cdef readonly int node_capacity
 	cdef int next_node_idx
+	cdef readonly int max_node_idx
 	cdef NodeInfo* node_info
 	cdef node_idx_lookup
 	cdef node_obj_lookup
@@ -35,6 +36,7 @@ cdef class Graph:
 	cdef readonly int num_edges
 	cdef readonly int edge_capacity
 	cdef int next_edge_idx
+	cdef readonly max_edge_idx
 	cdef EdgeInfo* edge_info
 	cdef edge_data_lookup
 	cdef int first_free_edge
@@ -42,6 +44,8 @@ cdef class Graph:
 	cdef readonly int edge_list_capacity
 	
 	# methods
+	cdef inner_validate(self,bint validate)
+	
 	cpdef copy(Graph self)
 	
 	cpdef np.ndarray[np.float_t] matrix(self)
@@ -55,6 +59,10 @@ cdef class Graph:
 	cpdef np.ndarray[np.int_t] add_nodes(Graph self,int num_nodes,node_obj_fxn=*)
 	
 	cpdef int add_node(Graph self,nobj=*,data=*) except -1
+	
+	cdef add_to_free_node_list(self,int nidx)
+	
+	cdef remove_from_free_node_list(self,int nidx)
 	
 	cpdef add_node_x(Graph self,int node_idx,int edge_list_capacity,nobj,data)
 	
@@ -89,6 +97,10 @@ cdef class Graph:
 	cpdef degree(Graph self,nobj)
 
 	cpdef degree_(Graph self,int nidx)
+	
+	cdef add_to_free_edge_list(self,int eidx)
+	
+	cdef remove_from_free_edge_list(self,int eidx)
 	
 	cpdef int add_edge(Graph self, u, v, data=*, double weight=*) except -1
 	

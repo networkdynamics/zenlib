@@ -16,11 +16,30 @@ cdef extern from "stdlib.h" nogil:
 cdef extern from "math.h":
 	double ceil(double x)
 	double floor(double x)
+	double fmax(double x, double y)
+	double fmin(double x, double y)
 
 __all__ = ['Graph']
 
+cdef int imax(int a, int b):
+	if a < b:
+		return b
+	else:
+		return a
+		
+cdef int imin(int a, int b):
+	if a < b:
+		return a
+	else:
+		return b
+
+"""
+This data structure contains node info (in C-struct format) for fast array-based lookup.
+
+When a node info entry is part of the free node list, the degree points to the next
+entry in the list and the capacity points to the previous entry in the list.
+"""
 cdef struct NodeInfo:
-	# This data structure contains node info (in C-struct format) for fast array-based lookup.
 	bint exists
 	
 	int degree # The number of entries in the edge list that are in use
@@ -29,6 +48,10 @@ cdef struct NodeInfo:
 	
 cdef int sizeof_NodeInfo = sizeof(NodeInfo)
 
+"""
+When an edge info entry is part of the free edge list, u points to the next entry
+in the list and v points to the previous entry.
+"""
 cdef struct EdgeInfo:
 	bint exists
 	int u # Node idx for the node with smaller index
@@ -76,9 +99,11 @@ cdef class Graph:
 		self.num_nodes = 0
 		self.node_capacity = node_capacity
 		self.next_node_idx = 0
+		self.max_node_idx = -1
 		self.node_info = <NodeInfo*> stdlib.malloc(sizeof_NodeInfo*self.node_capacity)
 		for i in range(self.node_capacity):
 			self.node_info[i].exists = False
+			
 		self.node_obj_lookup = {}
 		self.node_data_lookup = {}
 		self.node_idx_lookup = {}
@@ -86,9 +111,11 @@ cdef class Graph:
 		self.num_edges = 0
 		self.edge_capacity = edge_capacity
 		self.next_edge_idx = 0
+		self.max_edge_idx = -1
 		self.edge_info = <EdgeInfo*> stdlib.malloc(sizeof_EdgeInfo*self.edge_capacity)
 		for i in range(self.edge_capacity):
 			self.edge_info[i].exists = False
+			
 		self.edge_data_lookup = {}
 		
 		self.edge_list_capacity = edge_list_capacity
@@ -119,6 +146,7 @@ cdef class Graph:
 		state['node_capacity'] = self.node_capacity
 		state['node_grow_factor'] = self.node_grow_factor		
 		state['next_node_idx'] = self.next_node_idx
+		state['max_node_idx'] = self.max_node_idx
 		state['first_free_node'] = self.first_free_node		
 		state['node_obj_lookup'] = self.node_obj_lookup
 		state['node_data_lookup'] = self.node_data_lookup
@@ -138,7 +166,7 @@ cdef class Graph:
 								[self.node_info[i].elist[j] for j in range(self.node_info[i].degree)] )
 			else:
 				pickle_entry = (bool(self.node_info[i].exists),
-								self.node_info[i].degree)
+								self.node_info[i].degree,self.node_info[i].capacity)
 				
 			node_info.append(pickle_entry)
 		
@@ -149,6 +177,7 @@ cdef class Graph:
 		state['edge_capacity'] = self.edge_capacity
 		state['edge_grow_factor'] = self.edge_grow_factor		
 		state['next_edge_idx'] = self.next_edge_idx
+		state['max_edge_idx'] = self.max_edge_idx
 		state['first_free_edge'] = self.first_free_edge		
 		state['edge_data_lookup'] = self.edge_data_lookup
 		
@@ -174,6 +203,7 @@ cdef class Graph:
 		self.node_capacity = state['node_capacity']
 		self.node_grow_factor = state['node_grow_factor']
 		self.next_node_idx = state['next_node_idx']
+		self.max_node_idx = state['max_node_idx']
 		self.first_free_node = state['first_free_node']
 		self.node_obj_lookup = state['node_obj_lookup']
 		self.node_data_lookup = state['node_data_lookup']
@@ -196,16 +226,17 @@ cdef class Graph:
 					self.node_info[i].elist[j] = eidx
 						
 			else:
-				exists, degree = entry
+				exists, degree, capacity = entry
 				self.node_info[i].exists = exists
 				self.node_info[i].degree = degree
-				self.node_info[i].capacity = -1
+				self.node_info[i].capacity = capacity
 				
 		# restore all edge details
 		self.num_edges = state['num_edges']
 		self.edge_capacity = state['edge_capacity']
 		self.edge_grow_factor = state['edge_grow_factor']
 		self.next_edge_idx = state['next_edge_idx']
+		self.max_edge_idx = state['max_edge_idx']
 		self.first_free_edge = state['first_free_edge']
 		self.edge_data_lookup = state['edge_data_lookup']
 
@@ -220,15 +251,148 @@ cdef class Graph:
 				
 		return
 	
-	def __getattr__(self,name):
-		
-		if name == 'max_node_idx':
-			return self.next_node_idx - 1
-		elif name == 'max_edge_idx':
-			return self.next_edge_idx - 1
-		else:
-			raise AttributeError, 'Class has no attribute "%s"' % name
+	# def __getattr__(self,name):
+	# 	raise AttributeError, 'Class has no attribute "%s"' % name
 	
+	def validate(self,**kwargs):		
+		"""
+		Check whether the graph structure is valid.  This inspects various invariants and conditions
+		that should be present in order for the graph structure to be correct.  If any conditions are
+		broken, an exception will be thrown immediately.
+
+		Optional arguments:
+
+			- verbose [=False]: Print out information before each check
+		"""
+		verbose = kwargs.pop('verbose',False)
+		
+		self.inner_validate(verbose)
+	
+	cdef inner_validate(self,bint verbose):
+		cdef int i,j
+
+		# self.next_node_idx < self.node_capacity
+		if verbose:
+			print 'checking if self.next_node_idx < self.node_capacity'
+
+		assert self.next_node_idx <= self.node_capacity, 'self.next_node_idx > self.node_capacity (%d,%d)' % (self.next_node_idx,self.node_capacity)
+
+		# self.max_node_idx < self.next_node_idx
+		if verbose:
+			print 'checking if self.max_node_idx < self.next_node_idx'
+			
+		assert self.max_node_idx < self.next_node_idx, 'self.max_node_idx >= self.next_node_idx (%d,%d)' % (self.max_node_idx,self.next_node_idx)
+		
+		# there should be no other valid nodes beyond self.max_node_idx
+		if verbose:
+			print 'checking if no valid nodes exist beyond self.max_node_idx'
+			
+		for i in range(self.max_node_idx+1,self.node_capacity):
+			assert not self.node_info[i].exists, 'self.node_info[%d] exists, but is beyond self.max_node_idx (= %d)' % (i,self.max_node_idx)
+
+		# the node entry preceeding self.max_node_idx should exist
+		if verbose:
+			print 'checking that self.max_node_idx node exists'
+		
+		assert self.max_node_idx >= -1, 'self.max_node_idx is invalid (= %d)' % self.max_node_idx
+		assert self.max_node_idx == -1 or self.node_info[self.max_node_idx].exists, 'The node entry at self.max_node_idx does not exist'
+
+		# count the number of existing nodes
+		if verbose:
+			print 'counting the number of existing nodes'
+		
+		cdef int num_existing_nodes = 0
+
+		for i in range(self.next_node_idx):
+			if self.node_info[i].exists:
+				num_existing_nodes += 1
+
+		assert num_existing_nodes == self.num_nodes, '# of existing nodes (%d) != self.num_nodes (%d)' % (num_existing_nodes,self.num_nodes)
+
+		# validate the structure of the free node list
+		if verbose:
+			print 'counting the number of free nodes'
+		
+		cdef int num_free_nodes = 0
+		i = self.first_free_node
+		j = -1
+		while i != -1:
+			assert 0 <= i < self.node_capacity, 'Free node %d has an invalid index (self.node_capacity = %d)' % (i,self.node_capacity)
+			
+			assert not self.node_info[i].exists, 'Free node %d has exists flag set to True' % i
+			
+			num_free_nodes += 1
+			
+			assert self.node_info[i].capacity == j, 'Free node %d points to the incorrect predecessor (%d correct, %d actual)' % (i,j,self.node_info[i].capacity)
+			
+			j = i
+			i = self.node_info[i].degree
+			
+		assert (num_free_nodes + num_existing_nodes) == self.next_node_idx, '(# free nodes) + (# existing nodes) != self.next_node_idx (%d + %d != %d)' % (num_free_nodes,num_existing_nodes,self.next_node_idx)
+			
+		#####
+		# Check edges
+		
+		# self.next_edge_idx < self.edge_capacity
+		if verbose:
+			print 'checking if self.next_edge_idx < self.edge_capacity'
+
+		assert self.next_edge_idx <= self.edge_capacity, 'self.next_edge_idx > self.edge_capacity (%d,%d)' % (self.next_edge_idx,self.edge_capacity)
+
+		# self.max_edge_idx < self.next_edge_idx
+		if verbose:
+			print 'checking if self.max_edge_idx < self.next_edge_idx'
+			
+		assert self.max_edge_idx < self.next_edge_idx, 'self.max_edge_idx >= self.next_edge_idx (%d,%d)' % (self.max_edge_idx,self.next_edge_idx)
+		
+		# there should be no other valid edges beyond self.max_edge_idx
+		if verbose:
+			print 'checking if no valid edges exist beyond self.max_edge_idx'
+			
+		for i in range(self.max_edge_idx+1,self.edge_capacity):
+			assert not self.edge_info[i].exists, 'self.edge_info[%d] exists, but is beyond self.max_edge_idx (= %d)' % (i,self.max_edge_idx)
+
+		# the edge entry preceeding self.max_edge_idx should exist
+		if verbose:
+			print 'checking that self.max_edge_idx edge exists'
+		
+		assert self.max_edge_idx >= -1, 'self.max_edge_idx is invalid (= %d)' % self.max_edge_idx
+		assert self.max_edge_idx == -1 or self.edge_info[self.max_edge_idx].exists, 'The edge entry at self.max_edge_idx does not exist'
+
+		# count the number of existing edges
+		if verbose:
+			print 'counting the number of existing edges'
+		
+		cdef int num_existing_edges = 0
+
+		for i in range(self.next_edge_idx):
+			if self.edge_info[i].exists:
+				num_existing_edges += 1
+
+		assert num_existing_edges == self.num_edges, '# of existing edges (%d) != self.num_edges (%d)' % (num_existing_edges,self.num_edges)
+
+		# validate the structure of the free edge list
+		if verbose:
+			print 'counting the number of free edges'
+		
+		cdef int num_free_edges = 0
+		i = self.first_free_edge
+		j = -1
+		while i != -1:
+			assert 0 <= i < self.edge_capacity, 'Free edge %d has an invalid index (self.edge_capacity = %d)' % (i,self.edge_capacity)
+			
+			assert not self.edge_info[i].exists, 'Free edge %d has exists flag set to True' % i
+			
+			num_free_edges += 1
+			
+			assert self.edge_info[i].v == j, 'Free edge %d points to the incorrect predecessor (%d correct, %d actual)' % (i,j,self.edge_info[i].capacity)
+			
+			j = i
+			i = self.edge_info[i].u
+			
+		assert (num_free_edges + num_existing_edges) == self.next_edge_idx, '(# free edges) + (# existing edges) != self.next_edge_idx (%d + %d != %d)' % (num_free_edges,num_existing_edges,self.next_edge_idx)
+		
+				
 	cpdef copy(Graph self):
 		"""
 		Create a copy of this graph.
@@ -238,7 +402,7 @@ cdef class Graph:
 		cdef Graph G = Graph()
 		cdef int i,j,eidx,eidx2
 		cdef double weight
-	
+
 		for i in range(self.next_node_idx):
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
@@ -270,7 +434,7 @@ cdef class Graph:
 		Return True if the graph is currently in compact form: there are no unallocated node indices i < self.max_node_idx and no
 		unallocated edge indices j < self.max_edge_idx.  The graph can be compacted by calling the compact() method.
 		"""
-		return (self.first_free_node == -1 and self.first_free_edge == -1)
+		return (self.num_nodes == (self.max_node_idx+1) and self.num_edges == (self.max_edge_idx+1))
 	
 	cpdef compact(Graph self):
 		"""
@@ -283,20 +447,22 @@ cdef class Graph:
 		"""
 		cdef int next_free_idx
 		cdef int src, dest
-		cdef int u,v,i
+		cdef int u,v,i,nidx
 		cdef int eidx
 		
 		#####
 		# move the nodes around
-		while self.first_free_node != -1:
-			next_free_idx = self.node_info[self.first_free_node].degree
+		nidx = 0
+		while nidx < self.max_node_idx:
+			if self.node_info[nidx].exists:
+				nidx += 1
+				continue
 			
 			# move all node content 
-			src = self.next_node_idx - 1
-			dest = self.first_free_node
+			src = self.max_node_idx
+			dest = nidx
 			self.node_info[dest] = self.node_info[src]
 			self.node_info[src].exists = False
-			self.next_node_idx -= 1
 			
 			# move the node object references
 			if src in self.node_obj_lookup:
@@ -358,25 +524,32 @@ cdef class Graph:
 				# if the edge is a self-loop, insert it twice
 				if dest == v:
 					self.__insert_edge_into_edgelist(v,eidx,dest)
-								
-			# move to the next one
-			self.first_free_node = next_free_idx
 			
-			if self.first_free_node == (self.next_node_idx - 1):
-				self.first_free_node = -1
-				self.next_node_idx -= 1
-				
+			# update the max node index
+			while self.max_node_idx >= 0 and not self.node_info[self.max_node_idx].exists:
+				self.max_node_idx -= 1
+								
+			# move to the next node
+			nidx += 1
+		
+		# at this point, node info has been defragmented so there are no free nodes
+		# This means that the next unallocated node is the entry right after the max node idx.
+		self.first_free_node = -1		
+		self.next_node_idx = self.max_node_idx + 1
+		
 		#####
 		# move the edges around
-		while self.first_free_edge != -1:
-			next_free_idx = self.edge_info[self.first_free_edge].u
+		eidx = 0
+		while eidx < self.max_edge_idx:
+			if self.edge_info[eidx].exists:
+				eidx += 1
+				continue
 			
 			# move all edge content from the last element to the first free edge
-			src = self.next_edge_idx - 1
-			dest = self.first_free_edge
+			src = self.max_edge_idx
+			dest = eidx
 			self.edge_info[dest] = self.edge_info[src]
 			self.edge_info[src].exists = False
-			self.next_edge_idx -= 1
 			
 			# move the edge data
 			if src in self.edge_data_lookup:
@@ -405,12 +578,16 @@ cdef class Graph:
 			self.edge_info[src].u = -1
 			self.edge_info[src].v = -1
 			
-			# move to the next one
-			self.first_free_edge = next_free_idx
+			# update the max node index
+			while self.max_edge_idx >= 0 and not self.edge_info[self.max_edge_idx].exists:
+				self.max_edge_idx -= 1
+				
+			# move to the next edge
+			eidx += 1
 			
-			if self.first_free_edge == (self.next_edge_idx - 1):
-				self.first_free_edge = -1
-				self.next_edge_idx -= 1
+		# at this point the max number of nodes and the next node available are adjacent
+		self.first_free_edge = -1
+		self.next_edge_idx = self.max_edge_idx + 1
 		
 		return
 	
@@ -441,10 +618,7 @@ cdef class Graph:
 		and the object returned will be used as the node object for that node.  If not specified,
 		then no node objects will be assigned to nodes.
 		"""
-		cdef int i
 		cdef int nn_count
-		cdef int num_remaining
-		cdef int new_node_capacity
 		cdef np.ndarray[np.int_t,ndim=1] indexes = np.empty(num_nodes, np.int)
 		cdef int node_idx
 		
@@ -455,38 +629,16 @@ cdef class Graph:
 			# recycle an unused node index if possible
 			if self.first_free_node != -1:
 				node_idx = self.first_free_node
-				self.first_free_node = self.node_info[node_idx].degree
 			else:
 				node_idx = self.next_node_idx
-				self.next_node_idx += 1
 
 			indexes[nn_count] = node_idx
 			
-			# set the node object if specified
+			nobj = None
 			if node_obj_fxn is not None:
 				nobj = node_obj_fxn(node_idx)
-				self.node_idx_lookup[nobj] = node_idx
-				self.node_obj_lookup[node_idx] = nobj
-		
-			# grow the node_info array as necessary
-			if node_idx >= self.node_capacity:
-				# allocate exactly as many nodes as are needed
-				num_remaining = num_nodes - nn_count + 1
-				new_node_capacity = self.node_capacity + num_remaining
-				self.node_info = <NodeInfo*> stdlib.realloc(self.node_info, sizeof_NodeInfo*new_node_capacity)
-
-				for i in range(self.node_capacity,new_node_capacity):
-					self.node_info[i].exists = False
-				self.node_capacity = new_node_capacity
-			
-			self.node_info[node_idx].exists = True
-			self.node_info[node_idx].degree = 0
-		
-			# initialize edge lists
-			self.node_info[node_idx].elist = <int*> stdlib.malloc(sizeof(int) * self.edge_list_capacity)
-			self.node_info[node_idx].capacity = self.edge_list_capacity
-		
-			self.num_nodes += 1
+				
+			self.add_node_x(node_idx,self.edge_list_capacity,nobj,None)
 			
 		return indexes
 		
@@ -500,19 +652,39 @@ cdef class Graph:
 		This method returns the index corresponding to the new node.
 		"""
 		cdef int node_idx
+		cdef int next_free_node
 		
 		# recycle an unused node index if possible
 		if self.first_free_node != -1:
 			node_idx = self.first_free_node
-			self.first_free_node = self.node_info[node_idx].degree
 		else:
 			node_idx = self.next_node_idx
-			self.next_node_idx += 1
 			
 		self.add_node_x(node_idx,self.edge_list_capacity,nobj,data)
 		
 		return node_idx
+	
+	cdef add_to_free_node_list(self,int nidx):
+		self.node_info[nidx].degree = self.first_free_node
+		self.node_info[nidx].capacity = -1
 		
+		if self.first_free_node != -1:
+			self.node_info[self.first_free_node].capacity = nidx
+			
+		self.first_free_node = nidx
+			
+	cdef remove_from_free_node_list(self,int nidx):
+		cdef int prev_free_node = self.node_info[nidx].capacity
+		cdef int next_free_node = self.node_info[nidx].degree
+		
+		if prev_free_node == -1:
+			self.first_free_node = next_free_node
+		else:
+			self.node_info[prev_free_node].degree = next_free_node
+			
+		if next_free_node != -1:
+			self.node_info[next_free_node].capacity = prev_free_node
+			
 	cpdef add_node_x(Graph self,int node_idx,int edge_list_capacity,nobj,data):
 		"""
 		This function adds a node to the graph, but should be used with GREAT CARE.
@@ -532,8 +704,22 @@ cdef class Graph:
 			raise ZenException, 'Adding node at index %d will overwrite an existing node' % node_idx
 		
 		if node_idx >= self.next_node_idx:
-			# TODO: Add all skipped over nodes to the free node list
-			self.next_node_idx = node_idx + 1
+				# if we got in here, then we must be in the
+				# domain beyond the next_node_idx - these are the nodes
+				# that aren't in the free list.
+				
+				# add all nodes that are being skipped over to the free node list
+				for i in range(self.next_node_idx,imin(node_idx,self.node_capacity)):
+					self.add_to_free_node_list(i)
+				
+				self.next_node_idx = node_idx + 1
+		else:
+			# Fix the hole in the free node list that will be created
+			self.remove_from_free_node_list(node_idx)
+		
+		# update the max_node_idx to keep track of the maximum value existing index
+		if node_idx > self.max_node_idx:
+			self.max_node_idx = node_idx
 		
 		self.num_changes += 1
 		
@@ -554,6 +740,10 @@ cdef class Graph:
 			self.node_info = <NodeInfo*> stdlib.realloc(self.node_info, sizeof_NodeInfo*new_node_capacity)
 			for i in range(self.node_capacity,new_node_capacity):
 				self.node_info[i].exists = False
+			
+			# add all the newly allocated empty nodes to the free node list
+			for i in range(self.node_capacity,node_idx):
+				self.add_to_free_node_list(i)
 			self.node_capacity = new_node_capacity
 			
 		self.node_info[node_idx].exists = True
@@ -564,6 +754,7 @@ cdef class Graph:
 		self.node_info[node_idx].capacity = self.edge_list_capacity
 		
 		self.num_nodes += 1
+		
 		return
 		
 	def __contains__(Graph self,nobj):
@@ -822,9 +1013,14 @@ cdef class Graph:
 			del self.node_idx_lookup[nobj]
 		
 		# keep track of the free node
-		self.node_info[nidx].degree = self.first_free_node
-		self.first_free_node = nidx
-						
+		self.add_to_free_node_list(nidx)
+		
+		# update the max_node_idx value (if necessary)
+		if nidx == self.max_node_idx:
+			while self.max_node_idx >= 0 and not self.node_info[self.max_node_idx].exists:
+				self.max_node_idx -= 1
+		
+		# update the node count						
 		self.num_nodes -= 1
 	
 	cpdef degree(Graph self,nobj):
@@ -860,15 +1056,26 @@ cdef class Graph:
 		"""
 		return self.num_edges
 	
-	# def compact(self):
-	# 	"""
-	# 	Re-index edges and nodes in order to recapture wasted space in the
-	# 	graph data structure.  After calling this, node indices and edge
-	# 	indices may be different.
-	# 	
-	# 	TODO: Not implemented
-	# 	"""
-	# 	raise Exception, 'NOT IMPLEMENTED'
+	cdef add_to_free_edge_list(self,int eidx):
+		self.edge_info[eidx].u = self.first_free_edge
+		self.edge_info[eidx].v = -1
+
+		if self.first_free_edge != -1:
+			self.edge_info[self.first_free_edge].v = eidx
+
+		self.first_free_edge = eidx
+
+	cdef remove_from_free_edge_list(self,int eidx):
+		cdef int prev_free_edge = self.edge_info[eidx].v
+		cdef int next_free_edge = self.edge_info[eidx].u
+
+		if prev_free_edge == -1:
+			self.first_free_edge = next_free_edge
+		else:
+			self.edge_info[prev_free_edge].u = next_free_edge
+
+		if next_free_edge != -1:
+			self.edge_info[next_free_edge].v = prev_free_edge
 	
 	cpdef int add_edge(self, u, v, data=None, double weight=1) except -1:
 		"""
@@ -915,10 +1122,8 @@ cdef class Graph:
 		cdef int eidx
 		if self.first_free_edge != -1:
 			eidx = self.first_free_edge
-			self.first_free_edge = self.edge_info[eidx].u
 		else:
 			eidx = self.next_edge_idx
-			self.next_edge_idx += 1
 	
 		self.add_edge_x(eidx,u,v,data,weight)
 
@@ -926,15 +1131,28 @@ cdef class Graph:
 
 	cpdef add_edge_x(self, int eidx, int u, int v, data, double weight):
 	
+		cdef int i
+	
 		if eidx < self.edge_capacity and self.edge_info[eidx].exists == True:
 			raise ZenException, 'Adding edge at index %d will overwrite an existing edge' % eidx
 
 		if eidx >= self.next_edge_idx:
-			# TODO: Add all skipped-over-edges to the free edge list
+			# if we got in here, then we must be in the
+			# domain beyond the next_edge_idx - these are the edges
+			# that aren't in the free list.
+
+			# add all edges that are being skipped over to the free edge list
+			for i in range(self.next_edge_idx,imin(eidx,self.edge_capacity)):
+				self.add_to_free_edge_list(i)
+
 			self.next_edge_idx = eidx + 1
 		else:
-			# TODO: Fix the hole in the free edge list that will be created
-			pass
+			# Fix the hole in the free node list that will be created
+			self.remove_from_free_edge_list(eidx)
+		
+		# update the max_edge_idx to keep track of the maximum value existing index
+		if eidx > self.max_edge_idx:
+			self.max_edge_idx = eidx
 			
 		if data is not None:
 			self.edge_data_lookup[eidx] = data
@@ -946,6 +1164,11 @@ cdef class Graph:
 			self.edge_info = <EdgeInfo*> stdlib.realloc( self.edge_info, sizeof_EdgeInfo * new_edge_capacity)
 			for i in range(self.edge_capacity,new_edge_capacity):
 				self.edge_info[i].exists = False
+				
+			# add all the newly allocated empty edges to the free edge list
+			for i in range(self.edge_capacity,eidx):
+				self.add_to_free_edge_list(i)
+					
 			self.edge_capacity = new_edge_capacity
 		
 		####
@@ -1067,8 +1290,12 @@ cdef class Graph:
 			del self.edge_data_lookup[eidx]
 		
 		# add the edge to the list of free edges
-		self.edge_info[eidx].u = self.first_free_edge
-		self.first_free_edge = eidx
+		self.add_to_free_edge_list(eidx)
+		
+		# update the max_edge_idx value (if necessary)
+		if eidx == self.max_edge_idx:
+			while self.max_edge_idx >= 0 and not self.edge_info[self.max_edge_idx].exists:
+				self.max_edge_idx -= 1
 		
 		self.num_edges -= 1
 		

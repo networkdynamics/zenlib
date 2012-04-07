@@ -5,114 +5,8 @@ import pickle
 
 from zen import *
 
-class GraphRelabelTestCase(unittest.TestCase):
+class GraphCompact(unittest.TestCase):
 	
-	def test_change_node_obj(self):
-		G = Graph()
-		G.add_node(1,data=1)
-		G.set_node_object(1,2)
-		
-		self.assertFalse(1 in G)
-		self.assertTrue(2 in G)
-
-class GraphCopyTestCase(unittest.TestCase):
-	
-	def test_basic_index_preservation(self):
-		G = Graph()
-		G.add_edge(1,2)
-		G.add_edge(2,3)
-		G.add_edge(1,3)
-		G.rm_node(2)
-		
-		G2 = G.copy()
-		
-		self.assertEqual(G.node_idx(1),G2.node_idx(1))
-		self.assertEqual(G.node_idx(3),G2.node_idx(3))
-		self.assertEqual(G.edge_idx(1,3),G2.edge_idx(1,3))
-		self.assertEqual(G.edge_idx(1,3),G2.edge_idx(3,1))
-
-class GraphPickleTestCase(unittest.TestCase):
-	
-	def test_basic(self):
-		G = Graph()
-		G.add_edge(1,2)
-		G.add_edge(2,3)
-		G.add_edge(3,1)
-		
-		pstr = pickle.dumps(G)
-		
-		G2 = pickle.loads(pstr)
-		assert G2.has_edge(1,2)
-		assert G2.has_edge(2,3)
-		assert G2.has_edge(3,1)
-		assert G2.has_edge(1,3)
-		
-	def test_removal(self):
-		G = Graph()
-		G.add_edge(1,2)
-		G.add_edge(2,3)
-		G.add_edge(3,4)
-		G.add_edge(4,5)
-		G.rm_node(3)
-		
-		idx2 = G.node_idx(2)
-		eidx45 = G.edge_idx(4,5)
-		
-		pstr = pickle.dumps(G)
-		
-		G2 = pickle.loads(pstr)
-		assert len(G2) == 4
-		assert G2.size() == 2
-		assert G.node_idx(2) == idx2
-		assert G.edge_idx(4,5) == eidx45
-		
-		# make sure things don't crash when we add a new node - are internal structures valid?
-		G2.add_edge(5,6)
-
-class GraphTestCase(unittest.TestCase):
-	
-	def test_add_node_x_error(self):
-		G = Graph()
-		
-		# put a node into the graph
-		idx = G.add_node()
-		
-		# try to overwrite that node
-		try:
-			G.add_node_x(idx,G.edge_list_capacity,None,None)
-			self.fail('Attempt to overwrite node using G.add_node_x succeeded')
-		except ZenException:
-			pass
-			
-	def test_add_edge_x_error(self):
-		G = Graph()
-
-		# put a node into the graph
-		idx = G.add_edge(1,2)
-		G.add_node(3)
-
-		# try to overwrite that node
-		try:
-			G.add_edge_x(idx,1,2,None,1)
-			self.fail('Attempt to overwrite edge using G.add_edge_x succeeded')
-		except ZenException:
-			pass
-	
-	def test_add_nodes(self):
-		G = Graph()
-		G.add_nodes(10)
-		
-		self.assertEquals(len(G),10)
-		
-	def test_add_nodes_w_objects(self):
-		G = Graph()
-		G.add_nodes(10,lambda x:str(x))
-		
-		self.assertEquals(len(G),10)
-		
-		for n_,n in G.nodes_iter_(obj=True):
-			self.assertEquals(str(n_),n)
-			
 	def test_compact_nodes(self):
 		G = Graph()
 		G.add_edge(1,2)
@@ -129,6 +23,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEquals(G.node_idx(3),2)
 		self.assertEquals(G.node_idx(4),1)
 		self.assertEquals(G.edge_idx(3,4),0)
+		
+		G.validate()
 	
 	def test_compact_selfedges(self):
 		G = Graph()
@@ -146,6 +42,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEquals(G.node_idx(3),1)
 		self.assertEquals(G.edge_idx(3,3),0)
 		self.assertEquals(G.degree(3),2)
+		
+		G.validate()
 		
 	def test_compact_selfedges2(self):
 		"""
@@ -178,6 +76,8 @@ class GraphTestCase(unittest.TestCase):
 		G.rm_edge(3,3)
 		
 		self.assertEquals(G.degree(3),2)
+		
+		G.validate()
 	
 	def test_compact_fail_nodes(self):
 		G = Graph()
@@ -188,6 +88,8 @@ class GraphTestCase(unittest.TestCase):
 		G.rm_node(2)
 		
 		G.compact()
+		
+		G.validate()
 		
 	def test_compact_edges(self):
 		G = Graph()
@@ -200,6 +102,8 @@ class GraphTestCase(unittest.TestCase):
 		G.compact()
 		
 		self.assertEquals(G.max_edge_idx,0)
+		
+		G.validate()
 	
 	def test_is_compact(self):
 		G = Graph()
@@ -217,6 +121,185 @@ class GraphTestCase(unittest.TestCase):
 		
 		self.assertTrue(G.is_compact())
 		
+		G.validate()
+		
+class GraphAddXFunctions(unittest.TestCase):
+	
+	def test_add_node_x_error(self):
+		G = Graph()
+		
+		# put a node into the graph
+		idx = G.add_node()
+		
+		# try to overwrite that node
+		try:
+			G.add_node_x(idx,G.edge_list_capacity,None,None)
+			self.fail('Attempt to overwrite node using G.add_node_x succeeded')
+		except ZenException:
+			pass
+			
+		G.validate()
+			
+	def test_add_edge_x_error(self):
+		G = Graph()
+
+		# put a node into the graph
+		G.add_node(1)
+		G.add_node(2)
+		idx = G.add_edge(1,2)
+		G.add_node(3)
+
+		# try to overwrite that node
+		try:
+			G.add_edge_x(idx,1,2,None,1)
+			self.fail('Attempt to overwrite edge using G.add_edge_x succeeded')
+		except ZenException:
+			pass
+			
+		G.validate()
+			
+	def test_nodes_after_add_node_x(self):
+
+		graph = Graph()
+		graph.add_node_x(0, 10, 0, None)
+		graph.add_node_x(1, 10, 1, None)
+		graph.add_node_x(2, 10, 2, None)
+
+		nodes = graph.nodes_()
+		self.assertEquals(0, nodes[0])
+		self.assertEquals(1, nodes[1])
+		self.assertEquals(2, nodes[2])
+		
+		graph.validate()
+		
+	def test_free_node_list(self):
+		"""
+		If a node is added via add_node_x, any nodes
+		that are skipped over should be used when other
+		nodes are added later.
+		"""
+		G = Graph()
+		G.add_node_x(1,10, None, None)
+		
+		idx = G.add_node()
+		
+		self.assertEqual(idx,0)
+		
+		G.validate()
+		
+	def test_free_edge_list(self):
+		"""
+		If an edge is added via add_edge_x, any edge
+		that are skipped over should be used when other
+		edges are added later.
+		"""
+		G = Graph()
+		G.add_node(1)
+		G.add_node(2)
+		G.add_node(3)
+	
+		G.add_edge_x(1,0,1,None,1)
+	
+		idx = G.add_edge(2,3)
+	
+		self.assertEqual(idx,0)
+		
+		G.validate()
+			
+class GraphRelabelTestCase(unittest.TestCase):
+	
+	def test_change_node_obj(self):
+		G = Graph()
+		G.add_node(1,data=1)
+		G.set_node_object(1,2)
+		
+		self.assertFalse(1 in G)
+		self.assertTrue(2 in G)
+		
+		G.validate()
+
+class GraphCopyTestCase(unittest.TestCase):
+	
+	def test_basic_index_preservation(self):
+		G = Graph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(1,3)
+		G.rm_node(2)
+		
+		G2 = G.copy()
+		
+		self.assertEqual(G.node_idx(1),G2.node_idx(1))
+		self.assertEqual(G.node_idx(3),G2.node_idx(3))
+		self.assertEqual(G.edge_idx(1,3),G2.edge_idx(1,3))
+		self.assertEqual(G.edge_idx(1,3),G2.edge_idx(3,1))
+		
+		G.validate()
+		G2.validate()
+
+class GraphPickleTestCase(unittest.TestCase):
+	
+	def test_basic(self):
+		G = Graph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(3,1)
+		
+		pstr = pickle.dumps(G)
+		
+		G2 = pickle.loads(pstr)
+		assert G2.has_edge(1,2)
+		assert G2.has_edge(2,3)
+		assert G2.has_edge(3,1)
+		assert G2.has_edge(1,3)
+		
+		G.validate()
+		
+	def test_removal(self):
+		G = Graph()
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(3,4)
+		G.add_edge(4,5)
+		G.rm_node(3)
+		
+		idx2 = G.node_idx(2)
+		eidx45 = G.edge_idx(4,5)
+		
+		pstr = pickle.dumps(G)
+		
+		G2 = pickle.loads(pstr)
+		assert len(G2) == 4
+		assert G2.size() == 2
+		assert G.node_idx(2) == idx2
+		assert G.edge_idx(4,5) == eidx45
+		
+		# make sure things don't crash when we add a new node - are internal structures valid?
+		G2.add_edge(5,6)
+		
+		G.validate()
+
+class GraphTestCase(unittest.TestCase):
+		
+	def test_add_nodes(self):
+		G = Graph()
+		G.add_nodes(10)
+		
+		self.assertEquals(len(G),10)
+		
+		G.validate()
+		
+	def test_add_nodes_w_objects(self):
+		G = Graph()
+		G.add_nodes(10,lambda x:str(x))
+		
+		self.assertEquals(len(G),10)
+		
+		for n_,n in G.nodes_iter_(obj=True):
+			self.assertEquals(str(n_),n)
+			
+		G.validate()
+					
 	def test_adj_matrix(self):
 		G = Graph()
 		G.add_edge(0,1)
@@ -234,6 +317,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEquals(M[2,0],0)
 		self.assertEquals(M[2,1],1)
 		self.assertEquals(M[2,2],1)
+		
+		G.validate()
 	
 	def test_node_removal_nodes_(self):
 		
@@ -250,6 +335,8 @@ class GraphTestCase(unittest.TestCase):
 		
 		self.assertTrue(4 in nset2)
 		self.assertEqual(nset1,nset2)
+		
+		graph.validate()
 	
 	def test_max_indices(self):
 		G = Graph()
@@ -262,19 +349,34 @@ class GraphTestCase(unittest.TestCase):
 		
 		self.assertEqual(G.max_node_idx,2)
 		self.assertEqual(G.max_edge_idx,1)
+		
+		G.validate()
 	
 	def test_recycle_node_indices(self):
 		G = Graph(node_capacity=5)
 		for i in range(5):
 			G.add_node(i)
-			
+		
+		G.validate()
+		
 		for i in range(5):
 			G.rm_node(i)
-			
+		
+		G.validate()
+		
 		for i in range(5):
 			G.add_node(i)
 		
+		G.validate()
+		
 		self.assertEqual(G.node_capacity,5)
+		
+	def test_recycle_nodes_beyond_next_node_idx(self):
+		"""
+		Here we test the ability for a graph to keep nodes in
+		its free list that are beyond the next_node_idx
+		"""
+		pass
 	
 	def test_recycle_edge_indices(self):
 		G = Graph(edge_capacity=5)
@@ -298,6 +400,8 @@ class GraphTestCase(unittest.TestCase):
 		G.add_edge(1,6)
 
 		self.assertEqual(G.edge_capacity,5)	
+		
+		G.validate()
 	
 	def test_tutorial1(self):
 		G = Graph()
@@ -351,6 +455,8 @@ class GraphTestCase(unittest.TestCase):
 					n2 = max_edge[1]
 					#print "Node %d's heaviest neighbor is %d" % (n,n2)
 		
+		G.validate()
+		
 		return
 	
 	def test_basicadding(self):
@@ -391,6 +497,8 @@ class GraphTestCase(unittest.TestCase):
 		# test degree
 		self.assertEqual(G.degree_(n1),1)
 		self.assertEqual(G.degree_(n2),2)
+		
+		G.validate()
 	
 	def test_nodes(self):
 		G = Graph()
@@ -401,6 +509,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEqual(type(G.nodes()),types.ListType)
 		self.assertEqual(type(G.neighbors('hello')),types.ListType)
 		self.assertEqual(len(G.neighbors('hello')),2)
+		
+		G.validate()
 	
 	def test_nodes_(self):
 		G = Graph()
@@ -409,6 +519,8 @@ class GraphTestCase(unittest.TestCase):
 		G.add_edge('there','world')
 	
 		self.assertEqual(len(G.neighbors_(n1)),1)
+		
+		G.validate()
 	
 	def test_edge_removal(self):
 		G = Graph()
@@ -419,6 +531,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEqual(G.size(),3)
 		G.rm_edge(2,3)
 		self.assertEqual(G.size(),2)
+		
+		G.validate()
 	
 	def test_duplicate_edges(self):
 		G = Graph()
@@ -471,19 +585,25 @@ class GraphTestCase(unittest.TestCase):
 			if x != 5:
 				self.assertTrue(G.has_edge_(x,5))
 				self.assertTrue(G.has_edge_(5,x))
+				
+		G.validate()
 
 	def test_growing_nodearray(self):
 		G = Graph(node_capacity=1)
 		for i in range(10000):
 			n = G.add_node(i)
 			
+		G.validate()
+			
 	def test_growing_edgelistarray(self):
-		G = DiGraph(edge_list_capacity=1)
+		G = Graph(edge_list_capacity=1)
 		n0 = G.add_node('hello')
 	
 		for i in range(1000):
 			n = G.add_node(i)
 			G.add_edge_(n0,n)
+			
+		G.validate()
 		
 	def test_rm_node_edge(self):
 		G = Graph()
@@ -510,6 +630,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEqual(G.degree_(n2),1)
 		self.assertEqual(G.degree_(n3),1)
 		
+		G.validate()
+		
 	def test_node_iterator(self):
 		G = Graph()
 		for i in range(1000):
@@ -520,6 +642,8 @@ class GraphTestCase(unittest.TestCase):
 			count += 1
 			
 		self.assertEqual(count,1000)
+		
+		G.validate()
 		
 	def test_edge_iterator(self):
 		G = Graph()
@@ -534,6 +658,8 @@ class GraphTestCase(unittest.TestCase):
 			
 		self.assertEqual(count,1000)
 		
+		G.validate()
+		
 	def test_edges(self):
 		G = Graph()
 		
@@ -542,6 +668,8 @@ class GraphTestCase(unittest.TestCase):
 		e1 = E[0]
 		
 		self.assertTrue('x' in set(e1))
+		
+		G.validate()
 	
 	def test_grp_edge_iterators(self):
 		G = Graph()
@@ -570,6 +698,8 @@ class GraphTestCase(unittest.TestCase):
 			
 		self.assertFalse(success)
 		
+		G.validate()
+		
 	def test_grp_neighbor_iterators(self):
 		G = Graph()
 		n1 = G.add_node()
@@ -586,9 +716,11 @@ class GraphTestCase(unittest.TestCase):
 			count += 1
 	
 		self.assertEqual(count,12)
+		
+		G.validate()
 			
 	def test_neighbor_iters(self):
-		G = DiGraph()
+		G = Graph()
 		n1 = G.add_node('n1')
 		n2 = G.add_node('n2')
 		n3 = G.add_node('n3')
@@ -603,6 +735,8 @@ class GraphTestCase(unittest.TestCase):
 		
 		self.assertEquals(n1_all,set([n2,n3,n4]))
 		self.assertEquals(len(n1_all_raw),3)
+		
+		G.validate()
 		
 	def test_neighbor_iter_recursionlimit(self):
 		"""
@@ -620,6 +754,8 @@ class GraphTestCase(unittest.TestCase):
 			
 		self.assertEquals(count,1100)
 		
+		G.validate()
+		
 	def test_node_iterator_with_obj_and_data(self):
 		G = Graph()
 		G.add_node()
@@ -627,6 +763,8 @@ class GraphTestCase(unittest.TestCase):
 		
 		for idx,nobj,data in G.nodes_iter_(obj=True,data=True):
 			self.assertEqual(data,None)
+			
+		G.validate()
 			
 	def test_edge_iterator_with_obj_and_data(self):
 		G = Graph()
@@ -636,6 +774,8 @@ class GraphTestCase(unittest.TestCase):
 		for eidx,data in G.edges_iter_(data=True):
 			self.assertEqual(data,None)
 			
+		G.validate()
+			
 	def test_neighbor_iterator_with_obj_and_data(self):
 		G = Graph()
 		G.add_edge(1,2)
@@ -643,6 +783,8 @@ class GraphTestCase(unittest.TestCase):
 
 		for x,nobj,data in G.neighbors_iter_(G.node_idx(1),obj=True,data=True):
 			self.assertEqual(data,None)
+			
+		G.validate()
 			
 	def test_neighbor_iterator_with_data(self):
 		G = Graph()
@@ -662,6 +804,8 @@ class GraphTestCase(unittest.TestCase):
 	
 		self.assertFalse(success)
 		
+		G.validate()
+		
 	def test_set_data(self):
 		G = Graph()
 		G.add_node(1,'hello')
@@ -673,6 +817,8 @@ class GraphTestCase(unittest.TestCase):
 		self.assertEqual(G.node_data(1),'there')
 		self.assertEqual(G.edge_data(1,2),'y')
 		
+		G.validate()
+		
 	def test_weights(self):
 		G = Graph()
 		G.add_edge(1,2,weight=2)
@@ -681,6 +827,8 @@ class GraphTestCase(unittest.TestCase):
 		
 		self.assertEqual(G.weight(1,2),2)
 		self.assertEqual(G.weight(1,3),5)
+		
+		G.validate()
 		
 	def test_edge_data(self):
 		G = Graph()
@@ -707,6 +855,8 @@ class GraphTestCase(unittest.TestCase):
 
 		self.assertFalse(success)
 		
+		G.validate()
+		
 	def test_modify_node_iterator(self):
 		G = Graph()
 		G.add_node(0)
@@ -722,6 +872,8 @@ class GraphTestCase(unittest.TestCase):
 			error = True
 		
 		self.assertTrue(error)
+		
+		G.validate()
 		
 	def test_modify_edge_iterator(self):
 		G = Graph()
@@ -739,6 +891,8 @@ class GraphTestCase(unittest.TestCase):
 		
 		self.assertTrue(error)
 		
+		G.validate()
+		
 	def test_modify_neighbor_iterator(self):
 		G = Graph()
 		G.add_node(0)
@@ -755,6 +909,8 @@ class GraphTestCase(unittest.TestCase):
 
 		self.assertTrue(error)
 		
+		G.validate()
+		
 	def test_invalid_nidx(self):
 		G = Graph()
 		n1 = G.add_node(0)
@@ -767,6 +923,8 @@ class GraphTestCase(unittest.TestCase):
 
 		self.assertTrue(error)
 		
+		G.validate()
+		
 	def test_edge_idx(self):
 		G = Graph()
 		n1 = G.add_node()
@@ -774,6 +932,8 @@ class GraphTestCase(unittest.TestCase):
 		e1 = G.add_edge_(n1,n2,'blah')
 
 		self.assertEquals((e1,'blah'),G.edge_idx_(n1,n2,True))
+		
+		G.validate()
 		
 	def test_has_edge(self):
 		G = Graph()
@@ -783,18 +943,8 @@ class GraphTestCase(unittest.TestCase):
 			self.assertFalse(r)
 		except:
 			self.fail('No error should be thrown')
-
-	def test_nodes_after_add_node_x(self):
 		
-		graph = Graph()
-		graph.add_node_x(0, 10, 0, None)
-		graph.add_node_x(1, 10, 1, None)
-		graph.add_node_x(2, 10, 2, None)
-		
-		nodes = graph.nodes_()
-		self.assertEquals(0, nodes[0])
-		self.assertEquals(1, nodes[1])
-		self.assertEquals(2, nodes[2])
+		G.validate()
 
 if __name__ == '__main__':
 	unittest.main()
