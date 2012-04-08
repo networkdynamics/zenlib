@@ -33,6 +33,7 @@ cdef class DiGraph:
 	cdef readonly int num_nodes
 	cdef readonly int node_capacity
 	cdef int next_node_idx
+	cdef readonly int max_node_idx
 	cdef NodeInfo* node_info
 	cdef node_idx_lookup
 	cdef node_obj_lookup
@@ -42,6 +43,7 @@ cdef class DiGraph:
 	cdef readonly int num_edges
 	cdef readonly int edge_capacity
 	cdef int next_edge_idx
+	cdef readonly int max_edge_idx
 	cdef EdgeInfo* edge_info
 	cdef edge_data_lookup
 	cdef int first_free_edge
@@ -49,6 +51,8 @@ cdef class DiGraph:
 	cdef readonly int edge_list_capacity
 	
 	# methods
+	cdef inner_validate(self,bint verbose)
+	
 	cpdef np.ndarray[np.double_t] matrix(self)
 	
 	cpdef copy(DiGraph self)
@@ -66,6 +70,10 @@ cdef class DiGraph:
 	cpdef np.ndarray[np.int_t] add_nodes(self,int num_nodes,node_obj_fxn=*)
 	
 	cpdef int add_node(DiGraph self,nobj=*,data=*)
+	
+	cdef add_to_free_node_list(self,int nidx)
+	
+	cdef remove_from_free_node_list(self,int nidx)
 	
 	cpdef add_node_x(DiGraph self,int node_idx,int in_edge_list_capacity,int out_edge_list_capacity,nobj,data)
 	
@@ -112,6 +120,10 @@ cdef class DiGraph:
 	cpdef int add_edge(DiGraph self, src, tgt, data=*, double weight=*) except -1
 	
 	cpdef int add_edge_(DiGraph self, int src, int tgt, data=*, double weight=*) except -1
+	
+	cdef add_to_free_edge_list(self,int eidx)
+	
+	cdef remove_from_free_edge_list(self,int eidx)
 	
 	cpdef int add_edge_x(DiGraph self, int eidx, int src, int tgt, data, double weight) except -1
 	

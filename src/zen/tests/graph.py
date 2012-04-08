@@ -549,6 +549,8 @@ class GraphTestCase(unittest.TestCase):
 			
 		self.assertFalse(success,'This call should have thrown an exception')
 		
+		G.validate()
+		
 		# add it the other way
 		success = False
 		try:
@@ -559,6 +561,8 @@ class GraphTestCase(unittest.TestCase):
 				self.fail('Incorrect exception: %s' % str(e))
 			
 		self.assertFalse(success,'This call should have thrown an exception')
+		
+		G.validate()
 		
 	def test_neighbors2(self):
 		G = Graph()

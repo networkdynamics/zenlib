@@ -21,13 +21,13 @@ cdef extern from "math.h":
 
 __all__ = ['Graph']
 
-cdef int imax(int a, int b):
+cdef inline int imax(int a, int b):
 	if a < b:
 		return b
 	else:
 		return a
 		
-cdef int imin(int a, int b):
+cdef inline int imin(int a, int b):
 	if a < b:
 		return a
 	else:
@@ -385,14 +385,13 @@ cdef class Graph:
 			
 			num_free_edges += 1
 			
-			assert self.edge_info[i].v == j, 'Free edge %d points to the incorrect predecessor (%d correct, %d actual)' % (i,j,self.edge_info[i].capacity)
+			assert self.edge_info[i].v == j, 'Free edge %d points to the incorrect predecessor (%d correct, %d actual)' % (i,j,self.edge_info[i].v)
 			
 			j = i
 			i = self.edge_info[i].u
 			
 		assert (num_free_edges + num_existing_edges) == self.next_edge_idx, '(# free edges) + (# existing edges) != self.next_edge_idx (%d + %d != %d)' % (num_free_edges,num_existing_edges,self.next_edge_idx)
 		
-				
 	cpdef copy(Graph self):
 		"""
 		Create a copy of this graph.
@@ -704,15 +703,15 @@ cdef class Graph:
 			raise ZenException, 'Adding node at index %d will overwrite an existing node' % node_idx
 		
 		if node_idx >= self.next_node_idx:
-				# if we got in here, then we must be in the
-				# domain beyond the next_node_idx - these are the nodes
-				# that aren't in the free list.
-				
-				# add all nodes that are being skipped over to the free node list
-				for i in range(self.next_node_idx,imin(node_idx,self.node_capacity)):
-					self.add_to_free_node_list(i)
-				
-				self.next_node_idx = node_idx + 1
+			# if we got in here, then we must be in the
+			# domain beyond the next_node_idx - these are the nodes
+			# that aren't in the free list.
+			
+			# add all nodes that are being skipped over to the free node list
+			for i in range(self.next_node_idx,imin(node_idx,self.node_capacity)):
+				self.add_to_free_node_list(i)
+			
+			self.next_node_idx = node_idx + 1
 		else:
 			# Fix the hole in the free node list that will be created
 			self.remove_from_free_node_list(node_idx)
@@ -744,6 +743,7 @@ cdef class Graph:
 			# add all the newly allocated empty nodes to the free node list
 			for i in range(self.node_capacity,node_idx):
 				self.add_to_free_node_list(i)
+				
 			self.node_capacity = new_node_capacity
 			
 		self.node_info[node_idx].exists = True
@@ -1135,27 +1135,6 @@ cdef class Graph:
 	
 		if eidx < self.edge_capacity and self.edge_info[eidx].exists == True:
 			raise ZenException, 'Adding edge at index %d will overwrite an existing edge' % eidx
-
-		if eidx >= self.next_edge_idx:
-			# if we got in here, then we must be in the
-			# domain beyond the next_edge_idx - these are the edges
-			# that aren't in the free list.
-
-			# add all edges that are being skipped over to the free edge list
-			for i in range(self.next_edge_idx,imin(eidx,self.edge_capacity)):
-				self.add_to_free_edge_list(i)
-
-			self.next_edge_idx = eidx + 1
-		else:
-			# Fix the hole in the free node list that will be created
-			self.remove_from_free_edge_list(eidx)
-		
-		# update the max_edge_idx to keep track of the maximum value existing index
-		if eidx > self.max_edge_idx:
-			self.max_edge_idx = eidx
-			
-		if data is not None:
-			self.edge_data_lookup[eidx] = data
 		
 		# grow the info array
 		cdef int new_edge_capacity
@@ -1174,12 +1153,38 @@ cdef class Graph:
 		####
 		# connect up the edges to nodes
 		
+		# Note: this is where duplicate edges are detected.  So
+		# an exception can be thrown by these two functions.  Hence,
+		# it's necessary to make modifications to the edge list *AFTER*
+		# these functions both successfully return.
+		
 		# u
 		self.__insert_edge_into_edgelist(u,eidx,v)
 		
 		# v
 		self.__insert_edge_into_edgelist(v,eidx,u)
 		
+		if eidx >= self.next_edge_idx:
+			# if we got in here, then we must be in the
+			# domain beyond the next_edge_idx - these are the edges
+			# that aren't in the free list.
+
+			# add all edges that are being skipped over to the free edge list
+			for i in range(self.next_edge_idx,eidx):
+				self.add_to_free_edge_list(i)
+
+			self.next_edge_idx = eidx + 1
+		else:
+			# Fix the hole in the free node list that will be created
+			self.remove_from_free_edge_list(eidx)
+		
+		# update the max_edge_idx to keep track of the maximum value existing index
+		if eidx > self.max_edge_idx:
+			self.max_edge_idx = eidx
+			
+		if data is not None:
+			self.edge_data_lookup[eidx] = data
+			
 		### Add edge info
 		self.edge_info[eidx].exists = True
 		self.edge_info[eidx].u = u
