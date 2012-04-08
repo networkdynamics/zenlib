@@ -145,7 +145,6 @@ cdef class DiGraph:
 		state['node_capacity'] = self.node_capacity
 		state['node_grow_factor'] = self.node_grow_factor		
 		state['next_node_idx'] = self.next_node_idx
-		state['max_node_idx'] = self.max_node_idx
 		state['first_free_node'] = self.first_free_node		
 		state['node_obj_lookup'] = self.node_obj_lookup
 		state['node_data_lookup'] = self.node_data_lookup
@@ -158,7 +157,7 @@ cdef class DiGraph:
 		for i in range(self.node_capacity):
 			pickle_entry = None
 
-			if self.node_info[i].exists is not 0:			
+			if self.node_info[i].exists is not 0:		
 				pickle_entry = (bool(self.node_info[i].exists),
 								self.node_info[i].indegree,
 								self.node_info[i].in_capacity,
@@ -180,7 +179,6 @@ cdef class DiGraph:
 		state['edge_capacity'] = self.edge_capacity
 		state['edge_grow_factor'] = self.edge_grow_factor		
 		state['next_edge_idx'] = self.next_edge_idx
-		state['max_edge_idx'] = self.max_edge_idx
 		state['first_free_edge'] = self.first_free_edge
 		state['edge_data_lookup'] = self.edge_data_lookup
 
@@ -206,7 +204,6 @@ cdef class DiGraph:
 		self.node_capacity = state['node_capacity']
 		self.node_grow_factor = state['node_grow_factor']
 		self.next_node_idx = state['next_node_idx']
-		self.max_node_idx = state['max_node_idx']
 		self.first_free_node = state['first_free_node']
 		self.node_obj_lookup = state['node_obj_lookup']
 		self.node_data_lookup = state['node_data_lookup']
@@ -216,9 +213,11 @@ cdef class DiGraph:
 
 		# restore node_info
 		self.node_info = <NodeInfo*> stdlib.malloc(sizeof_NodeInfo*self.node_capacity)
+		self.max_node_idx = -1
 		for i,entry in enumerate(state['node_info']):
 
 			if entry[0] is True:
+				self.max_node_idx = i
 				exists, indegree, in_capacity, inelist, outdegree, out_capacity, outelist = entry
 				self.node_info[i].exists = exists
 				self.node_info[i].indegree = indegree
@@ -249,14 +248,18 @@ cdef class DiGraph:
 		self.edge_capacity = state['edge_capacity']
 		self.edge_grow_factor = state['edge_grow_factor']
 		self.next_edge_idx = state['next_edge_idx']
-		self.max_edge_idx = state['max_edge_idx']
 		self.first_free_edge = state['first_free_edge']
 		self.edge_data_lookup = state['edge_data_lookup']
 
 		# restore edge_info
 		self.edge_info = <EdgeInfo*> stdlib.malloc(sizeof_EdgeInfo*self.edge_capacity)
+		self.max_edge_idx = -1
 		for i,entry in enumerate(state['edge_info']):
 			exists,src,tgt,weight = entry
+			
+			if exists == 1:
+				self.max_edge_idx = i
+				
 			self.edge_info[i].exists = exists
 			self.edge_info[i].src = src
 			self.edge_info[i].tgt = tgt
