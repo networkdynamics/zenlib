@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 import numpy
 import numpy as np
 cimport numpy as np
@@ -256,13 +254,19 @@ cdef class Graph:
 	
 	def validate(self,**kwargs):		
 		"""
-		Check whether the graph structure is valid.  This inspects various invariants and conditions
-		that should be present in order for the graph structure to be correct.  If any conditions are
-		broken, an exception will be thrown immediately.
+		Checks whether the graph structure is valid.
+		
+		This method inspects various invariants and conditions that should be present 
+		in order for the graph structure to be correct.  If any conditions are
+		broken, an exception will be raised immediately.
 
-		Optional arguments:
-
-			- verbose [=False]: Print out information before each check
+		**KwArgs**:
+			
+			* ``verbose [=False]`` (boolean): print debugging information out before each condition check
+		
+		**Raises**: 
+			``AssertionError``: if a condition isn't satisfied.
+		
 		"""
 		verbose = kwargs.pop('verbose',False)
 		
@@ -394,9 +398,12 @@ cdef class Graph:
 		
 	cpdef copy(Graph self):
 		"""
-		Create a copy of this graph.
+		Create a copy of this graph.  
 		
-		Note that node and edge indices are preserved in this copy.
+		.. note:: that node and edge indices are preserved in this copy.
+		
+		**Returns**: 
+			:py:class:`zen.Graph`. A new graph object that contains an independent copy of the connectivity of this graph, but a shallow copy of node objects and node/edge data.
 		"""
 		cdef Graph G = Graph()
 		cdef int i,j,eidx,eidx2
@@ -424,14 +431,16 @@ cdef class Graph:
 		
 	cpdef is_directed(Graph self):
 		"""
-		Return True if this graph is directed (which it is not).
+		Return ``True`` if this graph is directed (which it is not).
 		"""
 		return False
 	
 	cpdef bool is_compact(Graph self):
 		"""
-		Return True if the graph is currently in compact form: there are no unallocated node indices i < self.max_node_idx and no
-		unallocated edge indices j < self.max_edge_idx.  The graph can be compacted by calling the compact() method.
+		Return ``True`` if the graph is in compact form.  
+		
+		A graph is compact if there are no unallocated node or edge indices.
+		The graph can be compacted by calling the :py:meth:`.compact` method.
 		"""
 		return (self.num_nodes == (self.max_node_idx+1) and self.num_edges == (self.max_edge_idx+1))
 	
@@ -439,10 +448,10 @@ cdef class Graph:
 		"""
 		Compact the graph in place.  This will re-assign:
 		
-			1) node indices such that there are no unallocated node indices less than self.max_node_idx
-			2) edge indices such that there are no unallocated edge indices less than self.max_edge_idx
+			#. node indices such that there are no unallocated node indices less than self.max_node_idx
+			#. edge indices such that there are no unallocated edge indices less than self.max_edge_idx
 			
-		Note that at present no way is provided of keeping track of the changes made to node and edge indices.
+		.. note:: At present no way is provided of keeping track of the changes made to node and edge indices.
 		"""
 		cdef int next_free_idx
 		cdef int src, dest
@@ -592,7 +601,45 @@ cdef class Graph:
 	
 	cpdef np.ndarray[np.double_t] matrix(self):
 		"""
-		Return a numpy adjacency matrix.
+		Construct and return the adjacency matrix.
+		
+		**Returns**: 
+			``np.ndarray[double,ndims=2]``, ``M``.  The topology of the graph in adjacency matrix form where ``M[i,j]`` is the
+			weight of the edge between nodes with index ``i`` and ``j``.  If there is no edge between ``i`` and ``j``, then 
+			``M[i,j] = 0``.
+				
+				When using this function, keep in mind that
+				if the graph is not compact, there may be some node indices that don't correspond to valid nodes. 
+				In this case, the corresponding matrix elements are not valid.  For example::
+				
+					G = Graph()
+					G.add_node('a') # this node has index 0
+					G.add_node('b') # this node has index 1
+					G.add_node('c') # this node has index 2
+					
+					G.rm_node('b') # after this point, index 1 doesn't correspond to a valid node
+					
+					M = G.matrix() # M is a 3x3 matrix
+					
+					V = M[1,:] # the values in V are meaningless because a node with index 1 doesn't exist
+					
+				This situation can be resolved by making a call to :py:meth:`.compact` prior to calling this function::
+				
+					G = Graph()
+					G.add_node('a') # this node has index 0
+					G.add_node('b') # this node has index 1
+					G.add_node('c') # this node has index 2
+				
+					G.rm_node('b') # after this point, index 1 doesn't correspond to a valid node
+					
+					G.compact() 
+					# In the call above, we've reassigned node indices so that there are no invalid nodes
+					# this means that nodes 'a' and 'b' have been assigned indices 0 and 1.
+					
+					M = G.matrix() # M is a 2x2 matrix
+				
+					V = M[1,:] # this is valid now and corresponds to node G.node_object(1)
+					
 		"""
 		cdef np.ndarray[np.double_t,ndim=2] A = np.zeros( (self.next_node_idx,self.next_node_idx), np.double)
 		cdef int i, j, u, eidx, v
@@ -613,9 +660,19 @@ cdef class Graph:
 		"""
 		Add a specified set of nodes to the graph.
 		
-		If node_obj_fxn is specified, then this function will be called with each node index
-		and the object returned will be used as the node object for that node.  If not specified,
-		then no node objects will be assigned to nodes.
+		**Args**:
+		
+			* ``num_nodes`` (int): the number of nodes to add to the graph.
+			* ``node_obj_fxn [=None]`` (callable): a callable object (typically a function) that accepts a node index (an integer)
+				and returns the object that will be used as the object for that node in the graph.  If this is not specified, then 
+				no node objects will be assigned to nodes.
+				
+		**Returns**:
+			``np.ndarray[int,ndims=1]``, ``I``. The node indices of the nodes added where ``I[j]`` is the index of the jth node added by this
+			function call.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if a node could not be added.
 		"""
 		cdef int nn_count
 		cdef np.ndarray[np.int_t,ndim=1] indexes = np.empty(num_nodes, np.int)
@@ -645,10 +702,16 @@ cdef class Graph:
 		"""
 		Add a node to this graph.
 		
-		  nobj is an optional node object
-		  data is an optional data object to associated with this node
+		**Args**:
 		
-		This method returns the index corresponding to the new node.
+			* ``nobj [=None]``: the (optional) object that will be a convenient identifier for this node.
+			* ``data [=None]``: an optional data object to associated with this node.
+		
+		**Returns**:
+			``int``. The index of the new node.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the node could not be added.
 		"""
 		cdef int node_idx
 		cdef int next_free_node
@@ -686,16 +749,33 @@ cdef class Graph:
 			
 	cpdef add_node_x(Graph self,int node_idx,int edge_list_capacity,nobj,data):
 		"""
-		This function adds a node to the graph, but should be used with GREAT CARE.
+		Adds a node to the graph with a specific node index.
 		
 		This function permits very high-performance population of the graph data structure
 		with nodes by allowing the calling function to specify the node index and edge
 		capacity of the node being added.  In general, this should only be done when the node indices
 		have been obtained from a previously stored graph data structure.
 		
-		Needless to say, when used incorrectly, this method call can irreparably damage
-		the integrity of the graph object, leading to incorrect results or, more likely,
-		segmentation faults.
+		.. DANGER:: 
+			This function should be used with great care because by specifying a node index, the 
+			calling function is forcing Zen to access specific parts of the memory allocated for nodes.  
+			Unless you are writing high-performance network loading code, you should not be calling
+			this function directly.
+			
+			When used incorrectly, this method call can irreparably damage the integrity of the graph object, 
+			leading to incorrect results or, more likely, segmentation faults.
+			
+		**Args**:
+		
+			* ``node_idx`` (int): the node index this node should be assigned.
+			* ``edge_list_capacity`` (int): the number of entries that should be allocated in the edge list for this node.
+			* ``nobj``: the node object that will be associated with this node.  If ``None``, then no object will be
+				assigned to this node.
+			* ``data``: the data object that will be associated with this node.  If ``None``, then no data will be 
+				assigned to this node.
+				
+		**Raises**:
+			:py:exc:`ZenException`: if the node index is already in use or the node object is not unique.
 		"""
 		cdef int i
 		
@@ -759,23 +839,19 @@ cdef class Graph:
 		
 	def __contains__(Graph self,nobj):
 		"""
-		Return True if the node object is in the graph.
+		Return ``True`` if object ``nobj`` is associated with a node in this graph.
 		"""
 		return nobj in self.node_idx_lookup
 	
 	cpdef int node_idx(Graph self,nobj) except -1:
 		"""
-		Return the node index associated with the node object.
-		
-		If the node object is not in the graph, an exception is raised.
+		Return the index of the node with node object ``nobj``.
 		"""
 		return self.node_idx_lookup[nobj]
 		
 	cpdef node_object(Graph self,int nidx):
 		"""
-		Return the node object associated with the node index.
-		
-		If no node object is associated, then None is returned.
+		Return the object associated with node having index ``nidx``.  If no object is associated, then ``None`` is returned.
 		"""
 		if nidx in self.node_obj_lookup:
 			return self.node_obj_lookup[nidx]
@@ -784,8 +860,18 @@ cdef class Graph:
 	
 	cpdef set_node_object(self,curr_node_obj,new_node_obj):
 		"""
-		Change the node object associated with a specific node.  The new object
-		must be unique among all other node objects.
+		Change the node object associated with a specific node.  
+		
+		.. note::
+			The new object must be unique among all other node objects.
+			
+		**Args**:
+		
+			* ``curr_node_obj``: the current node object to change.
+			* ``new_node_obj``: the object to replace the current node object with.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the new key object is not unique in the graph.
 		"""
 		if curr_node_obj == new_node_obj:
 			return
@@ -799,8 +885,18 @@ cdef class Graph:
 
 	cpdef set_node_object_(self,node_idx,new_node_obj):
 		"""
-		Set or change the node object associated with a specific node.  The new object
-		must be unique among all other node objects.
+		Change the node object associated with a specific node.  
+	
+		.. note::
+			The new object must be unique among all other node objects.
+		
+		**Args**:
+	
+			* ``node_idx``: the index of the node to set the object for.
+			* ``new_node_obj``: the object to replace the current node object with.
+		
+		**Raises**:
+			:py:exc:`ZenException`: if the new key object is not unique in the graph.
 		"""
 		if node_idx >= self.node_capacity or not self.node_info[node_idx].exists:
 			raise ZenException, 'Invalid node idx %d' % node_idx
@@ -820,10 +916,26 @@ cdef class Graph:
 		"""
 		Associate a new data object with a specific node in the network.
 		If data is None, then any data associated with the node is deleted.
+		
+		**Args**:
+		
+			* ``nobj``: the node object identifying the node whose data association is being changed.
+			* ``data``: the data object to associate.  If ``None``, then any data object currently
+				associated with this node will be deleted.
 		"""
 		self.set_node_data_(self.node_idx_lookup[nobj],data)
 
 	cpdef set_node_data_(Graph self,int nidx,data):
+		"""
+		Associate a new data object with a specific node in the network.
+		If data is None, then any data associated with the node is deleted.
+	
+		**Args**:
+	
+			* ``nidx``: the index of the node whose data association is being changed.
+			* ``data``: the data object to associate.  If ``None``, then any data object currently
+				associated with this node will be deleted.
+		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
 			
@@ -835,17 +947,13 @@ cdef class Graph:
 						
 	cpdef node_data(Graph self,nobj):
 		"""
-		Return the data object that is associated with the node object.
-		
-		If the node object is not in the graph, then an Exception is raised.
+		Return the data object associated with node having object identifier ``nobj``.
 		"""
 		return self.node_data_(self.node_idx_lookup[nobj])
 
 	cpdef node_data_(Graph self,int nidx):
 		"""
-		Return the data object that is associated with the node index.
-		
-		If no data object is associated, then None is returned.
+		Return the data object associated with node having index ``nidx``.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -857,27 +965,41 @@ cdef class Graph:
 		
 	cpdef nodes_iter(Graph self,data=False):
 		"""
-		Return an iterator over all the nodes in the graph.
+		Return an iterator over all the nodes in the graph.  
 		
-		If data is False, the iterator returns node objects.  If data is True,
-		then the iterator returns tuples of (node object,node data).
+		By default, the iterator yields node objects.  If ``data`` is ``True``,
+		then the iterator yields tuples ``(node_object,node_data)``.
 		"""
 		return NodeIterator(self,False,data,True)
 
 	cpdef nodes_iter_(Graph self,obj=False,data=False):
 		"""
-		Return an iterator over all the nodes in the graph.
+		Return an iterator over all the nodes in the graph.  
 	
-		If obj and data are False, the iterator returns node indices.  
-		If obj and/or data is True, then the iterator returns tuples of (node index [,node object] [,node data]).
+		By default, the iterator yields node indices.  If either ``obj`` or ``data`` are ``True``, then 
+		tuples are yielded.  For example::
+		
+			for nidx in G.node_iter_():
+				print 'Node index:',nidx
+				
+			for nidx,obj in G.node_iter_(obj=True):
+				print 'Node index:',nidx,'Node object:',obj
+				
+			for nidx,obj,data in G.node_iter_(True,True):
+				print nidx,obj,data
+		
 		"""
 		return NodeIterator(self,obj,data,False)
 				
 	cpdef nodes(Graph self,data=False):
 		"""
-		Return a list of nodes.  If data is False, then the result is a
-		list of the node objects.  If data is True, then the result is list of
-		tuples containing the node object and associated data.
+		Return a list of the node objects in the graph.
+		
+		.. note::
+			This method is only valid for graphs in which all nodes have a node object.
+		
+		By default, the list contains node objects for all nodes.  If ``data`` is ``True``, 
+		then the list contains tuples containing the node object and associated data.
 		"""
 		result = []
 		
@@ -902,16 +1024,16 @@ cdef class Graph:
 
 	cpdef nodes_(Graph self,obj=False,data=False):
 		"""
-		Return a numpy array of the nodes.  If obj and data are False, then the result is a
-		1-D array of the node indices.  If obj or data is True, then the result is a 2-D 
-		array in which the first column is node indices and the second column is
-		the node obj/data.  If obj and data are True, then the result is a 2-D array
-		in which the first column node indices, the second column is the node object, and the
-		third column is the node data.
+		Return a numpy array of the nodes.  
 		
-		if obj and data are both False, then the numpy array returned has type int.  When used
-		with cython, this fact can be used to dramatically increase the speed of code iterating
-		over a graph's nodes.
+		By default, the array is 1-D and contains only node indices.  If either ``obj`` or ``data``
+		are ``True``, then the result is a 2-D matrix in which the additional columns contain 
+		the node object and/or data.
+		
+		.. note:: 
+			If ``obj`` and ``data`` are both ``False``, then the numpy array returned has type ``int``.  When used
+			with cython, this fact can be used to dramatically increase the speed of code iterating
+			over a graph's nodes.
 		"""
 		ndim = 1 if not data and not obj else (2 if not data or not obj else 3)
 
@@ -974,13 +1096,14 @@ cdef class Graph:
 		
 	cpdef rm_node(Graph self,nobj):
 		"""
-		Remove the node associated with node object nobj.
+		Remove the node associated with node object ``nobj``.  Any edges incident to the node are also removed
+		from the graph.
 		"""
 		self.rm_node_(self.node_idx_lookup[nobj])
 	
 	cpdef rm_node_(Graph self,int nidx):
 		"""
-		Remove the node with index nidx.
+		Remove the node with index ``nidx``. Any edges incident to the node are also removed from the graph.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1025,13 +1148,13 @@ cdef class Graph:
 	
 	cpdef degree(Graph self,nobj):
 		"""
-		Return the degree of node with object nobj.
+		Return the degree of node with object ``nobj``.
 		"""
 		return self.degree_(self.node_idx_lookup[nobj])
 
 	cpdef degree_(Graph self,int nidx):
 		"""
-		Return the degree of node with index nidx.
+		Return the degree of node with index ``nidx``.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1040,7 +1163,7 @@ cdef class Graph:
 	
 	def __getitem__(self,nobj):
 		"""
-		Get the data for the node with the object given
+		Get the data for the node associated with ``nobj``.
 		"""
 		return self.node_data_lookup[self.node_idx_lookup[nobj]]
 	

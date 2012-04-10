@@ -307,7 +307,7 @@ class GraphTestCase(unittest.TestCase):
 		G.add_edge(2,2)
 		
 		M = G.matrix()
-		
+		inf = float('infinity')
 		self.assertEquals(M[0,0],0)
 		self.assertEquals(M[0,1],1)
 		self.assertEquals(M[0,2],0)
