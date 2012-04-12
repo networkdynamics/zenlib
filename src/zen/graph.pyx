@@ -403,7 +403,8 @@ cdef class Graph:
 		.. note:: that node and edge indices are preserved in this copy.
 		
 		**Returns**: 
-			:py:class:`zen.Graph`. A new graph object that contains an independent copy of the connectivity of this graph, but a shallow copy of node objects and node/edge data.
+			:py:class:`zen.Graph`. A new graph object that contains an independent copy of the connectivity of this graph.  
+			Node objects and node/edge data in the new graph reference the same objects as in the old graph.
 		"""
 		cdef Graph G = Graph()
 		cdef int i,j,eidx,eidx2
@@ -1202,11 +1203,39 @@ cdef class Graph:
 	
 	cpdef int add_edge(self, u, v, data=None, double weight=1) except -1:
 		"""
-		Add an edge to the graph from the src node to the tgt node.
-		src and tgt are node objects.  If data is not None, then it
-		is used as the data associated with this edge.
+		Add an edge to the graph.
 		
-		This function returns the index for the new edge.
+		As a convenience, if ``u`` or ``v`` are not valid node objects, they will be added to the graph
+		and then the edge will be added.::
+		
+			G = Graph()
+			
+			print len(G) # prints '0'
+			G.add_edge(1,2) # First nodes 1 and 2 will be added, then the edge will be added
+			print len(G) # prints '2' since there are now two nodes in the graph.
+			
+		.. note::
+			In undirected graphs, the edges (u,v) and (v,u) refer to the same edge.  Thus the following code
+			will raise an error::
+			
+				G = Graph()
+				G.add_edge(1,2)
+				G.add_edge(2,1) # a ZenException will be raised because the edge already exists.
+			
+		
+		**Args**:
+		
+			* ``u``: one endpoint of the graph. 
+			* ``v``: another endpoint of the graph.
+			* ``data [=None]``: an optional data object to associate with the edge
+			* ``weight [=1]`` (float): the weight of the edge.
+			
+		**Returns**:
+			``integer``. The index for the newly created edge.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the edge already exists in the graph.
+			
 		"""
 		cdef int nidx1, nidx2
 		
@@ -1224,10 +1253,35 @@ cdef class Graph:
 	
 	cpdef int add_edge_(Graph self, int u, int v, data=None, double weight=1) except -1:
 		"""
-		Add an edge to the graph connecting nodes with indices u and v.
-		If data is not None, then it is used as the data associated with this edge.
-	
-		This function returns the index for the new edge.
+		Add an edge to the graph.
+		
+		This version of the edge addition functionality uses node indices (not node objects).
+		Unlike in :py:method:``.add_edge``, if ``u`` or ``v`` are not valid node indices, then an
+		exception will be raised.
+			
+		.. note::
+			In undirected graphs, the edges (u,v) and (v,u) refer to the same edge.  Thus the following code
+			will raise an error::
+			
+				G = Graph()
+				n1 = G.add_node(1)
+				n2 = G.add_node(2)
+				G.add_edge_(n1,n2)
+				G.add_edge(n2,n1) # a ZenException will be raised because the edge already exists.
+			
+		
+		**Args**:
+		
+			* ``u`` (int): one endpoint of the graph. This is a node index.
+			* ``v`` (int): another endpoint of the graph. This is a node index.
+			* ``data [=None]``: an optional data object to associate with the edge
+			* ``weight [=1]`` (float): the weight of the edge.
+			
+		**Returns**:
+			``integer``. The index for the newly created edge.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the edge already exists in the graph or if either of the node indices are invalid.
 		"""	
 		cdef int tmp
 		
@@ -1253,7 +1307,37 @@ cdef class Graph:
 		return eidx
 
 	cpdef add_edge_x(self, int eidx, int u, int v, data, double weight):
+		"""
+		Adds an edge to the graph with a specific edge index.
 	
+		This function permits very high-performance population of the graph data structure
+		with edges by allowing the calling function to specify the edge index of the edge being added.  
+		In general, this should only be done when the edge indices have been obtained from a previously 
+		stored graph data structure.
+	
+		.. DANGER:: 
+			This function should be used with great care because by specifying a edge index, the 
+			calling function is forcing Zen to access specific parts of the memory allocated for edge.  
+			Unless you are writing high-performance network loading code, you should not be calling
+			this function directly.
+		
+			When used incorrectly, this method call can irreparably damage the integrity of the graph object, 
+			leading to incorrect results or, more likely, segmentation faults.
+		
+		**Args**:
+	
+			* ``eidx`` (int): the edge index this node should be assigned.
+			* ``u`` (int): one endpoint of the edge. This is a node index.
+			* ``v`` (int): the other endpoint of the edge. This is a node index.
+			* ``nobj``: the node object that will be associated with this node.  If ``None``, then no object will be
+				assigned to this node.
+			* ``data``: the data object that will be associated with this node.  If ``None``, then no data will be 
+				assigned to this node.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the edge already exists in the graph, the edge index is already in use, or either of the
+			node indices are invalid.
+		"""
 		cdef int i
 	
 		if eidx < self.edge_capacity and self.edge_info[eidx].exists == True:
@@ -1382,13 +1466,21 @@ cdef class Graph:
 	
 	cpdef rm_edge(Graph self,u,v):
 		"""
-		Remove the edge between node objects u and v.
+		Remove the edge between node objects ``u`` and ``v``.
+		
+		**Raises**:
+			
+			* :py:exc:`ZenException`: if the edge index is invalid.
+			* :py:exc:`KeyError`: if the node objects are invalid.
 		"""
 		self.rm_edge_(self.edge_idx(u,v))
 	
 	cpdef rm_edge_(Graph self,int eidx):
 		"""
-		Remove the edge with index eidx.
+		Remove the edge with index ``eidx``.
+		
+		**Raises**:
+			:py:exc:`ZenException`: if ``eid`` is an invalid edge index.
 		"""
 		if eidx >= self.edge_capacity:
 			raise ZenException, 'Invalid edge idx %d' % eidx
@@ -1438,16 +1530,16 @@ cdef class Graph:
 	
 	cpdef endpoints(Graph self,int eidx):
 		"""
-		Return the node objects at the endpoints of the edge with index eidx.
+		Return the node objects at the endpoints of the edge with index ``eidx``.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
-			raise ZenException, 'Edge with ID %d does not exist' % eidx
+			raise ZenException, 'Edge index %d does not exist' % eidx
 	
 		return self.node_obj_lookup[self.edge_info[eidx].u], self.node_obj_lookup[self.edge_info[eidx].v]
 		
 	cpdef endpoints_(Graph self,int eidx):
 		"""
-		Return the node indices at the endpoints of the edge with index eidx.
+		Return the node indices at the endpoints of the edge with index ``eidx``.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
@@ -1456,8 +1548,18 @@ cdef class Graph:
 	
 	cpdef endpoint(Graph self,int eidx,u):
 		"""
-		Return the other node (not u) that is the endpoint of this edge.  Note, no check is done
-		to ensure that u is an endpoint of the edge.
+		Return the object for the node (not u) that is the endpoint of this edge.
+		
+		.. note::
+			For performance reasons, no check is done to ensure that u is an endpoint of the edge.
+			
+		**Args**:
+		
+			* ``eidx`` (int): a valid edge index.
+			* ``u``: the object for one endpoint of the edge with index ``eidx``.
+			
+		**Returns**:
+			``object``. The object for the node that is the other endpoint of edge ``eidx``.
 		"""
 		if u not in self.node_idx_lookup:
 			raise ZenException, 'Invalid node object %s' % str(u)
@@ -1468,10 +1570,18 @@ cdef class Graph:
 	
 	cpdef int endpoint_(Graph self,int eidx,int u) except -1:
 		"""
-		Return the other endpoint for edge eidx besides the one given (u).
+		Return the index for the node (not u) that is the endpoint of this edge.
+	
+		.. note::
+			For performance reasons, no check is done to ensure that u is an endpoint of the edge.
 		
-		Note that this method is implemented for speed and no check is made to ensure that
-		u is one of the edge's endpoints.
+		**Args**:
+	
+			* ``eidx`` (int): a valid edge index.
+			* ``u`` (int): the index for one endpoint of the edge with index ``eidx``.
+		
+		**Returns**:
+			``integer``. The index for the node that is the other endpoint of edge ``eidx``.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
@@ -1482,18 +1592,30 @@ cdef class Graph:
 			return self.edge_info[eidx].u
 		
 	cpdef set_weight(Graph self,u,v,double w):
+		"""
+		Set the weight of the edge between nodes ``u`` and ``v`` (node objects) to ``w``.
+		"""
 		self.set_weight_(self.edge_idx(u,v),w)
 
 	cpdef set_weight_(Graph self,int eidx,double w):
+		"""
+		Set the weight of the edge with index ``eidx`` to ``w``.
+		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
 		
 		self.edge_info[eidx].weight = w
 		
 	cpdef double weight(Graph self,u,v):
+		"""
+		Return the weight of the edge between nodes ``u`` and ``v`` (node objects).
+		"""
 		return self.weight_(self.edge_idx(u,v))
 
 	cpdef double weight_(Graph self,int eidx):
+		"""
+		Return the weight of the edge with index ``eidx``.
+		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
 			
@@ -1501,20 +1623,18 @@ cdef class Graph:
 		
 	cpdef set_edge_data(Graph self,u,v,data):
 		"""
-		Associate a new data object with a specific edge in the network.
+		Associate a data object with the edge between nodes ``u`` and ``v`` (node objects).
+		
+		The value of ``data`` will replace any data object currently associated with the edge.
 		If data is None, then any data associated with the edge is deleted.
 		"""
 		self.set_edge_data_(self.edge_idx(u,v),data)
 		
-	cpdef edge_data(Graph self,u,v):
-		"""
-		Return the data associated with the edge connecting u and v.
-		"""
-		return self.edge_data_(self.edge_idx(u,v))
-		
 	cpdef set_edge_data_(Graph self,int eidx,data):
 		"""
-		Associate a new data object with a specific edge in the network.
+		Associate a data object with the edge with index ``eidx``.
+	
+		The value of ``data`` will replace any data object currently associated with the edge.
 		If data is None, then any data associated with the edge is deleted.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
@@ -1525,17 +1645,18 @@ cdef class Graph:
 				del self.edge_data_lookup[eidx]
 		else:
 			self.edge_data_lookup[eidx] = data
-		
-	cpdef edge_data_(Graph self,int eidx,int v=-1):
+
+	cpdef edge_data(Graph self,u,v):
 		"""
-		Return the data associated with the edge with index eidx.
-		
-		If v is specified, then the data associated with the edge
-		connecting nodes with indices eidx and v is returned.
+		Return the data associated with the edge between ``u`` and ``v`` (node objects).
 		"""
-		if v != -1:
-			eidx = self.edge_idx_(eidx,v)			
-		elif eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
+		return self.edge_data_(self.edge_idx(u,v))
+		
+	cpdef edge_data_(Graph self,int eidx):
+		"""
+		Return the data associated with the edge with index ``eidx``.
+		"""
+		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
 	
 		if eidx in self.edge_data_lookup:
@@ -1545,9 +1666,8 @@ cdef class Graph:
 			
 	cpdef bool has_edge(Graph self,u,v):
 		"""
-		Return True if the graph contains an edge connecting node objects u and v.
-		
-		If u or v are not in the graph, this method returns False.
+		Return ``True`` if the graph contains an edge between ``u`` and ``v`` (node objects).  
+		If either node object is not in the graph, this method returns ``False``.
 		"""
 		if u not in self.node_idx_lookup:
 			return False
@@ -1561,9 +1681,10 @@ cdef class Graph:
 		
 	cpdef bool has_edge_(Graph self,int u,int v):
 		"""
-		Return True if the graph contains an edge connecting nodes with indices u and v.
+		Return ``True`` if the graph contains an edge between ``u`` and ``v`` (node indices).
 		
-		Both u and v must be valid node indices.
+		**Raises**:
+			:py:exc:`ZenException`: if either ``u`` or ``v`` are invalid node indices.
 		"""
 		if u >= self.node_capacity or not self.node_info[u].exists:
 			raise ZenException, 'Invalid node (u) index %d' % u
@@ -1582,17 +1703,17 @@ cdef class Graph:
 		cdef int pos = self.find_elist_insert_pos(elist,self.node_info[u].degree,u,v)
 		return pos < self.node_info[u].degree and self.edge_info[elist[pos]].v == v
 	
-	cpdef edge_idx(Graph self, u, v, data=False):
+	cpdef int edge_idx(Graph self, u, v):
 		"""
-		Return the edge index for the edge connecting node objects u and v.
+		Return the edge index for the edge between ``u`` and ``v`` (node objects).
 		"""
 		u = self.node_idx_lookup[u]
 		v = self.node_idx_lookup[v]
-		return self.edge_idx_(u,v,data)
+		return self.edge_idx_(u,v) #,data)
 	
-	cpdef edge_idx_(Graph self, int u, int v, data=False):
+	cpdef int edge_idx_(Graph self, int u, int v):
 		"""
-		Return the edge index for the edge connecting node indices u and v.
+		Return the edge index for the edge between ``u`` and ``v`` (node indices).
 		"""
 		if u >= self.node_capacity or not self.node_info[u].exists:
 			raise ZenException, 'Invalid node (u) index %d' % u
@@ -1611,10 +1732,7 @@ cdef class Graph:
 		cdef int pos = self.find_elist_insert_pos(elist,self.node_info[u].degree,u,v)
 		
 		if pos < self.node_info[u].degree and self.edge_info[elist[pos]].v == v:
-			if data is True:
-				return elist[pos], self.edge_data_lookup[elist[pos]]
-			else:
-				return elist[pos]
+			return elist[pos]
 		else:			
 			raise ZenException, 'Edge (%d,%d) does not exist.' % (u,v)
 	
@@ -1622,11 +1740,37 @@ cdef class Graph:
 		"""
 		Return an iterator over edges in the graph.
 		
-		If nobj is None, then all edges in the graph are iterated over.  Otherwise
-		the edges touching the node with object nobj are iterated over.
+		By default, the iterator will cover all edges in the graph, returning each
+		edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
 		
-		If data is False, then the iterator returns a tuple (src,tgt).  Otherwise, the
-		iterator returns a tuple (src,tgt,data).
+		**Args**:
+			
+			* ``nobj [=None]``: if ``nobj`` is specified (not ``None``), then the edges touching the node with 
+				object ``nobj`` are iterated over.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
+				
+		Consider the following code which shows some of the different usages::
+		
+			G = Graph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
+		
+			print len(list(G.edges_iter())) # this prints 3 - there are 3 edges in the graph
+			print len(list(G.edges_iter(1))) # this prints 2 - there are 2 edges attached to node 1
+			
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,data in G.edges_iter(data=True):
+				print u,v,data
+				
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,w in G.edges_iter(weight=True):
+				print u,v,data
 		"""
 		if nobj is None:
 			return AllEdgeIterator(self,weight,data,True)
@@ -1636,13 +1780,39 @@ cdef class Graph:
 	cpdef edges_iter_(Graph self,int nidx=-1,bool data=False,bool weight=False):
 		"""
 		Return an iterator over edges in the graph.
+		
+		By default, the iterator will cover all edges in the graph, returning each
+		edge as the edge index.
+		
+		**Args**:
+			
+			* ``nidx [=-1]`` (int): if ``nidx`` is specified (``>= 0``), then the edges touching the node with 
+				index ``nidx`` are iterated over.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
+					
+		Consider the following code which shows some of the different usages::
 	
-		If nidx is None, then all edges in the graph are iterated over.  Otherwise
-		the edges touching the node with index nidx are iterated over.
+			G = Graph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
 	
-		If data is False, then the iterator returns edge indices.  Otherwise, the
-		iterator returns a tuple (edge index,data).
-		"""	
+			print len(list(G.edges_iter_())) # this prints 3 - there are 3 edges in the graph
+			print len(list(G.edges_iter_(G.node_idx(1)))) # this prints 2 - there are 2 edges attached to node 1
+		
+			# this will print the endpoints and data for all edges in the graph
+			for eidx,data in G.edges_iter_(data=True):
+				print eidx,data
+				
+			# this will print the endpoints and data for all edges in the graph
+			for eidx,w in G.edges_iter_(weight=True):
+				print eidx,w					
+		"""
 		if nidx == -1:
 			return AllEdgeIterator(self,weight,data,False)
 		else:
@@ -1653,8 +1823,40 @@ cdef class Graph:
 	
 	cpdef edges(Graph self,nobj=None,bool data=False,bool weight=False):
 		"""
-		Return edges connected to a node.  If nobj is not specified, then
-		all edges in the network are returned.
+		Return a list of edges in the graph.
+	
+		By default, the list will contain all edges in the graph, each
+		edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
+	
+		**Args**:
+		
+			* ``nobj [=None]``: if ``nobj`` is specified (not ``None``), then only the edges touching the node with 
+				object ``nobj`` are included in the list.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the data object associated with the edge
+			 	is added into the tuple returned for each edge (e.g., ``(u,v,d)``).
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the weight of the edge is added
+				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
+				value of the ``data`` argument).
+			
+		Consider the following code which shows some of the different usages::
+	
+			G = Graph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
+	
+			print len(G.edges()) # this prints 3 - there are 3 edges in the graph
+			print len(G.edges(1)) # this prints 2 - there are 2 edges attached to node 1
+		
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,data in G.edges(data=True):
+				print u,v,data
+			
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,w in G.edges(weight=True):
+				print u,v,data
 		"""
 		cdef int num_edges
 		cdef int* elist
@@ -1711,12 +1913,37 @@ cdef class Graph:
 				
 	cpdef edges_(Graph self,int nidx=-1,bool data=False,bool weight=False):
 		"""
-		Return a numpy array of edges.  If nidx is None, then all edges will be returned.
-		If nidx is not None, then the edges for the node with nidx will be returned.
+		Return a ``numpy.ndarray`` containing edges in the graph.
+	
+		By default, the return value is a 1D array, ``R``, that contains all edges in the graph, where ``R[i]`` is
+		an edge index.
+	
+		**Args**:
 		
-		If data is False, then the numpy array will be a 1-D array containing edge indices.  If data
-		is True, then the numpy array will be a 2-D array containing indices in the first column and
-		descriptor objects in the second column.
+			* ``nidx [=-1]`` (int): if ``nidx`` is specified (``>= 0``), then only the edges touching the node with 
+				index ``nidx`` are included in the array returned.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+			 	such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the data object associated with the edge.
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+				such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the weight of the edge.
+				
+		When additional columns are added, they will always be in the order edge index, data, weight. 
+		Consider the following code which shows some of the different usages::
+
+			G = Graph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
+
+			print G.edges_().shape # this prints (3,) - there are 3 edges in the graph and 1 column
+			print G.edges_(G.node_idx(1)).shape # this prints (2,) - there are 2 edges attached to node 1
+	
+			# this will print the endpoints and data for all edges in the graph
+			print G.edges_(data=True).shape # this prints (3,2)
+			print G.edges_(weight=True).shape # this prints (3,2)
+			print G.edges_(data=True,weight=True).shape # this prints (3,3)
 		"""
 		cdef int num_edges
 		cdef int* elist
@@ -1781,15 +2008,40 @@ cdef class Graph:
 	
 	cpdef grp_edges_iter(Graph self,nbunch,bool data=False,bool weight=False):
 		"""
-		Return an iterator over the edges of nodes in nbunch.  If data is 
-		True then tuples (src,tgt,data) are returned.
+		Return an iterator over the edges of a group of nodes.  
+		
+		By default, the iterator will return each edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
+		
+		**Args**:
+		
+			* ``nbunch``: an iterable (usually a list) that yields node objects.  These are
+				the nodes whose incident edges the iterator will return.
+			
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
 		"""
 		return SomeEdgeIterator(self,[self.node_idx_lookup[x] for x in nbunch],weight,data,True)
 		
 	cpdef grp_edges_iter_(Graph self,nbunch,bool data=False,bool weight=False):
 		"""
-		Return an iterator over the edges of node indices in nbunch.  If data is 
-		True then tuples (eidx,data) are returned.
+		Return an iterator over edges incident to some nodes in the graph.
+		
+		By default, the iterator will return each edge as the edge index.
+		
+		**Args**:
+			
+			* ``nidx [=-1]`` (int): if ``nidx`` is specified (``>= 0``), then only the edges touching the node with 
+				index ``nidx`` are iterated over.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
+
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
@@ -1799,8 +2051,16 @@ cdef class Graph:
 						
 	cpdef neighbors(Graph self,nobj,data=False):
 		"""
-		Return a list of nodes that are neighbors of the node nobj.  If data is True, then a 
-		list of tuples is returned, each tuple containing a neighbor node object and its data.
+		Return a list of a node's immediate neighbors.
+
+		By default, the list will contain the node object for each immediate neighbor of ``nobj``.
+
+		**Args**:
+	
+			* ``nobj``: this is the node object identifying the node whose neighbors to retrieve.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned containing the node
+			 	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		cdef int num_edges
 		cdef int* elist
@@ -1837,14 +2097,21 @@ cdef class Graph:
 		
 	cpdef neighbors_(Graph self,int nidx,obj=False,data=False):
 		"""
-		Return a numpy array of node ids corresponding to all neighbors of the node with id nid.
-		
-		If obj and data are False, then the numpy array will be a 1-D array containing node indices.  If obj or data
-		are True, then the numpy array will be a 2-D array containing indices in the first column and
-		the node object/data object in the second column.  If both obj and data are True, then the numpy array will be
-		a 2-D array containing indices in the first column, the node object in the second, and the node data in 
-		the third column.
-		"""		
+		Return an ``numpy.ndarray`` containing a node's immediate neighbors.
+
+		By default, the return value will be a 1D array containing the node index for each immediate neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose neighbors to retrieve.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a 2D array, ``R`` is returned in which ``R[i,0]`` is the index
+				of the neighbor and ``R[i,1]`` is the node object associated with it.
+
+			* ``data [=False]`` (boolean): if ``True``, then a 2D array, ``R``, is returned with the final column containing the
+				data object associated with the neighbor (e.g., ``R[i,0]`` is the index	of the neighbor and ``R[i,1]`` or ``R[i,2]``
+				is the data object, depending on the value of the ``nobj`` argument).
+		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
 			
@@ -1912,16 +2179,35 @@ cdef class Graph:
 		
 	cpdef neighbors_iter(Graph self,nobj,data=False):
 		"""
-		Return an iterator over the neighbors of node with object nobj.  If data is 
-		True then tuples (obj,data) are returned.
+		Return an iterator over a node's immediate neighbors.
+
+		By default, the iterator will yield the node object for each immediate neighbor of ``nobj``.
+
+		**Args**:
+
+			* ``nobj``: this is the node object identifying the node whose neighbors to iterate over.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return NeighborIterator(self,self.node_idx_lookup[nobj],False,data,True)
 		
 	cpdef neighbors_iter_(Graph self,int nidx,obj=False,data=False):
 		"""
-		Return an iterator over the neighbors of node with index nidx.  If obj is True, then
-		tuples (nidx,obj) are returned.  If data is True then tuples (obj,data) are returned.
-		If both are True, then tuples (nix,obj,data) are returned.
+		Return an iterator over a node's immediate neighbors.
+
+		By default, the iterator will yield the node index for each immediate neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose neighbors to iterate over.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+				
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1930,16 +2216,35 @@ cdef class Graph:
 			
 	cpdef grp_neighbors_iter(Graph self,nbunch,data=False):
 		"""
-		Return an iterator over the neighbors of nodes in nbunch.  If data is 
-		True then tuples (nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate neighbors.
+
+		By default, the iterator will yield the node object for each immediate neighbor of nodes in ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node object over whose neighbors to iterate.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return SomeNeighborIterator(self,[self.node_idx_lookup[x] for x in nbunch],False,data,True)
 
 	cpdef grp_neighbors_iter_(Graph self,nbunch,obj=False,data=False):
 		"""
-		Return an iterator over the neighbors of nodes in nbunch.  If obj is True
-		then tuples (nidx,nobj) are returned.  If data is True then tuples (nidx,data) 
-		are returned.  If both are True, then tuples (nidx,nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate neighbors.
+
+		By default, the iterator will yield the node index for each immediate neighbor of nodes in the iterable ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node indices over whose neighbors to iterate.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+			
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:

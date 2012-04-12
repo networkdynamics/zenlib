@@ -142,15 +142,15 @@ cdef class Graph:
 	
 	cpdef set_edge_data_(Graph self,int eidx,data)
 	
-	cpdef edge_data_(Graph self,int eidx,int v=*)
+	cpdef edge_data_(Graph self,int eidx)
 	
 	cpdef bool has_edge(Graph self,u,v)
 		
 	cpdef bool has_edge_(Graph self,int u,int v)
 	
-	cpdef edge_idx(Graph self, u, v, data=*)
+	cpdef int edge_idx(Graph self, u, v)
 	
-	cpdef edge_idx_(Graph self, int u, int v, data=*)
+	cpdef int edge_idx_(Graph self, int u, int v)
 	
 	cpdef edges_iter(Graph self,nobj=*,bool data=*,bool weight=*)
 	

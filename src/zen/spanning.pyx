@@ -57,7 +57,7 @@ cpdef minimum_spanning_tree(Graph G):
 			parent = node_parents[u]
 			new_parent = node_mapping[parent]
 			node_mapping[u] = Gnew.add_node(G.node_object(u), G.node_data_(u))
-			Gnew.add_edge_(node_mapping[u], new_parent, G.edge_data_(u, parent), G.weight_(G.edge_idx_(u,parent)))
+			Gnew.add_edge_(node_mapping[u], new_parent, G.edge_data_(G.edge_idx_(u, parent)), G.weight_(G.edge_idx_(u,parent)))
 			Vorig[u] = FALSE
 		# If neighbor v is still not in the new Graph, and its "key" can be decreased based on new node u, do it.
 		# loop over in edges
