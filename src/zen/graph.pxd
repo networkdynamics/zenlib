@@ -18,9 +18,9 @@ cdef struct EdgeInfo:
 cdef class Graph:
 	
 	# attributes
-	cdef public double node_grow_factor
-	cdef public double edge_list_grow_factor
-	cdef public double edge_grow_factor
+	cdef readonly double node_grow_factor
+	cdef readonly double edge_list_grow_factor
+	cdef readonly double edge_grow_factor
 	
 	cdef long num_changes
 	cdef readonly int num_nodes
@@ -148,9 +148,9 @@ cdef class Graph:
 		
 	cpdef bool has_edge_(Graph self,int u,int v)
 	
-	cpdef int edge_idx(Graph self, u, v)
+	cpdef edge_idx(Graph self, u, v)
 	
-	cpdef int edge_idx_(Graph self, int u, int v)
+	cpdef edge_idx_(Graph self, int u, int v)
 	
 	cpdef edges_iter(Graph self,nobj=*,bool data=*,bool weight=*)
 	

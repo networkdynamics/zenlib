@@ -71,19 +71,30 @@ cdef class Graph:
 	This class provides a highly-optimized implementation of an undirected graph.  Duplicate edges are not allowed.
 	
 	Public properties include:
-		- max_node_index - the largest node index currently in use
-		- max_edge_index - the largest edge index currently in use
+	
+		* ``max_node_index`` (int): the largest node index currently in use
+		* ``max_edge_index`` (int): the largest edge index currently in use
+		* ``edge_list_capacity`` (int): the initial number of edge positions that will be allocated in a newly created node's edge list.
+		* ``node_grow_factor`` (int): the multiple by which the node storage array will grow when its capacity is exceeded.
+		* ``edge_grow_factor`` (int): the multiple by which the edge storage array will grow when its capacity is exceeded.
+		* ``edge_list_grow_factor`` (int): the multiple by which the a node's edge list storage array will grow when its capacity is exceeded.
 	"""
 	
-	def __cinit__(Graph self,node_capacity=100,edge_capacity=100,edge_list_capacity=5):
+	def __init__(Graph self,**kwargs):
 		"""
-		Initialize the graph.
+		Create a new :py:class:`Graph` object.
 		
-		  node_capacity is the initial number of nodes this graph has space to hold
-		  edge_capacity is the initial number of edges this graph has space to hold
-		  edge_list_capacity is the initial number of edges that each node is allocated space for initially.
+		**Keyword Args**:
+		
+		  * ``node_capacity [=100]`` (int): the initial number of nodes this graph has space to hold.
+		  * ``edge_capacity [=100]`` (int): the initial number of edges this graph has space to hold.
+		  * ``edge_list_capacity [=5]`` (int): the initial number of edges that each node is allocated space for initially.
 		
 		"""
+		node_capacity = kwargs.pop('node_capacity',100)
+		edge_capacity = kwargs.pop('edge_capacity',100)
+		edge_list_capacity = kwargs.pop('edge_list_capacity',5)
+		
 		cdef int i
 		
 		self.first_free_node = -1
@@ -441,7 +452,7 @@ cdef class Graph:
 		Return ``True`` if the graph is in compact form.  
 		
 		A graph is compact if there are no unallocated node or edge indices.
-		The graph can be compacted by calling the :py:meth:`.compact` method.
+		The graph can be compacted by calling the :py:meth:`Graph.compact` method.
 		"""
 		return (self.num_nodes == (self.max_node_idx+1) and self.num_edges == (self.max_edge_idx+1))
 	
@@ -624,7 +635,7 @@ cdef class Graph:
 					
 					V = M[1,:] # the values in V are meaningless because a node with index 1 doesn't exist
 					
-				This situation can be resolved by making a call to :py:meth:`.compact` prior to calling this function::
+				This situation can be resolved by making a call to :py:meth:`Graph.compact` prior to calling this function::
 				
 					G = Graph()
 					G.add_node('a') # this node has index 0
@@ -1703,7 +1714,7 @@ cdef class Graph:
 		cdef int pos = self.find_elist_insert_pos(elist,self.node_info[u].degree,u,v)
 		return pos < self.node_info[u].degree and self.edge_info[elist[pos]].v == v
 	
-	cpdef int edge_idx(Graph self, u, v):
+	cpdef edge_idx(Graph self, u, v):
 		"""
 		Return the edge index for the edge between ``u`` and ``v`` (node objects).
 		"""
@@ -1711,7 +1722,7 @@ cdef class Graph:
 		v = self.node_idx_lookup[v]
 		return self.edge_idx_(u,v) #,data)
 	
-	cpdef int edge_idx_(Graph self, int u, int v):
+	cpdef edge_idx_(Graph self, int u, int v):
 		"""
 		Return the edge index for the edge between ``u`` and ``v`` (node indices).
 		"""
@@ -2033,8 +2044,8 @@ cdef class Graph:
 		
 		**Args**:
 			
-			* ``nidx [=-1]`` (int): if ``nidx`` is specified (``>= 0``), then only the edges touching the node with 
-				index ``nidx`` are iterated over.
+			* ``nbunch``: an iterable (usually a list) that yields node indices.  These are
+				the nodes whose originating edges the iterator will return.
 		
 			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
 				and the data associated with the edge (e.g., ``(eidx,d)``).

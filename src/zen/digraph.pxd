@@ -25,9 +25,9 @@ cdef struct EdgeInfo:
 cdef class DiGraph:
 	
 	# attributes
-	cdef public double node_grow_factor
-	cdef public double edge_list_grow_factor
-	cdef public double edge_grow_factor
+	cdef readonly double node_grow_factor
+	cdef readonly double edge_list_grow_factor
+	cdef readonly double edge_grow_factor
 	
 	cdef long num_changes
 	cdef readonly int num_nodes
@@ -69,7 +69,7 @@ cdef class DiGraph:
 	
 	cpdef np.ndarray[np.int_t] add_nodes(self,int num_nodes,node_obj_fxn=*)
 	
-	cpdef int add_node(DiGraph self,nobj=*,data=*)
+	cpdef int add_node(DiGraph self,nobj=*,data=*) except -1
 	
 	cdef add_to_free_node_list(self,int nidx)
 	
@@ -173,7 +173,7 @@ cdef class DiGraph:
 	
 	cpdef set_edge_data_(DiGraph self,int eidx,data)
 	
-	cpdef edge_data_(DiGraph self,int eidx,int dest=*)
+	cpdef edge_data_(DiGraph self,int eidx)
 	
 	cpdef bool has_edge(DiGraph self,src,tgt)
 		

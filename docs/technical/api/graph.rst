@@ -7,7 +7,7 @@ The undirected graph
 Graph construction
 ------------------
 
-.. autoclass:: zen.Graph()
+.. automethod:: zen.Graph.__init__([node_capacity=100,edge_capacity=100,edge_list_capacity=5])
 
 .. automethod:: zen.Graph.copy()
 
@@ -71,7 +71,7 @@ Edges
 
 .. automethod:: zen.Graph.set_weight(u,v,weight)
 
-.. automethod:: zen.Graph.set_weight_(u,v,weight)
+.. automethod:: zen.Graph.set_weight_(eidx,weight)
 
 Accessing nodes and edges
 -------------------------
@@ -113,6 +113,10 @@ Edges
 .. automethod:: zen.Graph.endpoints(eidx)
 
 .. automethod:: zen.Graph.endpoints_(eidx)
+
+.. automethod:: zen.Graph.endpoint(eidx,u)
+
+.. automethod:: zen.Graph.endpoint_(eidx,u)
 
 .. automethod:: zen.Graph.edge_idx(u,v)
 

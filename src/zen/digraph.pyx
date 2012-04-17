@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 import numpy
 import numpy as np
 cimport numpy as np
@@ -37,7 +35,13 @@ cdef inline int imin(int a, int b):
 		return a
 	else:
 		return b
-		
+
+"""
+This data structure contains node info (in C-struct format) for fast array-based lookup.
+
+When a node info entry is part of the free node list, the indegree points to the next
+entry in the list and the in_capacity points to the previous entry in the list.
+"""		
 cdef struct NodeInfo:
 	# This data structure contains node info (in C-struct format) for fast array-based lookup.
 	bint exists
@@ -52,6 +56,10 @@ cdef struct NodeInfo:
 	
 cdef int sizeof_NodeInfo = sizeof(NodeInfo)
 
+"""
+When an edge info entry is part of the free edge list, src points to the next entry
+in the list and tgt points to the previous entry.
+"""
 cdef struct EdgeInfo:
 	bint exists
 	int src # Node idx for the source of the edge
@@ -73,19 +81,30 @@ cdef class DiGraph:
 	This class provides a highly-optimized implementation of a directed graph.  Duplicate edges are not allowed.
 	
 	Public properties include:
-		- max_node_index - the largest node index currently in use
-		- max_edge_index - the largest edge index currently in use
+	
+		* ``max_node_index`` (int): the largest node index currently in use
+		* ``max_edge_index`` (int): the largest edge index currently in use
+		* ``edge_list_capacity`` (int): the initial number of edge positions that will be allocated in a newly created node's in and out edge lists.
+		* ``node_grow_factor`` (int): the multiple by which the node storage array will grow when its capacity is exceeded.
+		* ``edge_grow_factor`` (int): the multiple by which the edge storage array will grow when its capacity is exceeded.
+		* ``edge_list_grow_factor`` (int): the multiple by which the a node's in/out edge list storage array will grow when its capacity is exceeded.
 	"""
 	
-	def __cinit__(DiGraph self,node_capacity=100,edge_capacity=100,edge_list_capacity=5):
+	def __init__(DiGraph self,**kwargs):
 		"""
-		Initialize the directed graph.
+		Create a new :py:class:`DiGraph` object.
 		
-		  node_capacity is the initial number of nodes this graph has space to hold
-		  edge_capacity is the initial number of edges this graph has space to hold
-		  edge_list_capacity is the initial number of edges that each node is allocated space for initially.
+		**Keyword Args**:
+		
+		  * ``node_capacity [=100]`` (int): the initial number of nodes this graph has space to hold.
+		  * ``edge_capacity [=100]`` (int): the initial number of edges this graph has space to hold.
+		  * ``edge_list_capacity [=5]`` (int): the initial number of edges that each node is allocated space for initially.
 		
 		"""
+		node_capacity = kwargs.pop('node_capacity',100)
+		edge_capacity = kwargs.pop('edge_capacity',100)
+		edge_list_capacity = kwargs.pop('edge_list_capacity',5)
+		
 		cdef int i
 		
 		self.first_free_node = -1
@@ -269,13 +288,19 @@ cdef class DiGraph:
 	
 	def validate(self,**kwargs):		
 		"""
-		Check whether the graph structure is valid.  This inspects various invariants and conditions
-		that should be present in order for the graph structure to be correct.  If any conditions are
-		broken, an exception will be thrown immediately.
+		Checks whether the graph structure is valid.
+		
+		This method inspects various invariants and conditions that should be present 
+		in order for the graph structure to be correct.  If any conditions are
+		broken, an exception will be raised immediately.
 
-		Optional arguments:
-
-			- verbose [=False]: Print out information before each check
+		**KwArgs**:
+			
+			* ``verbose [=False]`` (boolean): print debugging information out before each condition check
+		
+		**Raises**: 
+			``AssertionError``: if a condition isn't satisfied.
+		
 		"""
 		verbose = kwargs.pop('verbose',False)
 
@@ -407,7 +432,45 @@ cdef class DiGraph:
 
 	cpdef np.ndarray[np.double_t] matrix(self):
 		"""
-		Return a numpy adjacency matrix.
+		Construct and return the adjacency matrix.
+	
+		**Returns**: 
+			``np.ndarray[double,ndims=2]``, ``M``.  The topology of the graph in adjacency matrix form where ``M[i,j]`` is the
+			weight of the edge between nodes with index ``i`` and ``j``.  If there is no edge between ``i`` and ``j``, then 
+			``M[i,j] = 0``.
+			
+				When using this function, keep in mind that
+				if the graph is not compact, there may be some node indices that don't correspond to valid nodes. 
+				In this case, the corresponding matrix elements are not valid.  For example::
+			
+					G = DiGraph()
+					G.add_node('a') # this node has index 0
+					G.add_node('b') # this node has index 1
+					G.add_node('c') # this node has index 2
+				
+					G.rm_node('b') # after this point, index 1 doesn't correspond to a valid node
+				
+					M = G.matrix() # M is a 3x3 matrix
+				
+					V = M[1,:] # the values in V are meaningless because a node with index 1 doesn't exist
+				
+				This situation can be resolved by making a call to :py:meth:`Graph.compact` prior to calling this function::
+			
+					G = DiGraph()
+					G.add_node('a') # this node has index 0
+					G.add_node('b') # this node has index 1
+					G.add_node('c') # this node has index 2
+			
+					G.rm_node('b') # after this point, index 1 doesn't correspond to a valid node
+				
+					G.compact() 
+					# In the call above, we've reassigned node indices so that there are no invalid nodes
+					# this means that nodes 'a' and 'b' have been assigned indices 0 and 1.
+				
+					M = G.matrix() # M is a 2x2 matrix
+			
+					V = M[1,:] # this is valid now and corresponds to node G.node_object(1)
+				
 		"""
 		cdef np.ndarray[np.double_t,ndim=2] A = np.zeros( (self.next_node_idx,self.next_node_idx), np.double)
 		cdef int i, j, u, eidx, v
@@ -425,9 +488,13 @@ cdef class DiGraph:
 	
 	cpdef copy(DiGraph self):
 		"""
-		Create a copy of this graph.
-		
-		Note that node and edge indices are preserved.
+		Create a copy of this graph.  
+	
+		.. note:: that node and edge indices are preserved in this copy.
+	
+		**Returns**: 
+			:py:class:`zen.DiGraph`. A new graph object that contains an independent copy of the connectivity of this graph.  
+			Node objects and node/edge data in the new graph reference the same objects as in the old graph.
 		"""
 		cdef DiGraph G = DiGraph()
 		cdef int i,j,eidx,eidx2
@@ -453,25 +520,27 @@ cdef class DiGraph:
 				
 	cpdef is_directed(DiGraph self):
 		"""
-		Return True if this graph is directed (which it is).
+		Return ``True`` if this graph is directed (which it is).
 		"""
 		return True
 	
 	cpdef bool is_compact(DiGraph self):
 		"""
-		Return True if the graph is currently in compact form: there are no unallocated node indices i < self.max_node_idx and no
-		unallocated edge indices j < self.max_edge_idx.  The graph can be compacted by calling the compact() method.
+		Return ``True`` if the graph is in compact form.  
+		
+		A graph is compact if there are no unallocated node or edge indices.
+		The graph can be compacted by calling the :py:meth:`DiGraph.compact` method.
 		"""
 		return (self.num_nodes == (self.max_node_idx + 1) and self.num_edges == (self.max_edge_idx + 1))
 	
 	cpdef compact(DiGraph self):
 		"""
 		Compact the graph in place.  This will re-assign:
-
-			1) node indices such that there are no unallocated node indices less than self.max_node_idx
-			2) edge indices such that there are no unallocated edge indices less than self.max_edge_idx
-
-		Note that at present no way is provided of keeping track of the changes made to node and edge indices.
+		
+			#. node indices such that there are no unallocated node indices less than self.max_node_idx
+			#. edge indices such that there are no unallocated edge indices less than self.max_edge_idx
+			
+		.. note:: At present no way is provided of keeping track of the changes made to node and edge indices.
 		"""
 		cdef int next_free_idx
 		cdef int src, dest
@@ -604,31 +673,43 @@ cdef class DiGraph:
 					
 	cpdef skeleton(self,data_merge_fxn=NO_NONE_LIST_OF_DATA,weight_merge_fxn=AVG_OF_WEIGHTS):
 		"""
-		Create an undirected version of this graph.  Note that node indices will
-		be preserved in the undirected graph that is returned.
+		Create an undirected version of this graph. 
 		
-		data_merge_fxn decides how the data objects associated with reciprocal
-		edges will be combined into a data object for a single undirected edge.
-		Valid values values are:
+		.. note::
+			Node indices will be preserved in the undirected graph that is returned.  Edge indices,
+			however, will not due to the fact that the number of edges present in the graph returned
+			may be smaller.
+		
+		**Args**:
 			
-			- NO_NONE_LIST_OF_DATA: a list of the data objects if the both data
-			  objects are not None.  Otherwise, the value will be set to None.
-			- LIST_OF_DATA: a list of the data objects regardless of their values.
-			- an arbitrary function merge(i,j,d1,d2) that returns a single object.
-			  In this instance, d1 is the data associated with edge (i,j) and 
-			  d2 is the data object associated with edge (j,i).  Note that i and j
-			  are node indices, not objects.
+			* ``data_merge_fxn [=NO_NONE_LIST_OF_DATA]``: decides how the data objects associated 
+				with reciprocal	edges will be combined into a data object for a single undirected edge.
+				Valid values values are:
+			
+				* ``NO_NONE_LIST_OF_DATA``: a list of the data objects if the both data
+			  		objects are not None.  Otherwise, the value will be set to None.
+				* ``LIST_OF_DATA``: a list of the data objects regardless of their values.
+				* an arbitrary function of the form ``merge(i,j,d1,d2)`` that returns a single object.
+			  		In this instance, ``d1`` is the data associated with edge ``(i,j)`` and 
+			  		``d2`` is the data object associated with edge ``(j,i)``.  Note that ``i`` and ``j``
+			  		are node indices, not objects.
 		
-		weight_merge_fxn decides how the values of reciprocal edges will be 
-		combined into a single undirected edge.  Valid values are 
+			* ``weight_merge_fxn [=AVG_OF_WEIGHTS]``: decides how the values of reciprocal edges will be 
+				combined into a single undirected edge.  Valid values are:
 		
-			- AVG_OF_WEIGHTS: average the two weights
-			- MIN_OF_WEIGHTS: take the min value of the weights
-			- MAX_OF_WEIGHTS: take the max value of the two weights
-			- an arbitrary function merge(i,j,w1,w2) that returns a float. 
-			  In this instance, w1 is the weight associated with edge (i,j) and 
-			  w2 is the weight associated with edge (j,i). Note that i and j are 
+				* ``AVG_OF_WEIGHTS``: average the two weights
+			 	* ``MIN_OF_WEIGHTS``: take the min value of the weights
+				* ``MAX_OF_WEIGHTS``: take the max value of the two weights
+				* an arbitrary function of the form ``merge(i,j,w1,w2)`` that returns a ``float``. 
+			  In this instance, ``w1`` is the weight associated with edge ``(i,j)`` and 
+			  ``w2`` is the weight associated with edge ``(j,i)``. Note that ``i`` and ``j`` are 
 			  node indices, not objects.
+			
+		**Returns**:
+			:py:class:`zen.Graph`. The undirected version of this graph.
+			
+		**Raises**:
+			:py:exc:`zen.ZenException`: if either ``data_merge_fxn`` or ``weight_merge_fxn`` are not properly defined.
 		"""
 		cdef Graph G = Graph()
 		cdef int i,j,eidx,eidx2
@@ -704,9 +785,10 @@ cdef class DiGraph:
 		
 	cpdef reverse(self):
 		"""
-		Create a directed graph with identical content in which edges are reverse directions.
+		Create a directed graph with identical content in which edge directions have been reversed.
 		
-		Note that node and edge indices are preserved in the reversed graph.
+		.. note::
+		 	Node and edge indices are preserved in the reversed graph.
 		"""
 		cdef DiGraph G = DiGraph()
 		cdef int i,j,eidx,eidx2
@@ -734,10 +816,20 @@ cdef class DiGraph:
 	cpdef np.ndarray[np.int_t] add_nodes(self,int num_nodes,node_obj_fxn=None):
 		"""
 		Add a specified set of nodes to the graph.
-
-		If node_obj_fxn is specified, then this function will be called with each node index
-		and the object returned will be used as the node object for that node.  If not specified,
-		then no node objects will be assigned to nodes.
+		
+		**Args**:
+		
+			* ``num_nodes`` (int): the number of nodes to add to the graph.
+			* ``node_obj_fxn [=None]`` (callable): a callable object (typically a function) that accepts a node index (an integer)
+				and returns the object that will be used as the object for that node in the graph.  If this is not specified, then 
+				no node objects will be assigned to nodes.
+				
+		**Returns**:
+			``np.ndarray[int,ndims=1]``, ``I``. The node indices of the nodes added where ``I[j]`` is the index of the jth node added by this
+			function call.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if a node could not be added.
 		"""
 		cdef int nn_count
 		cdef np.ndarray[np.int_t,ndim=1] indexes = np.empty( num_nodes, np.int)
@@ -764,14 +856,20 @@ cdef class DiGraph:
 
 		return indexes
 					
-	cpdef int add_node(DiGraph self,nobj=None,data=None):
+	cpdef int add_node(DiGraph self,nobj=None,data=None) except -1:
 		"""
 		Add a node to this graph.
 		
-		  nobj is an optional node object
-		  data is an optional data object to associated with this node
+		**Args**:
 		
-		This method returns the index corresponding to the new node.
+			* ``nobj [=None]``: the (optional) object that will be a convenient identifier for this node.
+			* ``data [=None]``: an optional data object to associated with this node.
+		
+		**Returns**:
+			``int``. The index of the new node.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the node could not be added.
 		"""
 		cdef int node_idx
 		
@@ -807,6 +905,36 @@ cdef class DiGraph:
 			self.node_info[next_free_node].in_capacity = prev_free_node
 				
 	cpdef add_node_x(DiGraph self,int node_idx,int in_edge_list_capacity,int out_edge_list_capacity,nobj,data):
+		"""
+		Adds a node to the graph with a specific node index.
+		
+		This function permits very high-performance population of the graph data structure
+		with nodes by allowing the calling function to specify the node index and edge
+		capacity of the node being added.  In general, this should only be done when the node indices
+		have been obtained from a previously stored graph data structure.
+		
+		.. DANGER:: 
+			This function should be used with great care because by specifying a node index, the 
+			calling function is forcing Zen to access specific parts of the memory allocated for nodes.  
+			Unless you are writing high-performance network loading code, you should not be calling
+			this function directly.
+			
+			When used incorrectly, this method call can irreparably damage the integrity of the graph object, 
+			leading to incorrect results or, more likely, segmentation faults.
+			
+		**Args**:
+		
+			* ``node_idx`` (int): the node index this node should be assigned.
+			* ``in_edge_list_capacity`` (int): the number of entries that should be allocated in the edge list for this node.
+			* ``out_edge_list_capacity`` (int): the number of entries that should be allocated in the edge list for this node.
+			* ``nobj``: the node object that will be associated with this node.  If ``None``, then no object will be
+				assigned to this node.
+			* ``data``: the data object that will be associated with this node.  If ``None``, then no data will be 
+				assigned to this node.
+				
+		**Raises**:
+			:py:exc:`ZenException`: if the node index is already in use or the node object is not unique.
+		"""
 		cdef int i
 		
 		if node_idx < self.node_capacity and self.node_info[node_idx].exists:
@@ -871,23 +999,19 @@ cdef class DiGraph:
 	
 	def __contains__(DiGraph self,nobj):
 		"""
-		Return True if the node object is in the graph.
+		Return ``True`` if object ``nobj`` is associated with a node in this graph.
 		"""
 		return nobj in self.node_idx_lookup
 	
 	cpdef int node_idx(DiGraph self,nobj) except -1:
 		"""
-		Return the node index associated with the node object.
-		
-		If the node object is not in the graph, an exception is raised.
+		Return the index of the node with node object ``nobj``.
 		"""
 		return self.node_idx_lookup[nobj]
 		
 	cpdef node_object(DiGraph self,int nidx):
 		"""
-		Return the node object associated with the node index.
-		
-		If no node object is associated, then None is returned.
+		Return the object associated with node having index ``nidx``.  If no object is associated, then ``None`` is returned.
 		"""
 		if nidx in self.node_obj_lookup:
 			return self.node_obj_lookup[nidx]
@@ -896,8 +1020,18 @@ cdef class DiGraph:
 	
 	cpdef set_node_object(self,curr_node_obj,new_node_obj):
 		"""
-		Change the node object associated with a specific node.  The new object
-		must be unique among all other node objects.
+		Change the node object associated with a specific node.  
+		
+		.. note::
+			The new object must be unique among all other node objects.
+			
+		**Args**:
+		
+			* ``curr_node_obj``: the current node object to change.
+			* ``new_node_obj``: the object to replace the current node object with.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the new key object is not unique in the graph.
 		"""
 		if curr_node_obj == new_node_obj:
 			return
@@ -911,8 +1045,18 @@ cdef class DiGraph:
 
 	cpdef set_node_object_(self,node_idx,new_node_obj):
 		"""
-		Set or change the node object associated with a specific node.  The new object
-		must be unique among all other node objects.
+		Change the node object associated with a specific node.  
+	
+		.. note::
+			The new object must be unique among all other node objects.
+		
+		**Args**:
+	
+			* ``node_idx``: the index of the node to set the object for.
+			* ``new_node_obj``: the object to replace the current node object with.
+		
+		**Raises**:
+			:py:exc:`ZenException`: if the new key object is not unique in the graph.
 		"""
 		if node_idx >= self.node_capacity or not self.node_info[node_idx].exists:
 			raise ZenException, 'Invalid node idx %d' % node_idx
@@ -930,9 +1074,7 @@ cdef class DiGraph:
 					
 	cpdef node_data(DiGraph self,nobj):
 		"""
-		Return the data object that is associated with the node object.
-		
-		If the node object is not in the graph, then an Exception is raised.
+		Return the data object associated with node having object identifier ``nobj``.
 		"""
 		return self.node_data_(self.node_idx_lookup[nobj])
 
@@ -940,6 +1082,12 @@ cdef class DiGraph:
 		"""
 		Associate a new data object with a specific node in the network.
 		If data is None, then any data associated with the node is deleted.
+		
+		**Args**:
+		
+			* ``nobj``: the node object identifying the node whose data association is being changed.
+			* ``data``: the data object to associate.  If ``None``, then any data object currently
+				associated with this node will be deleted.
 		"""
 		self.set_node_data_(self.node_idx_lookup[nobj],data)
 		
@@ -947,6 +1095,12 @@ cdef class DiGraph:
 		"""
 		Associate a new data object with a specific node in the network.
 		If data is None, then any data associated with the node is deleted.
+	
+		**Args**:
+	
+			* ``nidx``: the index of the node whose data association is being changed.
+			* ``data``: the data object to associate.  If ``None``, then any data object currently
+				associated with this node will be deleted.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node index %d' % nidx
@@ -959,9 +1113,7 @@ cdef class DiGraph:
 
 	cpdef node_data_(DiGraph self,int nidx):
 		"""
-		Return the data object that is associated with the node index.
-		
-		If no data object is associated, then None is returned.
+		Return the data object associated with node having index ``nidx``.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node index %d' % nidx
@@ -973,27 +1125,41 @@ cdef class DiGraph:
 		
 	cpdef nodes_iter(DiGraph self,data=False):
 		"""
-		Return an iterator over all the nodes in the graph.
+		Return an iterator over all the nodes in the graph.  
 		
-		If data is False, the iterator returns node objects.  If data is True,
-		then the iterator returns tuples of (node object,node data).
+		By default, the iterator yields node objects.  If ``data`` is ``True``,
+		then the iterator yields tuples ``(node_object,node_data)``.
 		"""
 		return NodeIterator(self,False,data,True)
 
 	cpdef nodes_iter_(DiGraph self,obj=False,data=False):
 		"""
-		Return an iterator over all the nodes in the graph.
+		Return an iterator over all the nodes in the graph.  
 	
-		If obj and data are False, the iterator returns node indices.  
-		If obj and/or data is True, then the iterator returns tuples of (node index [,node object] [,node data]).
+		By default, the iterator yields node indices.  If either ``obj`` or ``data`` are ``True``, then 
+		tuples are yielded.  For example::
+		
+			for nidx in G.node_iter_():
+				print 'Node index:',nidx
+				
+			for nidx,obj in G.node_iter_(obj=True):
+				print 'Node index:',nidx,'Node object:',obj
+				
+			for nidx,obj,data in G.node_iter_(True,True):
+				print nidx,obj,data
+		
 		"""
 		return NodeIterator(self,obj,data,False)
 				
 	cpdef nodes(DiGraph self,data=False):
 		"""
-		Return a list of nodes.  If data is False, then the result is a
-		list of the node objects.  If data is True, then the result is list of
-		tuples containing the node object and associated data.
+		Return a list of the node objects in the graph.
+		
+		.. note::
+			This method is only valid for graphs in which all nodes have a node object.
+		
+		By default, the list contains node objects for all nodes.  If ``data`` is ``True``, 
+		then the list contains tuples containing the node object and associated data.
 		"""
 		result = []
 		
@@ -1018,16 +1184,16 @@ cdef class DiGraph:
 
 	cpdef nodes_(DiGraph self,obj=False,data=False):
 		"""
-		Return a numpy array of the nodes.  If obj and data are False, then the result is a
-		1-D array of the node indices.  If obj or data is True, then the result is a 2-D 
-		array in which the first column is node indices and the second column is
-		the node obj/data.  If obj and data are True, then the result is a 2-D array
-		in which the first column node indices, the second column is the node object, and the
-		third column is the node data.
+		Return a numpy array of the nodes.  
 		
-		if obj and data are both False, then the numpy array returned has type int.  When used
-		with cython, this fact can be used to dramatically increase the speed of code iterating
-		over a graph's nodes.
+		By default, the array is 1-D and contains only node indices.  If either ``obj`` or ``data``
+		are ``True``, then the result is a 2-D matrix in which the additional columns contain 
+		the node object and/or data.
+		
+		.. note:: 
+			If ``obj`` and ``data`` are both ``False``, then the numpy array returned has type ``int``.  When used
+			with cython, this fact can be used to dramatically increase the speed of code iterating
+			over a graph's nodes.
 		"""
 		ndim = 1 if not data and not obj else (2 if not data or not obj else 3)
 
@@ -1090,13 +1256,14 @@ cdef class DiGraph:
 		
 	cpdef rm_node(DiGraph self,nobj):
 		"""
-		Remove the node associated with node object nobj.
+		Remove the node associated with node object ``nobj``.  Any edges incident to the node are also removed
+		from the graph.
 		"""
 		self.rm_node_(self.node_idx_lookup[nobj])
 	
 	cpdef rm_node_(DiGraph self,int nidx):
 		"""
-		Remove the node with index nidx.
+		Remove the node with index ``nidx``. Any edges incident to the node are also removed from the graph.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node index %d' % nidx
@@ -1144,13 +1311,13 @@ cdef class DiGraph:
 	
 	cpdef degree(DiGraph self,nobj):
 		"""
-		Return the degree of node with object nobj.
+		Return the degree of node with object ``nobj``.
 		"""
 		return self.degree_(self.node_idx_lookup[nobj])
 
 	cpdef degree_(DiGraph self,int nidx):
 		"""
-		Return the degree of node with index nidx.
+		Return the degree of node with index ``nidx``.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node index %d' % nidx
@@ -1159,13 +1326,13 @@ cdef class DiGraph:
 	
 	cpdef in_degree(DiGraph self,nobj):
 		"""
-		Return the in-degree of node with object nobj.
+		Return the in-degree of node with object ``nobj``.
 		"""
 		return self.in_degree_(self.node_idx_lookup[nobj])
 	
 	cpdef in_degree_(DiGraph self,int nidx):
 		"""
-		Return the in-degree of node with index nidx.
+		Return the in-degree of node with index ``nidx``.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node index %d' % nidx
@@ -1174,13 +1341,13 @@ cdef class DiGraph:
 	
 	cpdef out_degree(DiGraph self,nobj):
 		"""
-		Return the out-degree of node with object nobj.
+		Return the out-degree of node with object ``nobj``.
 		"""
 		return self.out_degree_(self.node_idx_lookup[nobj])
 	
 	cpdef out_degree_(DiGraph self,int nidx):
 		"""
-		Return the out-degree of node with index nidx.
+		Return the out-degree of node with index ``nidx``.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node index %d' % nidx
@@ -1189,7 +1356,7 @@ cdef class DiGraph:
 	
 	def __getitem__(self,nobj):
 		"""
-		Get the data for the node with the object given
+		Get the data for the node associated with ``nobj``.
 		"""
 		return self.node_data_lookup[self.node_idx_lookup[nobj]]
 	
@@ -1207,11 +1374,31 @@ cdef class DiGraph:
 	
 	cpdef int add_edge(self, src, tgt, data=None, double weight=1) except -1:
 		"""
-		Add an edge to the graph from the src node to the tgt node.
-		src and tgt are node objects.  If data is not None, then it
-		is used as the data associated with this edge.
+		Add an edge to the graph.
 		
-		This function returns the index for the new edge.
+		As a convenience, if ``src`` or ``tgt`` are not valid node objects, they will be added to the graph
+		and then the edge will be added.::
+		
+			G = DiGraph()
+			
+			print len(G) # prints '0'
+			G.add_edge(1,2) # First nodes 1 and 2 will be added, then the edge will be added
+			print len(G) # prints '2' since there are now two nodes in the graph.
+			
+		
+		**Args**:
+		
+			* ``src``: the node from which the edge originates
+			* ``tgt``: the node at which the edge terminates
+			* ``data [=None]``: an optional data object to associate with the edge
+			* ``weight [=1]`` (float): the weight of the edge.
+			
+		**Returns**:
+			``integer``. The index for the newly created edge.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the edge already exists in the graph.
+			
 		"""
 		cdef int nidx1, nidx2
 		
@@ -1231,12 +1418,25 @@ cdef class DiGraph:
 	
 	cpdef int add_edge_(DiGraph self, int src, int tgt, data=None, double weight=1) except -1:
 		"""
-		Add an edge to the graph from the src node to the tgt node.
-		src and tgt are node indices.  If data is not None, then it
-		is used as the data associated with this edge.
-	
-		This function returns the index for the new edge.
-		"""	
+		Add an edge to the graph.
+		
+		This version of the edge addition functionality uses node indices (not node objects).
+		Unlike in :py:method:``.add_edge``, if ``src`` or ``tgt`` are not valid node indices, then an
+		exception will be raised.	
+		
+		**Args**:
+		
+			* ``src`` (int): the node from which the edge originates. This should be a node index.
+			* ``tgt`` (int): the node at which the edge terminates. This should be a node index.
+			* ``data [=None]``: an optional data object to associate with the edge
+			* ``weight [=1]`` (float): the weight of the edge.
+			
+		**Returns**:
+			``integer``. The index for the newly created edge.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the edge already exists in the graph or if either of the node indices are invalid.
+		"""
 		cdef int i
 		self.num_changes += 1
 		
@@ -1277,7 +1477,37 @@ cdef class DiGraph:
 			self.edge_info[next_free_edge].tgt = prev_free_edge
 					
 	cpdef int add_edge_x(DiGraph self, int eidx, int src, int tgt, data, double weight) except -1:
+		"""
+		Adds an edge to the graph with a specific edge index.
+	
+		This function permits very high-performance population of the graph data structure
+		with edges by allowing the calling function to specify the edge index of the edge being added.  
+		In general, this should only be done when the edge indices have been obtained from a previously 
+		stored graph data structure.
+	
+		.. DANGER:: 
+			This function should be used with great care because by specifying a edge index, the 
+			calling function is forcing Zen to access specific parts of the memory allocated for edge.  
+			Unless you are writing high-performance network loading code, you should not be calling
+			this function directly.
 		
+			When used incorrectly, this method call can irreparably damage the integrity of the graph object, 
+			leading to incorrect results or, more likely, segmentation faults.
+		
+		**Args**:
+	
+			* ``eidx`` (int): the edge index this node should be assigned.
+			* ``src`` (int): the node from which the edge originates. This should be a node index.
+			* ``tgt`` (int): the node at which the edge terminates. This should be a node index.
+			* ``nobj``: the node object that will be associated with this node.  If ``None``, then no object will be
+				assigned to this node.
+			* ``data``: the data object that will be associated with this node.  If ``None``, then no data will be 
+				assigned to this node.
+			
+		**Raises**:
+			:py:exc:`ZenException`: if the edge already exists in the graph, the edge index is already in use, or either of the
+			node indices are invalid.
+		"""
 		if eidx < self.edge_capacity and self.edge_info[eidx].exists:
 			raise ZenException, 'Adding edge at index %d will overwrite an existing edge' % eidx
 		
@@ -1438,13 +1668,21 @@ cdef class DiGraph:
 	
 	cpdef rm_edge(DiGraph self,src,tgt):
 		"""
-		Remove the edge between node objects src and tgt.
+		Remove the edge connecting node object ``src`` to ``tgt``.
+		
+		**Raises**:
+			
+			* :py:exc:`ZenException`: if the edge index is invalid.
+			* :py:exc:`KeyError`: if the node objects are invalid.
 		"""
 		self.rm_edge_(self.edge_idx(src,tgt))
 	
 	cpdef rm_edge_(DiGraph self,int eidx):
 		"""
-		Remove the edge with index eidx.
+		Remove the edge with index ``eidx``.
+		
+		**Raises**:
+			:py:exc:`ZenException`: if ``eid`` is an invalid edge index.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge index %d' % eidx
@@ -1495,7 +1733,7 @@ cdef class DiGraph:
 	
 	cpdef endpoints(DiGraph self,int eidx):
 		"""
-		Return the node objects at the endpoints of the edge with index eidx.
+		Return the node objects at the endpoints of the edge with index ``eidx``.
 		"""
 		if not self.edge_info[eidx].exists:
 			raise ZenException, 'Edge with ID %d does not exist' % eidx
@@ -1504,7 +1742,7 @@ cdef class DiGraph:
 		
 	cpdef endpoints_(DiGraph self,int eidx):
 		"""
-		Return the node indices at the endpoints of the edge with index eidx.
+		Return the node indices at the endpoints of the edge with index ``eidx``.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge index %d' % eidx
@@ -1513,8 +1751,18 @@ cdef class DiGraph:
 
 	cpdef endpoint(DiGraph self,int eidx,u):
 		"""
-		Return the other node (not u) that is the endpoint of this edge.  Note, no check is done
-		to ensure that u is an endpoint of the edge.
+		Return the object for the node (not u) that is the endpoint of this edge.
+		
+		.. note::
+			For performance reasons, no check is done to ensure that u is an endpoint of the edge.
+			
+		**Args**:
+		
+			* ``eidx`` (int): a valid edge index.
+			* ``u``: the object for one endpoint of the edge with index ``eidx``.
+			
+		**Returns**:
+			``object``. The object for the node that is the other endpoint of edge ``eidx``.
 		"""
 		if u not in self.node_idx_lookup:
 			raise ZenException, 'Invalid node object %s' % str(u)
@@ -1525,10 +1773,18 @@ cdef class DiGraph:
 
 	cpdef int endpoint_(DiGraph self,int eidx,int u) except -1:
 		"""
-		Return the other endpoint for edge eidx besides the one given (u).
-
-		Note that this method is implemented for speed and no check is made to ensure that
-		u is one of the edge's endpoints.
+		Return the index for the node (not u) that is the endpoint of this edge.
+	
+		.. note::
+			For performance reasons, no check is done to ensure that u is an endpoint of the edge.
+		
+		**Args**:
+	
+			* ``eidx`` (int): a valid edge index.
+			* ``u`` (int): the index for one endpoint of the edge with index ``eidx``.
+		
+		**Returns**:
+			``integer``. The index for the node that is the other endpoint of edge ``eidx``.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
@@ -1539,36 +1795,60 @@ cdef class DiGraph:
 			return self.edge_info[eidx].src
 
 	cpdef src(DiGraph self,int eidx):
+		"""
+		Return the object for the node from which edge ``eidx`` originates.
+		"""
 		return self.node_object(self.src_(eidx))
 
 	cpdef int src_(DiGraph self,int eidx) except -1:
+		"""
+		Return the index for the node from which edge ``eidx`` originates.
+		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
 
 		return self.edge_info[eidx].src
 		
 	cpdef tgt(DiGraph self,int eidx):
+		"""
+		Return the object for the node at which edge ``eidx`` terminates.
+		"""
 		return self.node_object(self.tgt_(eidx))
 		
 	cpdef int tgt_(DiGraph self,int eidx) except -1:
+		"""
+		Return the index for the node at which edge ``eidx`` terminates.
+		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge idx %d' % eidx
 
 		return self.edge_info[eidx].tgt
 		
-	cpdef set_weight(DiGraph self,u,v,double w):
-		self.set_weight_(self.edge_idx(u,v),w)
+	cpdef set_weight(DiGraph self,src,tgt,double w):
+		"""
+		Set the weight of the edge connecting node ``src`` to ``tgt`` (node objects) to ``w``.
+		"""
+		self.set_weight_(self.edge_idx(src,tgt),w)
 
 	cpdef set_weight_(DiGraph self,int eidx,double w):
+		"""
+		Set the weight of the edge with index ``eidx`` to ``w``.
+		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge index %d' % eidx
 		
 		self.edge_info[eidx].weight = w
 
-	cpdef double weight(DiGraph self,u,v):
-		return self.weight_(self.edge_idx(u,v))
+	cpdef double weight(DiGraph self,src,tgt):
+		"""
+		Return the weight of the edge connecting node ``src`` to ``tgt`` (node objects).
+		"""
+		return self.weight_(self.edge_idx(src,tgt))
 
 	cpdef double weight_(DiGraph self,int eidx):
+		"""
+		Return the weight of the edge with index ``eidx``.
+		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge index %d' % eidx
 			
@@ -1576,20 +1856,24 @@ cdef class DiGraph:
 		
 	cpdef set_edge_data(DiGraph self,src,tgt,data):
 		"""
-		Associate a new data object with a specific edge in the network.
+		Associate a data object with the edge between nodes ``src`` and ``tgt`` (node objects).
+		
+		The value of ``data`` will replace any data object currently associated with the edge.
 		If data is None, then any data associated with the edge is deleted.
 		"""
 		self.set_edge_data_(self.edge_idx(src,tgt),data)
 		
 	cpdef edge_data(DiGraph self,src,tgt):
 		"""
-		Return the data associated with the edge from src to tgt.
+		Return the data associated with the edge between ``src`` and ``tgt`` (node objects).
 		"""
 		return self.edge_data_(self.edge_idx(src,tgt))
 	
 	cpdef set_edge_data_(DiGraph self,int eidx,data):
 		"""
-		Associate a new data object with a specific edge in the network.
+		Associate a data object with the edge with index ``eidx``.
+
+		The value of ``data`` will replace any data object currently associated with the edge.
 		If data is None, then any data associated with the edge is deleted.
 		"""
 		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
@@ -1601,16 +1885,11 @@ cdef class DiGraph:
 		else:
 			self.edge_data_lookup[eidx] = data
 	
-	cpdef edge_data_(DiGraph self,int eidx,int dest=-1):
+	cpdef edge_data_(DiGraph self,int eidx):
 		"""
-		Return the data associated with the edge with index eidx.
-		
-		If dest is specified, then the data associated with the edge
-		connected nodes with indices eidx and dest is returned.
-		"""			
-		if dest != -1:
-			eidx = self.edge_idx_(eidx,dest)			
-		elif eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
+		Return the data associated with the edge with index ``eidx``.
+		"""		
+		if eidx >= self.edge_capacity or not self.edge_info[eidx].exists:
 			raise ZenException, 'Invalid edge index %d' % eidx
 	
 		if eidx in self.edge_data_lookup:
@@ -1620,9 +1899,8 @@ cdef class DiGraph:
 			
 	cpdef bool has_edge(DiGraph self,src,tgt):
 		"""
-		Return True if the graph contains an edge connecting node objects src and tgt.
-		
-		If src or tgt are not in the graph, then this function returns False.
+		Return ``True`` if the graph contains an edge between ``src`` and ``tgt`` (node objects).  
+		If either node object is not in the graph, this method returns ``False``.
 		"""
 		if src not in self.node_idx_lookup:
 			return False
@@ -1637,9 +1915,10 @@ cdef class DiGraph:
 		
 	cpdef bool has_edge_(DiGraph self,int src,int tgt):
 		"""
-		Return True if the graph contains an edge connecting nodes with indices src and tgt.
+		Return ``True`` if the graph contains an edge between ``src`` and ``tgt`` (node indices).
 		
-		Both src and tgt must be valid indices.
+		**Raises**:
+			:py:exc:`ZenException`: if either ``src`` or ``tgt`` are invalid node indices.
 		"""
 		if src >= self.node_capacity or not self.node_info[src].exists:
 			raise ZenException, 'Invalid source index %d' % src
@@ -1654,7 +1933,7 @@ cdef class DiGraph:
 	
 	cpdef edge_idx(DiGraph self, src, tgt, data=False):
 		"""
-		Return the edge index for the edge connecting node objects src and tgt.
+		Return the edge index for the edge between ``src`` and ``tgt`` (node objects).
 		"""
 		src = self.node_idx_lookup[src]
 		tgt = self.node_idx_lookup[tgt]
@@ -1662,7 +1941,7 @@ cdef class DiGraph:
 	
 	cpdef edge_idx_(DiGraph self, int src, int tgt, data=False):
 		"""
-		Return the edge index for the edge connecting node indices src and tgt.
+		Return the edge index for the edge between ``src`` and ``tgt`` (node indices).
 		"""
 		if src >= self.node_capacity or not self.node_info[src].exists:
 			raise ZenException, 'Invalid source index %d' % src
@@ -1686,11 +1965,37 @@ cdef class DiGraph:
 		"""
 		Return an iterator over edges in the graph.
 		
-		If nobj is None, then all edges in the graph are iterated over.  Otherwise
-		the edges touching the node with object nobj are iterated over.
+		By default, the iterator will cover all edges in the graph, returning each
+		edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
 		
-		If data is False, then the iterator returns a tuple (src,tgt).  Otherwise, the
-		iterator returns a tuple (src,tgt,data).
+		**Args**:
+			
+			* ``nobj [=None]``: if ``nobj`` is specified (not ``None``), then the edges touching the node with 
+				object ``nobj`` are iterated over.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
+				
+		Consider the following code which shows some of the different usages::
+		
+			G = DiGraph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
+		
+			print len(list(G.edges_iter())) # this prints 3 - there are 3 edges in the graph
+			print len(list(G.edges_iter(1))) # this prints 2 - there are 2 edges attached to node 1
+			
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,data in G.edges_iter(data=True):
+				print u,v,data
+				
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,w in G.edges_iter(weight=True):
+				print u,v,data
 		"""
 		if nobj is None:
 			return AllEdgeIterator(self,weight,data,True)
@@ -1700,13 +2005,39 @@ cdef class DiGraph:
 	cpdef edges_iter_(DiGraph self,int nidx=-1,data=False,weight=False):
 		"""
 		Return an iterator over edges in the graph.
+		
+		By default, the iterator will cover all edges in the graph, returning each
+		edge as the edge index.
+		
+		**Args**:
+			
+			* ``nidx [=-1]`` (int): if ``nidx`` is specified (``>= 0``), then the edges touching the node with 
+				index ``nidx`` are iterated over.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
+					
+		Consider the following code which shows some of the different usages::
 	
-		If nidx is None, then all edges in the graph are iterated over.  Otherwise
-		the edges touching the node with index nidx are iterated over.
+			G = DiGraph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
 	
-		If data is False, then the iterator returns edge indices.  Otherwise, the
-		iterator returns a tuple (edge index,data).
-		"""	
+			print len(list(G.edges_iter_())) # this prints 3 - there are 3 edges in the graph
+			print len(list(G.edges_iter_(G.node_idx(1)))) # this prints 2 - there are 2 edges attached to node 1
+		
+			# this will print the endpoints and data for all edges in the graph
+			for eidx,data in G.edges_iter_(data=True):
+				print eidx,data
+				
+			# this will print the endpoints and data for all edges in the graph
+			for eidx,w in G.edges_iter_(weight=True):
+				print eidx,w					
+		"""
 		if nidx == -1:
 			return AllEdgeIterator(self,weight,data,False)
 		else:
@@ -1717,8 +2048,40 @@ cdef class DiGraph:
 	
 	cpdef edges(DiGraph self,nobj=None,data=False,weight=False):
 		"""
-		Return edges connected to a node.  If nobj is not specified, then
-		all edges in the network are returned.
+		Return a list of edges in the graph.
+	
+		By default, the list will contain all edges in the graph, each
+		edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
+	
+		**Args**:
+		
+			* ``nobj [=None]``: if ``nobj`` is specified (not ``None``), then only the edges touching the node with 
+				object ``nobj`` are included in the list.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the data object associated with the edge
+			 	is added into the tuple returned for each edge (e.g., ``(u,v,d)``).
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the weight of the edge is added
+				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
+				value of the ``data`` argument).
+			
+		Consider the following code which shows some of the different usages::
+	
+			G = DiGraph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
+	
+			print len(G.edges()) # this prints 3 - there are 3 edges in the graph
+			print len(G.edges(1)) # this prints 2 - there are 2 edges attached to node 1
+		
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,data in G.edges(data=True):
+				print u,v,data
+			
+			# this will print the endpoints and data for all edges in the graph
+			for u,v,w in G.edges(weight=True):
+				print u,v,data
 		"""
 		cdef int num_edges
 		cdef int* elist
@@ -1794,14 +2157,37 @@ cdef class DiGraph:
 				
 	cpdef edges_(DiGraph self,int nidx=-1,data=False,weight=False):
 		"""
-		Return a numpy array of edges.  If nidx is None, then all edges will be returned.
-		If nidx is not None, then the edges for the node with nidx will be returned.
+		Return a ``numpy.ndarray`` containing edges in the graph.
+	
+		By default, the return value is a 1D array, ``R``, that contains all edges in the graph, where ``R[i]`` is
+		an edge index.
+	
+		**Args**:
 		
-		If data is True, then the numpy array will contain an additional column containing the
-		data for each edge.
-		
-		If weight is True, then the numpy array will contain an additional column containing the weight
-		of each edge.
+			* ``nidx [=-1]`` (int): if ``nidx`` is specified (``>= 0``), then only the edges touching the node with 
+				index ``nidx`` are included in the array returned.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+			 	such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the data object associated with the edge.
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+				such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the weight of the edge.
+				
+		When additional columns are added, they will always be in the order edge index, data, weight. 
+		Consider the following code which shows some of the different usages::
+
+			G = DiGraph()
+			G.add_edge(1,2,data='e1')
+			G.add_edge(2,3,data='e2')
+			G.add_edge(3,1,data='e3')
+
+			print G.edges_().shape # this prints (3,) - there are 3 edges in the graph and 1 column
+			print G.edges_(G.node_idx(1)).shape # this prints (2,) - there are 2 edges attached to node 1
+	
+			# this will print the endpoints and data for all edges in the graph
+			print G.edges_(data=True).shape # this prints (3,2)
+			print G.edges_(weight=True).shape # this prints (3,2)
+			print G.edges_(data=True,weight=True).shape # this prints (3,3)
 		"""
 		if nidx != -1 and (nidx >= self.node_capacity or not self.node_info[nidx].exists):
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1890,15 +2276,38 @@ cdef class DiGraph:
 			
 	cpdef in_edges_iter(DiGraph self,nobj,data=False,weight=False):
 		"""
-		Return an iterator over the inbound edges of node with object nobj.  If data is 
-		True then tuples (src,tgt,data) are returned.
+		Return an iterator over the edges for which ``nobj`` is a target.
+		
+		By default, the iterator will yield each edge as the tuple ``(u,tgt)``, 
+		where ``u`` and ``nobj`` are (node object) endpoints of the edge.
+		
+		**Args**:
+			
+			* ``nobj``: the object identifying the node from which all edges iterated over terminate at.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
 		"""
 		return NodeEdgeIterator(self,self.node_idx_lookup[nobj],ITER_INDEGREE,weight,data,True)
 
 	cpdef in_edges_iter_(DiGraph self,int nidx,data=False,weight=False):
 		"""
-		Return an iterator over the inbound edges of node with index nidx.  If data is
-		True then tuples (edge idx,data) are returned.
+		Return an iterator over the edges for which ``nidx`` (a node index) is a source.
+		
+		By default, the iterator will yield each edge as the edge index.
+		
+		**Args**:
+			
+			* ``nidx`` (int): the index for the node that is the terminating node for edges yielded.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1907,16 +2316,39 @@ cdef class DiGraph:
 		
 	cpdef in_edges(DiGraph self,nobj,data=False,weight=False):
 		"""
-		Return a list containing the inbound edges of the node with object nobj.  If
-		data is True, then the list contains tuples (src,tgt,data).
+		Return a list of edges in the graph for which ``nobj`` (a node object) is a target.
+	
+		By default, the list will contain each edge as the tuple ``(u,nobj)``, 
+		where ``u`` and ``nobj`` are (node object) endpoints of the edge.
+	
+		**Args**:
+		
+			* ``nobj``: the object identifying the node from which all edges iterated over terminate at.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the data object associated with the edge
+			 	is added into the tuple returned for each edge (e.g., ``(u,v,d)``).
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the weight of the edge is added
+				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
+				value of the ``data`` argument).
 		"""
 		return list(self.in_edges_iter(nobj,weight,data))
 
 	cpdef in_edges_(DiGraph self,int nidx,data=False,weight=False):
 		"""
-		Return a numpy array containing the inbound edges of the node with index nidx.
-		If data is False, the result is 1-D array containing edge indices.  If data
-		is True, the result is a 2-D array containing the edge index and data.
+		Return a ``numpy.ndarray`` containing edges in the graph that terminate at node with index ``nidx``.
+	
+		By default, the return value is a 1D array, ``R``, where ``R[i]`` is an edge index.
+	
+		**Args**:
+		
+			* ``nidx`` (int): the index for the node at which the edges included in the array terminate.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+			 	such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the data object associated with the edge.
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+				such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the weight of the edge.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1957,15 +2389,38 @@ cdef class DiGraph:
 		
 	cpdef out_edges_iter(DiGraph self,nobj,data=False,weight=False):
 		"""
-		Return an iterator over the outbound edges of node with object nobj.  If data is 
-		True then tuples (src,tgt,data) are returned.
+		Return an iterator over the edges for which ``nobj`` is a source.
+		
+		By default, the iterator will yield each edge as the tuple ``(nobj,v)``, 
+		where ``nobj`` and ``v`` are (node object) endpoints of the edge.
+		
+		**Args**:
+			
+			* ``nobj``: the object identifying the node from which all edges iterated over eminate from.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
 		"""
 		return NodeEdgeIterator(self,self.node_idx_lookup[nobj],ITER_OUTDEGREE,weight,data,True)
 
 	cpdef out_edges_iter_(DiGraph self,int nidx,data=False,weight=False):
 		"""
-		Return an iterator over the outbound edges of node with index nidx.  If data is
-		True then tuples (edge idx,data) are returned.
+		Return an iterator over the edges for which ``nidx`` (a node index) is a source.
+		
+		By default, the iterator will yield each edge as the edge index.
+		
+		**Args**:
+			
+			* ``nidx`` (int): the index for the node that is the originating node for edges yielded.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -1974,16 +2429,39 @@ cdef class DiGraph:
 	
 	cpdef out_edges(DiGraph self,nobj,data=False,weight=False):
 		"""
-		Return a list containing the outbound edges of the node with object nobj.  If
-		data is True, then the list contains tuples (src,tgt,data).
+		Return a list of edges in the graph for which ``nobj`` (a node object) is a source.
+	
+		By default, the list will contain each edge as the tuple ``(nobj,v)``, 
+		where ``nobj`` and ``v`` are (node object) endpoints of the edge.
+	
+		**Args**:
+		
+			* ``nobj``: the object identifying the node from which all edges iterated over originate at.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the data object associated with the edge
+			 	is added into the tuple returned for each edge (e.g., ``(u,v,d)``).
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the weight of the edge is added
+				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
+				value of the ``data`` argument).
 		"""
 		return list(self.out_edges_iter(nobj,weight,data))
 
 	cpdef out_edges_(DiGraph self,int nidx,data=False,weight=False):
 		"""
-		Return a numpy array containing the outbound edges of the node with index nidx.
-		If data is False, the result is 1-D array containing edge indices.  If data
-		is True, the result is a 2-D array containing the edge index and data.
+		Return a ``numpy.ndarray`` containing edges in the graph that originate at node with index ``nidx``.
+	
+		By default, the return value is a 1D array, ``R``, where ``R[i]`` is an edge index.
+	
+		**Args**:
+		
+			* ``nidx`` (int): the index for the node at which the edges included in the array originate.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+			 	such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the data object associated with the edge.
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the array will no longer be a 1D array.  A separate column will be added
+				such that ``R[i,0]`` is the edge index and ``R[i,1]`` is the weight of the edge.
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -2025,29 +2503,77 @@ cdef class DiGraph:
 	
 	cpdef grp_edges_iter(DiGraph self,nbunch,data=False,weight=False):
 		"""
-		Return an iterator over the edges of nodes in nbunch.  If data is 
-		True then tuples (src,tgt,data) are returned.
+		Return an iterator over the edges of a group of nodes.  
+		
+		By default, the iterator will return each edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
+		
+		**Args**:
+		
+			* ``nbunch``: an iterable (usually a list) that yields node objects.  These are
+				the nodes whose incident edges the iterator will return.
+			
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
 		"""
 		return SomeEdgeIterator(self,[self.node_idx_lookup[x] for x in nbunch],ITER_BOTH,weight,data,True)
 
 	cpdef grp_in_edges_iter(DiGraph self,nbunch,data=False,weight=False):
 		"""
-		Return an iterator over the inbound edges of nodes in nbunch.  If data is 
-		True then tuples (src,tgt,data) are returned.
+		Return an iterator over the edges that terminate within a group of nodes.  
+		
+		By default, the iterator will return each edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
+		
+		**Args**:
+		
+			* ``nbunch``: an iterable (usually a list) that yields node objects.  These are
+				the nodes whose terminal edges the iterator will return.
+			
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
 		"""
 		return SomeEdgeIterator(self,[self.node_idx_lookup[x] for x in nbunch],ITER_INDEGREE,weight,data,True)
 
 	cpdef grp_out_edges_iter(DiGraph self,nbunch,data=False,weight=False):
 		"""
-		Return an iterator over the outbound edges of nodes in nbunch.  If data is 
-		True then tuples (src,tgt,data) are returned.
+		Return an iterator over the edges that originate within a group of nodes.  
+		
+		By default, the iterator will return each edge as the tuple ``(u,v)``, where ``u`` and ``v`` are (node object) endpoints of the edge.
+		
+		**Args**:
+		
+			* ``nbunch``: an iterable (usually a list) that yields node objects.  These are
+				the nodes whose originating edges the iterator will return.
+			
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
 		"""
 		return SomeEdgeIterator(self,[self.node_idx_lookup[x] for x in nbunch],ITER_OUTDEGREE,weight,data,True)
 		
 	cpdef grp_edges_iter_(DiGraph self,nbunch,data=False,weight=False):
 		"""
-		Return an iterator over the edges of node indices in nbunch.  If data is 
-		True then tuples (eidx,data) are returned.
+		Return an iterator over edges incident to some nodes in the graph.
+		
+		By default, the iterator will return each edge as the edge index.
+		
+		**Args**:
+			
+			* ``nbunch``: an iterable (usually a list) that yields node indices.  These are
+				the nodes whose originating edges the iterator will return.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
@@ -2057,8 +2583,20 @@ cdef class DiGraph:
 
 	cpdef grp_in_edges_iter_(DiGraph self,nbunch,data=False,weight=False):
 		"""
-		Return an iterator over the inbound edges of node indices in nbunch.  If data is 
-		True then tuples (eidx,data) are returned.
+		Return an iterator over edges that terminate among some nodes in the graph.
+		
+		By default, the iterator will return each edge as the edge index.
+		
+		**Args**:
+			
+			* ``nbunch``: an iterable (usually a list) that yields node indices.  These are
+				the nodes among whom the edges returned terminate.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
@@ -2068,8 +2606,20 @@ cdef class DiGraph:
 
 	cpdef grp_out_edges_iter_(DiGraph self,nbunch,data=False,weight=False):
 		"""
-		Return an iterator over the outbound edges of node indices in nbunch.  If data is 
-		True then tuples (eidx,data) are returned.
+		Return an iterator over edges that originate among some nodes in the graph.
+		
+		By default, the iterator will return each edge as the edge index.
+		
+		**Args**:
+			
+			* ``nbunch``: an iterable (usually a list) that yields node indices.  These are
+				the nodes among whom the edges returned originate.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator returns a tuple containing the edge index
+				and the data associated with the edge (e.g., ``(eidx,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator 	returns a tuple containing the edge index
+				and the weight of the edge (e.g., ``(eidx,w)`` or ``(eidx,d,w)`` depending on the value of the ``data`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
@@ -2079,8 +2629,16 @@ cdef class DiGraph:
 						
 	cpdef neighbors(DiGraph self,nobj,data=False):
 		"""
-		Return a list of nodes that are neighbors of the node nobj.  If data is True, then a 
-		list of tuples is returned, each tuple containing a neighbor node object and its data.
+		Return a list of a node's immediate neighbors.
+
+		By default, the list will contain the node object for each immediate neighbor of ``nobj``.
+
+		**Args**:
+	
+			* ``nobj``: this is the node object identifying the node whose neighbors to retrieve.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned containing the node
+			 	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		cdef int num_edges
 		cdef int* elist
@@ -2134,14 +2692,21 @@ cdef class DiGraph:
 		
 	cpdef neighbors_(DiGraph self,int nidx,obj=False,data=False):
 		"""
-		Return a numpy array of node ids corresponding to all neighbors of the node with id nid.
-		
-		If obj and data are False, then the numpy array will be a 1-D array containing node indices.  If obj or data
-		are True, then the numpy array will be a 2-D array containing indices in the first column and
-		the node object/data object in the second column.  If both obj and data are True, then the numpy array will be
-		a 2-D array containing indices in the first column, the node object in the second, and the node data in 
-		the third column.
-		"""	
+		Return an ``numpy.ndarray`` containing a node's immediate neighbors.
+
+		By default, the return value will be a 1D array containing the node index for each immediate neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose neighbors to retrieve.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a 2D array, ``R`` is returned in which ``R[i,0]`` is the index
+				of the neighbor and ``R[i,1]`` is the node object associated with it.
+
+			* ``data [=False]`` (boolean): if ``True``, then a 2D array, ``R``, is returned with the final column containing the
+				data object associated with the neighbor (e.g., ``R[i,0]`` is the index	of the neighbor and ``R[i,1]`` or ``R[i,2]``
+				is the data object, depending on the value of the ``nobj`` argument).
+		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
 				
@@ -2244,16 +2809,35 @@ cdef class DiGraph:
 		
 	cpdef neighbors_iter(DiGraph self,nobj,data=False):
 		"""
-		Return an iterator over the neighbors of node with object nobj.  If data is 
-		True then tuples (obj,data) are returned.
+		Return an iterator over a node's immediate neighbors.
+
+		By default, the iterator will yield the node object for each immediate neighbor of ``nobj``.
+
+		**Args**:
+
+			* ``nobj``: this is the node object identifying the node whose neighbors to iterate over.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return NeighborIterator(self,self.node_idx_lookup[nobj],ITER_BOTH,False,data,True)
 		
 	cpdef neighbors_iter_(DiGraph self,int nidx,obj=False,data=False):
 		"""
-		Return an iterator over the neighbors of node with index nidx.  If obj is True, then
-		tuples (nidx,obj) are returned.  If data is True then tuples (obj,data) are returned.
-		If both are True, then tuples (nix,obj,data) are returned.
+		Return an iterator over a node's immediate neighbors.
+
+		By default, the iterator will yield the node index for each immediate neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose neighbors to iterate over.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+				
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -2262,16 +2846,35 @@ cdef class DiGraph:
 		
 	cpdef in_neighbors_iter(DiGraph self,nobj,data=False):
 		"""
-		Return an iterator over the in-neighbors of node with object nobj.  If data is 
-		True then tuples (obj,data) are returned.
+		Return an iterator over a node's immediate in-bound neighbors.
+
+		By default, the iterator will yield the node object for each immediate out-bound neighbor of ``nobj``.
+
+		**Args**:
+
+			* ``nobj``: this is the node object identifying the node whose in-bound neighbors to iterate over.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return NeighborIterator(self,self.node_idx_lookup[nobj],ITER_INDEGREE,False,data,True)
 		
 	cpdef in_neighbors_iter_(DiGraph self,int nidx,obj=False,data=False):
 		"""
-		Return an iterator over the in-neighbors of node with index nidx.  If obj is True, then
-		tuples (nidx,obj) are returned.  If data is True then tuples (obj,data) are returned.
-		If both are True, then tuples (nix,obj,data) are returned.
+		Return an iterator over a node's immediate in-bound neighbors.
+
+		By default, the iterator will yield the node index for each immediate in-bound neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose in-bound neighbors to iterate over.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+				
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -2280,20 +2883,35 @@ cdef class DiGraph:
 
 	cpdef in_neighbors(DiGraph self,nobj,data=False):
 		"""
-		Return a list of nodes that are in-neighbors of the node nobj.  If data is True, then a 
-		list of tuples is returned, each tuple containing a neighbor node object and its data.
+		Return a list of a node's immediate in-bound neighbors.
+
+		By default, the list will contain the node object for each immediate in-bound neighbor of ``nobj``.
+
+		**Args**:
+	
+			* ``nobj``: this is the node object identifying the node whose in-bound neighbors to retrieve.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned containing the node
+			 	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return list(self.in_neighbors_iter(nobj,data))
 
 	cpdef in_neighbors_(DiGraph self,int nidx,obj=False,data=False):
 		"""
-		Return a numpy array of node ids corresponding to in-neighbors of the node with index nidx.
-		
-		If obj and data are False, then the numpy array will be a 1-D array containing node indices.  If obj or data
-		are True, then the numpy array will be a 2-D array containing indices in the first column and
-		the node object/data object in the second column.  If both obj and data are True, then the numpy array will be
-		a 2-D array containing indices in the first column, the node object in the second, and the node data in 
-		the third column.
+		Return an ``numpy.ndarray`` containing a node's immediate in-bound neighbors.
+
+		By default, the return value will be a 1D array containing the node index for each immediate in-bound neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose in-bound neighbors to retrieve.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a 2D array, ``R`` is returned in which ``R[i,0]`` is the index
+				of the neighbor and ``R[i,1]`` is the node object associated with it.
+
+			* ``data [=False]`` (boolean): if ``True``, then a 2D array, ``R``, is returned with the final column containing the
+				data object associated with the neighbor (e.g., ``R[i,0]`` is the index	of the neighbor and ``R[i,1]`` or ``R[i,2]``
+				is the data object, depending on the value of the ``nobj`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -2334,16 +2952,35 @@ cdef class DiGraph:
 
 	cpdef out_neighbors_iter(DiGraph self,nobj,data=False):
 		"""
-		Return an iterator over the out-neighbors of node with object nobj.  If data is 
-		True then tuples (obj,data) are returned.
+		Return an iterator over a node's immediate out-bound neighbors.
+
+		By default, the iterator will yield the node object for each immediate out-bound neighbor of ``nobj``.
+
+		**Args**:
+
+			* ``nobj``: this is the node object identifying the node whose out-bound neighbors to iterate over.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return NeighborIterator(self,self.node_idx_lookup[nobj],ITER_OUTDEGREE,False,data,True)
 		
 	cpdef out_neighbors_iter_(DiGraph self,int nidx,obj=False,data=False):
 		"""
-		Return an iterator over the in-neighbors of node with index nidx.  If obj is True, then
-		tuples (nidx,obj) are returned.  If data is True then tuples (obj,data) are returned.
-		If both are True, then tuples (nix,obj,data) are returned.
+		Return an iterator over a node's immediate out-bound neighbors.
+
+		By default, the iterator will yield the node index for each immediate out-bound neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose out-bound neighbors to iterate over.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+				
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -2352,20 +2989,35 @@ cdef class DiGraph:
 
 	cpdef out_neighbors(DiGraph self,nobj,data=False):
 		"""
-		Return a list of nodes that are out-neighbors of the node nobj.  If data is True, then a 
-		list of tuples is returned, each tuple containing a neighbor node object and its data.
+		Return a list of a node's immediate out-bound neighbors.
+
+		By default, the list will contain the node object for each immediate out-bound neighbor of ``nobj``.
+
+		**Args**:
+	
+			* ``nobj``: this is the node object identifying the node whose out-bound neighbors to retrieve.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is returned containing the node
+			 	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return list(self.out_neighbors_iter(nobj,data))
 
 	cpdef out_neighbors_(DiGraph self,int nidx,obj=False,data=False):
 		"""
-		Return a numpy array of node ids corresponding to out-neighbors of the node with index nidx.
-		
-		If obj and data are False, then the numpy array will be a 1-D array containing node indices.  If obj or data
-		are True, then the numpy array will be a 2-D array containing indices in the first column and
-		the node object/data object in the second column.  If both obj and data are True, then the numpy array will be
-		a 2-D array containing indices in the first column, the node object in the second, and the node data in 
-		the third column.
+		Return an ``numpy.ndarray`` containing a node's immediate out-bound neighbors.
+
+		By default, the return value will be a 1D array containing the node index for each immediate out-bound neighbor of ``nidx``.
+
+		**Args**:
+
+			* ``nidx``: this is the node index identifying the node whose out-bound neighbors to retrieve.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a 2D array, ``R`` is returned in which ``R[i,0]`` is the index
+				of the neighbor and ``R[i,1]`` is the node object associated with it.
+
+			* ``data [=False]`` (boolean): if ``True``, then a 2D array, ``R``, is returned with the final column containing the
+				data object associated with the neighbor (e.g., ``R[i,0]`` is the index	of the neighbor and ``R[i,1]`` or ``R[i,2]``
+				is the data object, depending on the value of the ``nobj`` argument).
 		"""
 		if nidx >= self.node_capacity or not self.node_info[nidx].exists:
 			raise ZenException, 'Invalid node idx %d' % nidx
@@ -2406,30 +3058,65 @@ cdef class DiGraph:
 			
 	cpdef grp_neighbors_iter(DiGraph self,nbunch,data=False):
 		"""
-		Return an iterator over the neighbors of nodes in nbunch.  If data is 
-		True then tuples (nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate neighbors.
+
+		By default, the iterator will yield the node object for each immediate neighbor of nodes in ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node object over whose neighbors to iterate.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return SomeNeighborIterator(self,[self.node_idx_lookup[x] for x in nbunch],ITER_BOTH,False,data,True)
 
 	cpdef grp_in_neighbors_iter(DiGraph self,nbunch,data=False):
 		"""
-		Return an iterator over the in-neighbors of nodes in nbunch.  If data is 
-		True then tuples (nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate in-bound neighbors.
+
+		By default, the iterator will yield the node object for each immediate in-bound neighbor of nodes in ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node object over whose in-bound neighbors to iterate.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return SomeNeighborIterator(self,[self.node_idx_lookup[x] for x in nbunch],ITER_INDEGREE,False,data,True)
 
 	cpdef grp_out_neighbors_iter(DiGraph self,nbunch,data=False):
 		"""
-		Return an iterator over the out-neighbors of nodes in nbunch.  If data is 
-		True then tuples (nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate out-bound neighbors.
+
+		By default, the iterator will yield the node object for each immediate out-bound neighbor of nodes in ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node object over whose out-bound neighbors to iterate.
+
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node object) 
+				containing the node	object and the data object associated with the node (e.g., ``(n,d)``).
 		"""
 		return SomeNeighborIterator(self,[self.node_idx_lookup[x] for x in nbunch],ITER_OUTDEGREE,False,data,True)
 
 	cpdef grp_neighbors_iter_(DiGraph self,nbunch,obj=False,data=False):
 		"""
-		Return an iterator over the neighbors of nodes in nbunch.  If obj is True
-		then tuples (nidx,nobj) are returned.  If data is True then tuples (nidx,data) 
-		are returned.  If both are True, then tuples (nidx,nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate neighbors.
+
+		By default, the iterator will yield the node index for each immediate neighbor of nodes in the iterable ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node indices over whose neighbors to iterate.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+			
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
@@ -2439,9 +3126,20 @@ cdef class DiGraph:
 
 	cpdef grp_in_neighbors_iter_(DiGraph self,nbunch,obj=False,data=False):
 		"""
-		Return an iterator over the in-neighbors of nodes in nbunch.  If obj is True
-		then tuples (nidx,nobj) are returned.  If data is True then tuples (nidx,data) 
-		are returned.  If both are True, then tuples (nidx,nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate in-bound neighbors.
+
+		By default, the iterator will yield the node index for each immediate in-bound neighbor of nodes in the iterable ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node indices over whose in-bound neighbors to iterate.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+			
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
@@ -2451,9 +3149,20 @@ cdef class DiGraph:
 
 	cpdef grp_out_neighbors_iter_(DiGraph self,nbunch,obj=False,data=False):
 		"""
-		Return an iterator over the out-neighbors of nodes in nbunch.  If obj is True
-		then tuples (nidx,nobj) are returned.  If data is True then tuples (nidx,data) 
-		are returned.  If both are True, then tuples (nidx,nobj,data) are returned.
+		Return an iterator over a group of nodes' immediate out-bound neighbors.
+
+		By default, the iterator will yield the node index for each immediate out-bound neighbor of nodes in the iterable ``nbunch``.
+
+		**Args**:
+
+			* ``nbunch``: an iterable providing the node indices over whose out-bound neighbors to iterate.
+
+			* ``obj [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the node object associated with the node (e.g., ``(nidx,n)``).
+			
+			* ``data [=False]`` (boolean): if ``True``, then a tuple is yielded (rather than a node index) 
+				containing the node	index and the data object associated with the node (e.g., ``(nidx,d)`` or ``(nidx,n,d)``
+				depending on the value of the ``nobj`` argument).
 		"""
 		for nidx in nbunch:
 			if nidx >= self.node_capacity or not self.node_info[nidx].exists:
