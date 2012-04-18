@@ -16,8 +16,8 @@ import heapq
 
 cimport numpy as np
 import numpy as np
-from digraph cimport *
-from graph cimport *
+from zen.digraph cimport *
+from zen.graph cimport *
 from exceptions import *
 
 from cpython cimport bool

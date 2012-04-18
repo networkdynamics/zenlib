@@ -4,8 +4,8 @@
 This module provides functions that calculate spanning trees of a network.
 """
 
-from graph cimport Graph
-from digraph cimport DiGraph
+from zen.graph cimport Graph
+from zen.digraph cimport DiGraph
 from zen.util.fiboheap cimport FiboHeap
 import numpy as np
 cimport numpy as np

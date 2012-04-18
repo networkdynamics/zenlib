@@ -1,7 +1,7 @@
 import numpy as np
 cimport numpy as np
-from graph cimport Graph
-from exceptions import ZenException
+from zen.graph cimport Graph
+from zen.exceptions import ZenException
 
 __all__ = ['modularity']
 

@@ -1,5 +1,5 @@
 import unittest
-from zen import Graph, modularity
+from zen import *
 
 class TestSynonymModularity(unittest.TestCase):
     def test_small_graph_modularity(self):
@@ -20,7 +20,7 @@ class TestSynonymModularity(unittest.TestCase):
 		community_assignment={0:['1','2','3'],1:['4','5','6']}
 		expected_result=10.0/28 # hand calculated
 		#print 'modularity: ' + str(modularity.modularity(graph, community_assignment))
-		self.assertAlmostEqual(modularity.modularity(graph, community_assignment), expected_result)
+		self.assertAlmostEqual(modularity(graph, community_assignment), expected_result)
 		graph.add_node('7')
 		graph.add_node('8')
 		graph.add_node('9')
@@ -33,7 +33,7 @@ class TestSynonymModularity(unittest.TestCase):
 		
 		community_assignment={0:['1','2','3'],1:['4','5','6'],2:['7','8','9']}
 		#print 'modularity: ' + str(modularity.modularity(graph, community_assignment))
-		self.assertAlmostEqual(modularity.modularity(graph, community_assignment), expected_result)
+		self.assertAlmostEqual(modularity(graph, community_assignment), expected_result)
 		
 		#community_assignment={0:['1','3'],1:['4','6'],2:['7','9'],3:['2','5','8']}
 		#print 'modularity: ' + str(modularity.modularity(graph, community_assignment))

@@ -1,6 +1,6 @@
 import unittest
 from zen import Graph
-from zen.community.label_propagation import *
+from zen.algorithms.community.label_propagation import *
 
 class TestLabelPropagation(unittest.TestCase):
     def test_one_community(self):

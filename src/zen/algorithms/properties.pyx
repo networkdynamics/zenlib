@@ -4,11 +4,11 @@
 This module provides functions that measure properties of a network.
 """
 
-from graph cimport Graph
-from digraph cimport DiGraph
-from exceptions import *
+from zen.graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen.exceptions import *
 from shortest_path cimport *
-from constants import *
+from zen.constants import *
 import numpy as np
 cimport numpy as np
 import numpy.ma as ma

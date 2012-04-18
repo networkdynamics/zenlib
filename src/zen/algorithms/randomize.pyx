@@ -9,9 +9,9 @@ Since all functions involve calls to the system random number generator, all fun
 		random seed.
 """
 
-from graph cimport Graph
-from digraph cimport DiGraph
-from exceptions import *
+from zen.graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen.exceptions import *
 
 from random import choice, randint
 from random import shuffle as rnd_shuffle
