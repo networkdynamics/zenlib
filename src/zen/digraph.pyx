@@ -78,7 +78,7 @@ CURRENT_PICKLE_VERSION = 1.0
 
 cdef class DiGraph:
 	"""
-	This class provides a highly-optimized implementation of a directed graph.  Duplicate edges are not allowed.
+	This class provides a highly-optimized implementation of a `directed graph <http://en.wikipedia.org/wiki/Directed_graph>`_.  Duplicate edges are not allowed.
 	
 	Public properties include:
 	

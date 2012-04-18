@@ -68,7 +68,8 @@ CURRENT_PICKLE_VERSION = 1.0
 
 cdef class Graph:
 	"""
-	This class provides a highly-optimized implementation of an undirected graph.  Duplicate edges are not allowed.
+	This class provides a highly-optimized implementation of an `undirected graph <http://en.wikipedia.org/wiki/Undirected_graph#Undirected_graph>`_. 
+	Duplicate edges are not allowed.
 	
 	Public properties include:
 	
