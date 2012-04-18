@@ -5,7 +5,7 @@ import numpy as np
 cimport numpy as np
 from Queue import Queue
 
-__all__ = ['maximum_matching_','hopcroft_karp_']
+__all__ = ['maximum_matching','maximum_matching_','hopcroft_karp_']
 
 # TODO(druths): Add support for matching undirected networks
 

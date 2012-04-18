@@ -21,6 +21,7 @@ ext_modules = [	Extension('zen.graph', ['zen/graph.pyx'], include_dirs=[numpy_in
 				Extension('zen.io.scn', ['zen/io/scn.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.io.memlist', ['zen/io/memlist.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.algorithms.clustering', ['zen/algorithms/clustering.pyx'], include_dirs=[numpy_include_dir]),
+				Extension('zen.algorithms.components', ['zen/algorithms/components.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.algorithms.randomize', ['zen/algorithms/randomize.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.algorithms.centrality', ['zen/algorithms/centrality.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.layout.spring_layout', ['zen/layout/spring_layout.pyx'], include_dirs=[numpy_include_dir]),

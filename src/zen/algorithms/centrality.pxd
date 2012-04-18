@@ -1,9 +1,7 @@
-from cpython cimport bool
+cpdef betweenness_centrality(G,bint normalized=*,bint weighted=*)
 
-cpdef betweenness(G,bool normalized=*,bool weighted=*)
+cpdef betweenness_centrality_(G,bint normalized=*,bint weighted=*)
 
-cpdef betweenness_(G,bool normalized=*,bool weighted=*)
+cpdef eigenvector_centrality(G,max_iter=*,tol=*,bint weighted=*)
 
-cpdef eigenvector(G,max_iter=*,tol=*,bool weighted=*)
-
-cpdef eigenvector_(G,max_iter=*,tol=*,bool weighted=*)
+cpdef eigenvector_centrality_(G,max_iter=*,tol=*,bint weighted=*)
