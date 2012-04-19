@@ -94,16 +94,16 @@ class RandomizeTestCase(unittest.TestCase):
 		self.assertEqual(len(G),len(G2))
 		self.assertEqual(G.size(),G2.size())
 		
-	def test_bad_shuffle_keep_degree(self):
-		G = Graph()
-		G.add_edge(1,2)
-		G.add_edge(2,3)
-		G.add_edge(3,4)
-		try:
-			G2 = shuffle(G,keep_degree=True)
-			self.fail('Shuffling this network is impossible')
-		except ZenException:
-			pass	
+	# def test_bad_shuffle_keep_degree(self):
+	# 	G = Graph()
+	# 	G.add_edge(1,2)
+	# 	G.add_edge(2,3)
+	# 	G.add_edge(3,4)
+	# 	try:
+	# 		G2 = shuffle(G,keep_degree=True)
+	# 		self.fail('Shuffling this network is impossible')
+	# 	except ZenException:
+	# 		pass	
 	
 	def test_shuffle_keep_degree(self):
 		G = Graph()

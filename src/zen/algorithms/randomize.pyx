@@ -256,6 +256,9 @@ cdef Graph ug_shuffle(Graph G,bool keep_degree,bool self_loops,int seed):
 					v1 = e2[1]
 					u2 = e2[0]
 					v2 = e1[1]
+				
+				if (u1 == u2 and v1 == v2) or (u1 == v2 and u2 == v1):
+					continue
 					
 				if not dG.has_edge(u1,v1) and not dG.has_edge(u2,v2):
 					dG.rm_edge(e1[0],e1[1])
