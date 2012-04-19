@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 """
 This module implements a memory-mapped edge list in which edges are specified by 
 their node index pairs.  This format can be read very quickly.  These files, however,

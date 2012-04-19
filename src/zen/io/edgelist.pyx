@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 from zen.digraph cimport DiGraph
 from zen.graph cimport Graph
 from zen.exceptions import ZenException

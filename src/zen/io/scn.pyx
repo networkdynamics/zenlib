@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 """
 This module defines the simple, consise network (SCN) format.  It is designed for quick parsing.
 

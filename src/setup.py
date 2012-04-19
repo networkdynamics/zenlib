@@ -12,6 +12,7 @@ fiboheap_include_dir = os.path.join('zen','util')
 ext_modules = [	Extension('zen.graph', ['zen/graph.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.digraph', ['zen/digraph.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.bipartite', ['zen/bipartite.pyx'], include_dirs=[numpy_include_dir]),
+				Extension('zen.degree', ['zen/degree.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.hypergraph', ['zen/hypergraph.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.util.fiboheap', ['zen/util/fiboheap.pyx', 'zen/util/fib.c'], include_dirs=[numpy_include_dir]),
 				Extension('zen.util.queue', ['zen/util/queue.pyx'], include_dirs=[numpy_include_dir]),
