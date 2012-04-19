@@ -1,0 +1,10 @@
+# The product of cython compilation
+*.c
+*.o
+*.so
+
+# The product of python compilation/running
+*.pyc
+
+# Mac oddities
+.DS_Store
