@@ -94,15 +94,34 @@ class RandomizeTestCase(unittest.TestCase):
 		self.assertEqual(len(G),len(G2))
 		self.assertEqual(G.size(),G2.size())
 		
-	def test_shuffle_keep_degree(self):
+	def test_bad_shuffle_keep_degree(self):
 		G = Graph()
 		G.add_edge(1,2)
 		G.add_edge(2,3)
 		G.add_edge(3,4)
+		try:
+			G2 = shuffle(G,keep_degree=True)
+			self.fail('Shuffling this network is impossible')
+		except ZenException:
+			pass	
+	
+	def test_shuffle_keep_degree(self):
+		G = Graph()
+		G.add_edge(1,2)
+		G.add_edge(2,6)
+		G.add_edge(2,7)
+		G.add_edge(2,3)
+		G.add_edge(3,5)
+		G.add_edge(5,6)
+		G.add_edge(3,4)
 
 		G2 = shuffle(G,keep_degree=True)
-		self.assertEqual(len(G),len(G2))
-		self.assertEqual(G.size(),G2.size())	
+
+		d1 = ddist(G)
+		d2 = ddist(G2)
+
+		for v1,v2 in zip(d1,d2):
+			self.assertEquals(v1,v2)
 		
 	def test_dg_shuffle_keep_degree(self):
 		G = DiGraph()
@@ -120,3 +139,6 @@ class RandomizeTestCase(unittest.TestCase):
 		
 		for v1,v2 in zip(d1,d2):
 			self.assertEquals(v1,v2)
+			
+if __name__ == '__main__':
+	unittest.main()

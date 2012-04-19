@@ -1,46 +1,50 @@
 """
-This module supports the reading and writing of edge lists in binary format.  The binary format was designed
+The ``zen.io.bel`` module (available as ``zen.bel``) supports the reading and writing of edge lists in binary format.  The binary format was designed
 by Derek Ruths for use with Zen.  In a binary format, each node is referenced by an index number (node/edge
 labels and properties are not supported).  The complete format is:
 
 ``<F = Format Version #><N = # of nodes> <M = # of edges> <u1><v1><u2><v2>...<um><vm>`` where:
 	
-	- ``F`` is a 8 bit number indicating the format version used, 
-	- ``N`` is a 32 bit number indicating the max index number (nodes are indexed from zero to N),
-	- ``E`` is a 64 bit number indicating the number of edges stored, and
-	- ``ui`` and ``vi`` are ceil(log2(N+1)) bit numbers storing the index numbers of the left and right nodes for edge i.
+	* ``F`` is a 8 bit number indicating the format version used, 
+	* ``N`` is a 32 bit number indicating the max index number (nodes are indexed from zero to ``N``),
+	* ``E`` is a 64 bit number indicating the number of edges stored, and
+	* ``ui`` and ``vi`` are ``ceil(log2(N+1))`` bit numbers storing the index numbers of the left and right nodes for edge ``i``.
 	
 The current version of the binary edge list (.bel) format is 1.0.
 
 Reading
 -------
 
-Graphs can be read either from file-like objects using ``read(...)`` or from strings using ``read_str(...)``.
+Graphs can be read either from file-like objects using :py:func:`zen.io.bel.read` or from strings using :py:func:`zen.io.bel.read_str`.
 Both functions accept the same set of arguments:
 
-	- read(fh,<keyword arguments>)
-	- read_str(sbuffer,<keyword arguments>)
+	* ``read(fh,<keyword arguments>)``
+	* ``read_str(sbuffer,<keyword arguments>)``
 
 ``fh/sbuffer`` specifies the object from which the graph will be read.
 
 Supported keywords include the following:
 
-	- node_obj_fxn [= str]: unlike the default definition, this function accepts integers and returns the node object
+	* ``node_obj_fxn [= str]``: unlike the default definition, this function accepts integers and returns the node object
 	
-	- directed [= False]: indicates whether the data is read as directed
+	* ``directed [= False]`` (boolean): indicates whether the data is read as directed
 	
-	- check_for_duplicates [= False]: applies only when loading an undirected graph. If True, then a check will be made to ensure that
-		no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
-		performance cost due to the check.
+	* ``check_for_duplicates [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
+	  no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
+	  performance cost due to the check.
+
+.. autofunction:: zen.io.bel.read
+
+.. autofunction:: zen.io.bel.read_str
 
 Writing
 -------
 
-Graphs can be written either to file-like objects using ``write(...)`` or to strings using ``write_str(...)``.
+Graphs can be written either to file-like objects using :py:func:`zen.io.bel.write` or to strings using :py:func:`write_str`.
 Both functions accept the similar sets of arguments:
 
-	- write(G,fh)
-	- write_str(G)
+	* ``write(G,fh)``
+	* ``write_str(G)``
 
 ``G`` specifies the graph to write. ``fh`` is a file-like object.  ``write_str(...)`` returns the string
 representation of the ``G``, so no argument equivalent of ``fh`` exists).
@@ -48,13 +52,18 @@ representation of the ``G``, so no argument equivalent of ``fh`` exists).
 ``G`` must be compact (an exception will be raised if the graph is not compact).  The graph is stored in 
 the binary edge list format and node indexes are used to index the edge list when writing.
 
-Background
-----------
+.. autofunction:: zen.io.bel.write
+
+.. autofunction:: zen.io.bel.write_str
+
+Citations
+---------
 
 Techniques similar to the ones used here for network compression have been explored previously in publications
 such as 
 
-  B. Dengiz et al. Local search genetic algorithm for optimal design of reliable networks. 
+.. note::
+	B. Dengiz et al. Local search genetic algorithm for optimal design of reliable networks.
 	IEEE Transactions on Evolutionary Computation, 1(3):179-188, 1997.
 	
 The general idea is drawn from variable length integer encoding which has been used in ZIP compression, for example.
@@ -76,9 +85,25 @@ VERSION_LEN = 8
 NUM_INDEX_LEN = 32
 NUM_EDGES_LEN = 64
 
-def read_str(sbuffer, **kwargs): #node_fxn=lambda x: x, edge_fxn=None, G = UNDIRECTED, build_all_nodes = False):
+def read_str(sbuffer, **kwargs):
 	"""
 	Read graph data from the ascii string in the binary edge list format.
+	
+	**Args**:
+		``sbuffer`` is the string from which the network data will be read.
+	
+	**KwArgs**:
+		* ``node_obj_fxn [= str]``: unlike the default definition, this function accepts integers and returns the node object
+	
+		* ``directed [= False]`` (boolean): indicates whether the data is read as directed
+	
+		* ``check_for_duplicates [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
+	  	  no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
+	  	  performance cost due to the check.
+	
+	**Returns**:
+		:py:class:`zen.Graph` or :py:class:`zen.DiGraph`.  The graph read from the input string.  The ``directed`` parameter decides
+		whether a directed or undirected graph is constructed.
 	"""
 	
 	# handle the keyword arguments
@@ -169,7 +194,24 @@ def read(fh, **kwargs):
 	"""
 	Read graph data from the file-like object in the edge list format.
 	
-	If `fh` is a string, then it is interpreted as a filename that the network will be read from.
+	
+	
+	**Args**:
+		``fh`` (file-handle or string): if `fh` is a string, then it is interpreted as a filename that the network will be read from.
+		If ``fh`` is a file-handle, then the network data is read from the data returned from the file stream.
+	
+	**KwArgs**:
+		* ``node_obj_fxn [= str]``: unlike the default definition, this function accepts integers and returns the node object
+
+		* ``directed [= False]`` (boolean): indicates whether the data is read as directed
+
+		* ``check_for_duplicates [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
+  	  	  no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
+		  performance cost due to the check.
+	
+	**Returns**:
+		:py:class:`zen.Graph` or :py:class:`zen.DiGraph`.  The graph read from the input file.  The ``directed`` parameter decides
+		whether a directed or undirected graph is constructed.
 	"""
 	
 	close_fh = False
@@ -304,9 +346,13 @@ def store_bitvector(G):
 	
 def write_str(G):
 	"""
-	Write the graph, G, to a binary edge list representation and return this in an ascii string.
+	Write the graph, ``G``, to a binary edge list representation and return this in an ascii string.
 	
-	The graph must be compact in order to be written.  If it is not compact, an exception will be raised.
+	.. note::
+		The graph must be compact in order to be written.  If it is not compact, an exception will be raised. See :py:meth:`zen.Graph.compact`.
+	
+	**Raises**:
+		:py:exc:`zen.ZenException`: if the graph is not compact.
 	"""
 	
 	if not G.is_compact():
@@ -345,10 +391,14 @@ def write_str(G):
 	
 def write(G, fh):
 	"""
-	Write the graph, G, to the file-like object fh in the binary edge list format.  If `fh` is a string, then it is 
+	Write the graph, ``G``, to the file-like object fh in the binary edge list format.  If `fh` is a string, then it is 
 	interpreted as the name of the file to which the graph will be written.
 	
-	The graph must be compact in order to be written.  If it is not compact, an exception will be raised.
+	.. note::
+		The graph must be compact in order to be written.  If it is not compact, an exception will be raised. See :py:meth:`zen.Graph.compact`.
+	
+	**Raises**:
+		:py:exc:`zen.ZenException`: if the graph is not compact.
 	"""
 	close_fh = False
 	if type(fh) == types.StringType:

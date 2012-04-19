@@ -14,12 +14,13 @@ Functions for loading and storing network data
 Zen supports the following standard network data formats:
 
 	* :doc:`Edgelist <edgelist>`
-	* :doc:`Binary edgelist <bel>`
 	* :doc:`Graph modeling language <gml>`
 	* The :doc:`DOT format <dot>`
 	
 Also supported are a handful of more specialized formats that are particular to Zen alone:
 
+	* :doc:`Binary edgelist <bel>`: this is a space efficient version of the edgelist that uses binary representation of 
+	  nodes (rather than ascii representations).
 	* :doc:`Memory-mapped edgelist <memlist>`: this storage format preserves the 
 	  internal structure of a Zen graph (connectivity only).  The result is a format that can be read very quickly.  
 	  This format is excellent for storing and loading very large networks.
