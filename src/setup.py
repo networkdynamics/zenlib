@@ -42,13 +42,14 @@ setup(
   download_url = 'http://zenlib.googlecode.com/svn/trunk/',
   cmdclass = {'build_ext': build_ext},
   ext_modules = ext_modules,
-  packages = ['zen','zen.drawing','zen.generating','zen.io','zen.layout','zen.tests','zen.util','zen.community','zen.benchmarks'],
+  packages = ['zen','zen.drawing','zen.generating','zen.io','zen.layout','zen.tests','zen.util','zen.community','zen.benchmarks','zen.data'],
   package_data = {	'zen' : ['*.pxd'],
 					'zen.drawing' : ['*.pxd'],
 					'zen.generating' : ['*.pxd'],
 					'zen.io' : ['*.pxd'],
 					'zen.layout' : ['*.pxd'],
 					'zen.tests' : ['*.pxd','*.scn','*.elist','*.helist','*.rdot', '*.memlist'],
-					'zen.util' : ['*.pxd'] }
+					'zen.util' : ['*.pxd'],
+					'zen.data' : ['*.scn','*.gml'] }
   
 )
