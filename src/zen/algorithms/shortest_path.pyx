@@ -1,8 +1,8 @@
 #cython: embedsignature=True
 
 import heapq 
-from digraph cimport DiGraph
-from graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen.graph cimport Graph
 import numpy as np
 cimport numpy as np
 from zen.exceptions import ZenException

@@ -448,7 +448,7 @@ class DiGraphTestCase(unittest.TestCase):
 		self.assertTrue(G.has_edge_(n1,n2))
 		self.assertEqual(G.edge_idx_(n1,n2),e1)
 		self.assertFalse(G.has_edge_(n1,n3))
-		self.assertEqual(G.edge_data_(n1,n2),None)
+		self.assertEqual(G.edge_data_(e1),None)
 		
 		# check containment
 		self.assertTrue('hello' in G)

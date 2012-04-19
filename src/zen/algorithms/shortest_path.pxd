@@ -1,5 +1,5 @@
-from digraph cimport DiGraph
-from graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen.graph cimport Graph
 
 from cpython cimport bool
 cimport numpy as np

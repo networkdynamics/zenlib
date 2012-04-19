@@ -36,6 +36,9 @@ from digraph import *
 from bipartite import *
 from hypergraph import *
 
+# basic degree properties
+#from degree import *
+
 # import generation routines
 import generating
 
@@ -45,16 +48,12 @@ import data
 # import utilities
 from exceptions import *
 from constants import *
+
+# import io routines
 from io import *
-from properties import *
 
 # import algorithms
-import matching
-import clustering
-import centrality
-from shortest_path import *
-from randomize import *
-import spanning
+from algorithms import *
 
 # import visual stuff
 import layout

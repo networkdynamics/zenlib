@@ -22,7 +22,7 @@ class MinimumSpanningTreeTestCase(unittest.TestCase):
 		G.add_edge('B', 'E', 'BE', 7)
 		G.add_edge('E', 'C', 'EC', 5)
 		
-		Gnew = spanning.minimum_spanning_tree(G)
+		Gnew = minimum_spanning_tree(G)
 		
 		# We only have 6 edges in the MST
 		self.assertTrue(Gnew.num_edges == 6)
@@ -94,7 +94,7 @@ class MinimumSpanningTreeTestCase(unittest.TestCase):
 		
 	def test_empty(self):
 		G = Graph()
-		Gnew = spanning.minimum_spanning_tree(G)
+		Gnew = minimum_spanning_tree(G)
 		self.assertTrue(Gnew.num_nodes == 0)
 				
 if __name__ == '__main__':

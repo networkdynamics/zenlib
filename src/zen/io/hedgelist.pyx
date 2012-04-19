@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 from zen.hypergraph cimport HyperGraph
 
 from cpython cimport bool

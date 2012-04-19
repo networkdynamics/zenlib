@@ -1,5 +1,3 @@
-#cython: embedsignature=True
-
 """
 This module provides code for reading and writing networks in the restricted dot (rdot) format.
 

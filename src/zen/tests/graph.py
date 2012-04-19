@@ -478,7 +478,7 @@ class GraphTestCase(unittest.TestCase):
 		self.assertTrue(G.has_edge_(n2,n1))
 		self.assertEqual(G.edge_idx_(n1,n2),e1)
 		self.assertFalse(G.has_edge_(n1,n3))
-		self.assertEqual(G.edge_data_(n1,n2),None)
+		self.assertEqual(G.edge_data_(G.edge_idx_(n1,n2)),None)
 		
 		# check containment
 		self.assertTrue('hello' in G)
@@ -935,7 +935,7 @@ class GraphTestCase(unittest.TestCase):
 		n2 = G.add_node()
 		e1 = G.add_edge_(n1,n2,'blah')
 
-		self.assertEquals((e1,'blah'),G.edge_idx_(n1,n2,True))
+		self.assertEquals(e1,G.edge_idx_(n1,n2))
 		
 		G.validate()
 		

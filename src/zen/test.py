@@ -23,6 +23,7 @@ from tests.gml import *
 from tests.properties import *
 from tests.clustering import *
 from tests.centrality import *
+from tests.components import *
 
 # shortest paths
 from tests.shortest_path import *

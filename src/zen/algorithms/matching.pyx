@@ -1,11 +1,11 @@
-from bipartite cimport BipartiteGraph
-from digraph cimport DiGraph
-from exceptions import *
+from zen.bipartite cimport BipartiteGraph
+from zen.digraph cimport DiGraph
+from zen.exceptions import *
 import numpy as np
 cimport numpy as np
 from Queue import Queue
 
-__all__ = ['maximum_matching_','hopcroft_karp_']
+__all__ = ['maximum_matching','maximum_matching_','hopcroft_karp_']
 
 # TODO(druths): Add support for matching undirected networks
 

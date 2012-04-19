@@ -3,8 +3,8 @@
 """
 Various clustering measures.
 """
-from digraph cimport DiGraph
-from graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen.graph cimport Graph
 import numpy
 from exceptions import *
 
