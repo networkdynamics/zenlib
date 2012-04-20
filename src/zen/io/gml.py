@@ -1,7 +1,15 @@
 """
-This module provides support for reading and writing graph data stored in the Graph Modeling Language (GML).
+The ``zen.io.gml`` module (available as ``zen.gml``) supports the reading and writing network data in the `Graph Modeling Language (GML) <http://en.wikipedia.org/wiki/Graph_Modelling_Language>`_.  At present only reading GML is supported.
 
-Source: 
+GML is a flexible language for specifying the structure of a network (nodes and edges) that can be annotated with arbitrary attributes and information. This module provides a full implementation of the GML file format as specified in the `technical report <http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf>`_:
+
+.. note::
+	Source: Michael Himsolt. *GML: A portable Graph File Format*. Technical Report, Universitat Passau.
+	
+Functions
+---------
+
+.. autofunction:: zen.io.gml.read
 """
 
 from zen.exceptions import *
@@ -236,20 +244,20 @@ def build_graph(graph_data,weight_fxn):
 				
 def read(fname,**kwargs):
 	"""
-	Read graph data stored in file fname in GML format.
+	Read GML-formatted network data stored in file named ``fname``.
 	
-	The node id is used to specify the node index.  The node name is preferably used as the node object.  However, if the name attribute 
-	is missing and the label is present, then the node label will be used as the node object.  If both are missing, then the node id will
-	be used as the node object.
+	The node's ``id`` attribute is used to specify the node index.  The node's ``name`` attribute is preferably used as the node object.  
+	However, if the ``name`` attribute is missing and the ``label`` is present, then the node's ``label`` attribute will be used as the 
+	node object.  If both are missing, then the node id will be used as the node object.
 	
-	Optional arguments:
+	.. note::	
+		Currently graph attributes are not supported by the reader.  If encountered, they will simply be skipped over and not added to the
+		final graph. This is simply because graph objects don't support arbitrary data yet.
 	
-		- weight_fxn [=None]: derive weight assignments from edge data.
-		
-	Unsupported GML features:
+	**KwArgs**:
 	
-		- Currently graph attributes are not added to the final graph.  This is simply because graph objects don't support arbitrary
-			data yet.
+		* ``weight_fxn [=None]``: derive weight assignments from edge data.  If specified, this function is called with one parameter: the
+		  full set of attributes that were specified for the edge.
 	"""
 	
 	# extract keyword arguments
