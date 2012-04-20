@@ -13,7 +13,7 @@ the ``source`` and ``destination`` parameters are storage system specific (e.g.,
 valid Zen graph object.  ``keyword arguments`` are used to customize the read or write operation.  While some will be storage system
 specific, several are common enough to warrent being standardized across storage systems.
 
-**Read keyword arguments**:
+*Read keyword arguments*:
 
 	* ``node_obj_fxn [= str]``: this is a function that accepts a string (the node object as a string) and returns the node object 
 	  that should be used in the graph.  If not specified, the default functionality is to use string node objects.
@@ -38,7 +38,7 @@ specific, several are common enough to warrent being standardized across storage
 	  this function can be used to assign weight values to edges based on their data.  The function accepts the edge data
 	  argument and returns the numerical weight.
 
-**Write keyword arguments**:
+*Write keyword arguments*:
 
 	* ``use_node_indices [= False]`` (boolean): this argument indicates that the node indices should be used as the unique identifier for each
 	  node in the destination rather than the node objects (which is the default).  This argument is only supported by methods

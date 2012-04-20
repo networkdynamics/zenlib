@@ -50,25 +50,16 @@ cdef extern from "stdio.h" nogil:
 
 def write(G,filename,**kwargs):
 	"""
-	Write the graph specified to the filename in the SCN format.  Writing a graph in this format
-	requires a bit more user-involvement than other formats due to the strict interpretation of
-	how properties are written out.
+	Write the graph, ``G``, to the file named ``filename`` in the SCN format.
 	
-	Supported keywords are:
-	
-		- num_node_props [=0]: the number of properties that will be written for each node
-		- num_edge_props [=0]: the number of properties that will be written for each edge
-		- use_node_indices [=False]: use the node index as its identifier rather than its object.
-		- node_data_fxn [=None]: the function that will be used to generate the node properties
-			that will be written to the file.
-		- edge_data_fxn [=None]: the function that will be used to generate the edge properties
-				that will be written to the file.
+	Writing a graph in this format requires a bit more user-involvement than other formats 
+	due to the strict interpretation of how properties are written out.
 	
 	When called, the number of node/edge properties that will be stored *for each* node/edge
 	is specified (if not specified, it is assumed that zero properties will be written).  The
-	actual properties that will be written for a node or edge are provided by node_data_fxn
-	and edge_data_fxn, functions which return a tuple containing string properties of a specific
-	node, each property string containing no spaces. The tuple must have exactly the number of 
+	actual properties that will be written for a node and edge are produced by ``node_data_fxn``
+	and ``edge_data_fxn``, respectively.  These are functions which return a tuple containing string 
+	properties of a specific node/edge, each property string containing no spaces. The tuple must have exactly the number of 
 	entries as properties expected.  The node_data_fxn accepts three arguments: the node index,
 	the node object, and the node data object.  The edge_data_fxn accepts four arguments: the edge
 	index, the first (source) node, the second (target) node, and the edge data object.
@@ -76,6 +67,23 @@ def write(G,filename,**kwargs):
 	There is one exception for nodes and edges.  If a node/edge has no properties, 
 	the node/edge_data_fxn may return None, in which case no properties will be associated
 	with the node/edge.
+	
+	**KwArgs**:
+	
+		* ``num_node_props [=0]`` (int): the number of properties that will be written for each node.
+		* ``num_edge_props [=0]`` (int): the number of properties that will be written for each edge.
+		* ``use_node_indices [=False]`` (boolean): use the node index as its identifier rather than its object.
+		* ``node_data_fxn [=None]``: the function that will be used to generate the node properties
+		  that will be written to the file. This is a function which returns a tuple containing the string 
+		  properties of the specific node provided in the parameters. Each property string must contain no spaces. 
+		  Furthermore, the tuple must have exactly ``num_node_props`` entries (the number of properties expected).  
+		  The ``node_data_fxn`` accepts three arguments: the node index, the node object, and the node data object.
+		* ``edge_data_fxn [=None]``: the function that will be used to generate the edge properties
+		  that will be written to the file. This is a function which returns a tuple containing the string 
+		  properties of the specific edge provided in the parameters. Each property string must contain no spaces. 
+		  Furthermore, the tuple must have exactly ``num_edge_props`` entries (the number of properties expected).  
+		  The ``edge_data_fxn`` accepts four arguments: the edge index, the first (source) node index, the second 
+		  (target) node index, and the edge data object.
 	"""
 	
 	num_node_props = kwargs.pop('num_node_props',0)
@@ -239,25 +247,31 @@ cpdef write_digraph_scn(G,filename,num_node_props,num_edge_props,node_data_fxn,e
 	
 def read(filename,**kwargs):
 	"""
-	Read a network from the file specified in the SCN format.  Node and edge properties are stored in a numpy array that is stored in the props file of the node object.
+	Read a network from the file with name ``filename`` specified in the SCN format.
 	
-	Keyword arguments suppported are:
+	.. note: 
+		The standard weighted argument is not supported as SCN does not currently specify a way of assigning weights to edges.
+		
+	**KwArgs**:
 	
-		- node_obj_fxn [=str]: the function that converts the string node identifier read from the file
+		* ``node_obj_fxn [=str]``: the function that converts the string node identifier read from the file
 			into the node object
-		- directed [=False]: whether the edges should be interpreted as directed (if so, a DiGraph object
-			will be returned)
-		- ignore_duplicate_edges [=False]: ignore duplicate edges that may occur.  This incurs a performance
+		* ``directed [=False]`` (boolean): whether the edges should be interpreted as directed.
+		* ``ignore_duplicate_edges [=False]`` (boolean): ignore duplicate edges that may occur.  This incurs a performance
 			hit since every edge must be checked before being inserted.
-		- merge_graph [=None]: merge the edges read into the existing graph object provided. In this case,
-			the merge_graph is returned (rather than a new graph object).
-		- weighted [=False]: a third column of numbers will be expected in the file and will be interpreted 
+		* ``merge_graph [=None]`` (:py:class:`Graph` or :py:class:`DiGraph`): merge the edges read into the existing graph object provided. In this case,
+			the ``merge_graph`` is returned (rather than a new graph object).
+		* ``weighted [=False]`` (boolean): a third column of numbers will be expected in the file and will be interpreted 
 			as edge weights.
-		- max_line_len [=500]: this method is implemented in C for speed.  As part of this, a fixed size buffer is used to minimize time
+		* ``max_line_len [=500]`` (int): this method is implemented in C for speed.  As part of the implementation, a fixed size buffer is used to minimize time
 			spent parsing each line.  By default, the buffer size is 500 characters.  This argument allows a different max size
 			buffer to be set.
 			
-	The standard weighted argument is not supported as SCN does not currently specify a way of assigning weights to edges.
+
+	**Returns**:
+		:py:class:`Graph` or :py:class:`DiGraph`. The graph constructed from the graph data read in SCN format.  If ``directed = True``, then a :py:class:`DiGraph` is built,
+		otherwise a :py:class:`Graph` is built.  In the graph object that is returned, node and edge properties are stored in a numpy array that is assigned to be the data
+		object of the respective node.
 	"""
 	
 	node_obj_fxn = kwargs.pop('node_obj_fxn',None)
