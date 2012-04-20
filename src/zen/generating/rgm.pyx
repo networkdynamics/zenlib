@@ -1,5 +1,5 @@
 """
-This module implements some of the simple network generation functions.
+This module implements standard random graph models.
 """
 from zen.graph cimport Graph
 from zen.digraph cimport DiGraph
@@ -13,17 +13,21 @@ def barabasi_albert(n, m, **kwargs):
 	"""
 	Generate a random graph using the Barabasi-Albert preferential attachment model.
 	
-	Required parameters:
-	  - n: the number of nodes to add to the graph
-	  - m: the number of edges a new node will add to the graph
+	**Args**:
 	
-	Optional parameters:
-	  - seed [=0]: an integer seed for the random number generator
-	  - directed [=False]: whether to build the graph directed.  If True, then the m edges created
-		by a node upon its creation are instantiated as out-edges.  All others are in-edges to that node.
+		* ``n`` (int): the number of nodes to add to the graph
+		* ``m`` (int): the number of edges a new node will add to the graph
 	
-	Citation:
-	A. L. Barabási and R. Albert "Emergence of scaling in random networks", Science 286, pp 509-512, 1999.
+	**KwArgs**:
+		* ``directed [=False]`` (boolean): whether to build the graph directed.  If ``True``, then the ``m`` edges created
+		  by a node upon its creation are instantiated as out-edges.  All others are in-edges to that node.
+		* ``seed [=-1]`` (int): a seed for the random number generator
+	
+	**Returns**:
+		:py:class:`zen.Graph` or :py:class:`zen.DiGraph`. The graph generated.  If ``directed = True``, then a :py:class:`DiGraph` will be returned.
+	
+	.. note::
+		Source: A. L. Barabási and R. Albert "Emergence of scaling in random networks", Science 286, pp 509-512, 1999.
 	"""
 	seed = kwargs.pop('seed',None)
 	directed = kwargs.pop('directed',False)
@@ -150,16 +154,18 @@ cdef __inner_barabasi_albert_dir(int n, int m, int seed):
 		
 	return G
 
-def erdos_renyi(int n,float p,**kwargs): #bint directed=False,bint self_loops=False):
+def erdos_renyi(int n,float p,**kwargs):
 	"""
-	Generate an erdos-renyi graph with num_nodes nodes, each edge existing with probability p.
+	Generate an Erdos-Renyi graph.
 	
-	Optional arguments are:
-		- directed [=False]: indicates whether the network generated is directed.
-		
-		- self_loops [=False]: indicates whether self-loops are permitted in the generated graph.
-		
-		- seed [=None]: the seed provided to the random generator used to drive the graph construction.
+	**Args**:
+	 	* ``num_nodes`` (int): the number of nodes to populate the graph with.
+	 	* ``p`` (0 <= float <= 1): the probability p given to each edge's existence.
+	
+	**KwArgs**:
+		* ``directed [=False]`` (boolean): indicates whether the network generated is directed.
+		* ``self_loops [=False]`` (boolean): indicates whether self-loops are permitted in the generated graph.
+		* ``seed [=-1]`` (int): the seed provided to the random generator used to drive the graph construction.
 	"""
 	directed = kwargs.pop('directed',False)
 	self_loops = kwargs.pop('self_loops',False)
