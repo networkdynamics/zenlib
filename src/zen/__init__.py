@@ -39,6 +39,9 @@ from hypergraph import *
 # basic degree properties
 from degree import *
 
+# randomization routines
+from randomize import *
+
 # import generation routines
 import generating
 
