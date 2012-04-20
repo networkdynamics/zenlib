@@ -1,21 +1,37 @@
 """
-This module implements a memory-mapped edge list in which edges are specified by 
-their node index pairs.  This format can be read very quickly.  These files, however,
-must be created very carefully.
+The ``zen.io.memlist`` module (available as ``zen.memlist``) implements a memory-mapped edge list in which 
+edges are specified by their node index pairs.  This format can be read and written very quickly.  These files, however,
+must be created very carefully and can only be created and loaded by the Zen library.
 
-== The Memory-mapped Edge List format ==
+Description of the format
+-------------------------
 The first line of the file indicates the number of nodes in the network - this will be taken
 to be an upper-bound on the node index values appearing in the edge list.
 
 All remaining lines consist of node index pairs that specify edges - one edge per line.
 
 Other rules:
-	- Lines that contain any text must start with that text (no leading whitespace)
-	- The separator between entries is any whitespace
-	- Any line beginning with a '#' character is treated as a comment.
-	- In order to write out a graph in this format, it must be compacted.  This means that there cannot be any unallocated
+	* Lines that contain any text must start with that text (no leading whitespace)
+	* The separator between entries is any whitespace
+	* Any line beginning with a '#' character is treated as a comment.
+	* In order to write out a graph in this format, it must be compacted.  This means that there cannot be any unallocated
 	  nodes in the node array prior to the last allocated node (e.g., the node array can't be fragmented).
+
+Why does the graph need to be compact?
+--------------------------------------
+
+The first thing that the reading function does is create a node for each index between 0 and the maximum node index in the file (inclusive).  If the
+graph is not compact when it is written to memlist format, then some of the node indices less than the maximum node index will be empty.  This will 
+lead to the creation of extra nodes in the reconstructed network that weren't there in the original.
+
+See :py:meth:`zen.Graph.compact` or :py:meth:`zen.DiGraph.compact` for more information.
 	
+Functions
+---------
+
+.. autofunction:: zen.io.memlist.read
+
+.. autofunction:: zen.io.memlist.write
 """
 from zen.digraph cimport DiGraph
 from zen.graph cimport Graph
