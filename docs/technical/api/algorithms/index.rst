@@ -6,8 +6,9 @@ Graph and network algorithms
 	
 	Centrality <centrality.rst>
 	Clustering <clustering.rst>
+	Community detection <community.rst>
 	Components <components.rst>
 	Matching <matching.rst>
 	Modularity <modularity.rst>
 	Shortest path <shortest_path.rst>
-	Spanning trees <spanning.rst>
+	Minimum spanning trees <min_spanning.rst>
