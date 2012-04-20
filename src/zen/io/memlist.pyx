@@ -55,12 +55,11 @@ cdef extern from "stdio.h" nogil:
 	
 def write(G,filename):
 	"""
-	Write the graph in memlist format to the file specified. Node values
-	will be node indices.  This assumes that the graph has been compacted.
-	If the graph is not compact, then a ZenException will be raised.
+	Write the graph, ``G``, in memlist format to the file named ``filename``.specified. 
+	Node values	will be node indices.
 	
-	Note that the standard use_node_indices keyword is not supported here because memlist
-	always uses the node indices (rather than node objects).
+	**Raises**:
+		:py:exc:`zen.ZenException`: if ``G`` is not compact.
 	"""
 	if not G.is_compact():
 		raise ZenException, 'Graph is not compact'
@@ -79,19 +78,19 @@ cpdef __inner_write(G,filename):
 	
 def read(char* filename,**kwargs):
 	"""
-	Read in a network from a file in a memory mapped edge list format.
+	Read in a network from the file named ``filename`` assuming a memory-mapped edgelist format.
 	
-	Keyword arguments suppported are:
+	**KwArgs**:
 	
-		- node_obj_fxn [=None]: the function that accepts an integer node id read from the memlist file
-			and returns the node object.  Since memlist is designed to handle very large networks, by default
-			no node objects are added to the graph.
-		- directed [=False]: whether the edges should be interpreted as directed (if so, a DiGraph object
-			will be returned)
-		- ignore_duplicate_edges [=False]: ignore duplicate edges that may occur.  This incurs a performance
-			hit since every edge must be checked before being inserted.
-		- weighted [=False]: a third column of numbers will be expected in the file and will be interpreted 
-			as edge weights.
+		* ``node_obj_fxn [=None]``: the function that accepts an integer node id read from the memlist file
+		  and returns the node object.  Since memlist is designed to handle very large networks, by default
+		  no node objects are added to the graph.
+		* ``directed [=False]`` (boolean): whether the edges should be interpreted as directed (if so, a :py:class:`zen.DiGraph` object
+		  will be returned).
+		- ``ignore_duplicate_edges [=False]`` (boolean): ignore duplicate edges that may occur.  This incurs a performance
+		  hit since every edge must be checked before being inserted.
+		- ``weighted [=False]`` (boolean): a third column of numbers will be expected in the file and will be interpreted 
+		  as edge weights.
 	"""
 	
 	directed = kwargs.pop('directed',None)
