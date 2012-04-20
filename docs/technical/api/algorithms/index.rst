@@ -4,11 +4,11 @@ Graph and network algorithms
 .. toctree::
 	:hidden:
 	
-	Centrality <centrality.rst>
-	Clustering <clustering.rst>
+	Centrality measures <centrality.rst>
+	Clustering coefficients <clustering.rst>
 	Community detection <community.rst>
-	Components <components.rst>
-	Matching <matching.rst>
-	Modularity <modularity.rst>
-	Shortest path <shortest_path.rst>
+	Component identification <components.rst>
+	Maximum-matching <matching.rst>
+	Modularity measures <modularity.rst>
+	Shortest paths <shortest_path.rst>
 	Minimum spanning trees <min_spanning.rst>
