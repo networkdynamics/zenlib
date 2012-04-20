@@ -1,22 +1,30 @@
 """
-This module defines the simple, consise network (SCN) format.  It is designed for quick parsing.
+The ``zen.io.scn`` module (available as ``zen.scn``) supports the reading and writing of graph data in a simple, concise network (SCN) format designed for quick parsing that resembles the :doc:`edgelist format <edgelist>`.
 
-== The SCN format ==
+Description of the format
+-------------------------
+
 In general, each line of the file specifies either a node or an edge.  Networks are specified 
 in two parts.  First nodes are specified, then edges are specified.  The sections are divided
-by a line consisting of the character '='.
+by a line consisting of the character ``=``.
 
-A node definition has the following format:
-	<node name> <prop1> <prop2> ... <propN>
+	* A node definition has the following format: ``<node name> <prop1> <prop2> ... <propN>``
 
-An edge definition has the following format:
-	<src> <dest> <prop1> <prop2> ... <propN>
+	* An edge definition has the following format: ``<src> <dest> <prop1> <prop2> ... <propN>``
 
 Other rules:
-	- The first line in the file consists of two numbers: the number of properties nodes have and edges have
-	- Node names and properties must not contain spaces and cannot start with an '=' sign
-	- Lines that contain any text must start with that text (no leading whitespace)
-	- The separator between entries on a line is *exactly* one space
+	* The first line in the file consists of two numbers: the number of properties nodes have and edges have
+	* Node names and properties must not contain spaces and cannot start with an ``=`` sign
+	* Lines that contain any text must start with that text (no leading whitespace)
+	* The separator between entries on a line is *exactly* one space
+	
+Functions
+---------
+
+.. autofunction:: zen.io.scn.read
+
+.. autofunction:: zen.io.scn.write
+	
 """
 from zen.digraph cimport DiGraph
 from zen.graph cimport Graph
