@@ -1,3 +1,19 @@
+"""
+The ``zen.io.edgelist`` module (available as ``zen.edgelist``) supports the reading and writing of the edgelist format. The edgelist format
+allocates a single line to each edge.  The line has the format: 
+
+``<n1> <n2> [<w>]``
+
+where ``<n1>`` and ``<n2>`` are node identifiers at the endpoints of the edge and ``<w>`` is the optional weight parameter.  Most often the weight is completely omitted.
+
+Both directed and undirected networks can be specified in this format: when reading a directed network, ``<n1>`` is taken to be the source and ``<n2>`` is taken to be the target of the edge.  Since the directedness of the network is not explicitly indicated in the format, it is up to the code reading the file to decide whether or not to read the data assuming that each edge has a direction.
+
+.. autofunction:: zen.io.edgelist.read
+
+.. autofunction:: zen.io.edgelist.write
+
+"""
+
 from zen.digraph cimport DiGraph
 from zen.graph cimport Graph
 from zen.exceptions import ZenException
@@ -22,12 +38,16 @@ def write(G,filename,**kwargs):
 	"""
 	Write the graph in edgelist format to the file specified.
 	
-	Keyword arguments supported are:
+	**Args**:
 	
-		- use_weights [=False]: write the weights out as a third value for each edge
-		
-		- use_node_indices [=False]: write node indices rather than the string representation
-			of the node object as the node identifier
+		* ``G`` (either :py:class:`zen.Graph` or :py:class:`zen.DiGraph`): the graph to write out in edgelist format.
+		* ``filename`` (str): the name of the file to write the edgelist to.
+	
+	**KwArgs**:
+	
+		* ``use_weights [=False]`` (boolean): write the weights out as a third value for each edge
+	 	* ``use_node_indices [=False]`` (boolean): write node indices rather than the string representation
+		  of the node object as the node identifier.
 	"""
 	if type(G) != DiGraph and type(G) != Graph:
 		raise ZenException, 'Only Graphs and DiGraphs are supported by edgelist.write'
@@ -65,20 +85,27 @@ cpdef __inner_write(G,filename,bool use_weights,bool use_node_indices):
 
 def read(filename,**kwargs):
 	"""
-	Read in a network from a file in an edge list format.
+	Read in edgelist formatted network data into a Zen graph object.
 	
-	Keyword arguments suppported are:
+	**Args**:
+		
+		* ``filename`` (str): the name of the file the edgelist data is stored in.
+		
+	**KwArgs**:
 	
-		- node_obj_fxn [=str]: the function that converts the string node identifier read from the file
-			into the node object
-		- directed [=False]: whether the edges should be interpreted as directed (if so, a DiGraph object
-			will be returned)
-		- ignore_duplicate_edges [=False]: ignore duplicate edges that may occur.  This incurs a performance
-			hit since every edge must be checked before being inserted.
-		- merge_graph [=None]: merge the edges read into the existing graph object provided. In this case,
-			the merge_graph is returned (rather than a new graph object).
-		- weighted [=False]: a third column of numbers will be expected in the file and will be interpreted 
-			as edge weights.
+		* ``node_obj_fxn [=str]``: the function that converts the string node identifier read from the file
+		  into the node object
+		* ``directed [=False]`` (boolean): whether the edges should be interpreted as directed (if so, a DiGraph object
+		  will be returned)
+		* ``ignore_duplicate_edges [=False]`` (boolean): ignore duplicate edges that may occur.  This incurs a performance
+		  hit since every edge must be checked before being inserted.
+		* ``merge_graph [=None]`` (:py:class:`zen.Graph` or :py:class:`zen.DiGraph`): merge the edges read into the 
+		  existing graph object provided. In this case,	the merge_graph is returned (rather than a new graph object).
+		* ``weighted [=False]`` (boolean): a third column of numbers will be expected in the file and will be interpreted 
+		  as edge weights.
+		
+	**Returns**:
+		:py:class:`zen.Graph` or :py:class:`zen.DiGraph`. The graph object that the network data was loaded into.
 	"""
 	
 	# get arguments

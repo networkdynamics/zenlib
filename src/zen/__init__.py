@@ -37,7 +37,7 @@ from bipartite import *
 from hypergraph import *
 
 # basic degree properties
-#from degree import *
+from degree import *
 
 # import generation routines
 import generating
