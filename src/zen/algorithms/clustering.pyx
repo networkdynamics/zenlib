@@ -1,8 +1,14 @@
-#cython: embedsignature=True
+"""
+The ``zen.algorithms.clustering`` module (available as ``zen.clustering``) implements three measures of the degree of local clustering of nodes
+in a network's connectivity:
+
+	* `Global clustering coefficient <http://en.wikipedia.org/wiki/Clustering_coefficient#Global_clustering_coefficient>`_
+	* `Local clustering coefficient <http://en.wikipedia.org/wiki/Clustering_coefficient#Local_clustering_coefficient>`_
+	* `Network average clustering coefficient <http://en.wikipedia.org/wiki/Clustering_coefficient#Network_average_clustering_coefficient>`_
+
 
 """
-Various clustering measures.
-"""
+
 from zen.digraph cimport DiGraph
 from zen.graph cimport Graph
 import numpy
@@ -59,16 +65,18 @@ cpdef tt(G):
 	else:
 		return <float> num_tris / <float> num_vees
 	
-cpdef overall(G):
+cpdef gcc(G):
 	"""
-	Compute the overall clustering coefficient: the fraction of triangles to vee's in the network.
+	Compute the global clustering coefficient: the fraction of triangles to vee's in the network.
 	"""
 	if type(G) == DiGraph:
-		return __occ_directed(<DiGraph> G)
+		return __gcc_directed(<DiGraph> G)
+	elif type(G) == Graph:
+		return __gcc_undirected(<Graph> G)
 	else:
 		raise ZenException, 'Graph type %s not supported' % str(type(G))
 
-def local(G,**kwargs):
+def lcc(G,**kwargs):
 	"""
 	Compute the local clustering coefficients for nodes in the network specified.
 	By default, a numpy array containing each nodes' clustering coefficient will be
@@ -125,90 +133,88 @@ def local(G,**kwargs):
 	else:
 		raise ZenException, 'Unsupported graph type: %s' % str(type(G))
 
-# def weak(G,**kwargs):
-# 	"""
-# 	Compute the weak clustering coefficients for nodes in the network specified.
-# 	By default, a numpy array containing each nodes' weak clustering coefficient will
-# 	be returned.
-# 	
-# 	Possible other arguments for this function are:
-# 	
-# 	  - nbunch=None: a container holding a set of node descriptors whose clustering
-# 					coefficients should be computed.
-# 	  - nbunch_=None: a container holding a set of node ids whose clustering
-# 					coefficients should be computed.
-# 	  - avg=False: if True, return the average weak clustering coefficient for
-# 					the network.  Rather than an array of values, one float will be returned.
-# 					When used with nbunch or nbunch_, this will return the average weak
-# 					clustering coefficient for just those nodes.
-# 	  - ids=False: if True, the result will be a two-dimensional array in which the first
-# 					column is the weak clustering coefficient and the second column is the
-# 					associated node id.
-# 	  - reverse=False: if True, then in-neighbors will be considered rather than out-neighbors.
-# 	"""
-# 	if type(G) == DiGraph:
-# 		# parse the results...
-# 		avg = False
-# 		ids = False
-# 		nbunch = None
-# 		nbunch_ = None
-# 		reverse = False
-# 		
-# 		if 'avg' in kwargs:
-# 			avg = kwargs['avg']
-# 			del kwargs['avg']
-# 		if 'ids' in kwargs:
-# 			ids = kwargs['ids']
-# 			del kwargs['ids']
-# 			if avg and ids:
-# 				raise Exception, 'Both ids and avg cannot be given'
-# 		if 'nbunch' in kwargs:
-# 			nbunch = kwargs['nbunch']
-# 			del kwargs['nbunch']
-# 		if 'nbunch_' in kwargs:
-# 			nbunch_ = kwargs['nbunch_']
-# 			del kwargs['nbunch_']
-# 			if nbunch != None and nbunch_ != None:
-# 				raise Exception, 'Both nbunch and nbunch_ cannot be given'
-# 		if 'reverse' in kwargs:
-# 			reverse = kwargs['reverse']	
-# 			del kwargs['reverse']
-# 		if len(kwargs) != 0:
-# 			raise ZenException, 'Unknown arguments: %s' % ','.join(kwargs.keys())
-# 			
-# 		return __wcc_directed(<DiGraph>G,nbunch,nbunch_,avg,ids,reverse)
-# 	else:
-# 		raise ZenException, 'Undirected graphs not yet supported'
-
-cpdef __occ_directed(DiGraph G):
-	cdef int num_nodes = 0
-	cdef int idx
-	cdef int x,i,j,k
-	cdef int ni,nj,nk
+cpdef float __gcc_directed(DiGraph G):
+	cdef int i,j,k
+	cdef int ni,nj,nk,nl
 	cdef int num_vees = 0
 	cdef int num_tris = 0
-
-	nodes = G.nodes_()
-	num_nodes = len(nodes)
-
-	for x in range(num_nodes):
-		ni = nodes[x]
-
-		num_vees += G.node_info[ni].outdegree * (G.node_info[ni].outdegree-1)
+	cdef int num_notself
+		
+	for ni in range(G.next_node_idx):
+		
+		if not G.node_info[ni].exists:
+			continue
+		
+		num_notself = 0
 	
 		# check each edge
 		for i in range(G.node_info[ni].outdegree):
 			nj = G.edge_info[G.node_info[ni].outelist[i]].tgt
+			
+			if nj == ni:
+				continue
+			else:
+				num_notself += 1
+				
 			for j in range(G.node_info[nj].outdegree):
 				nk = G.edge_info[G.node_info[nj].outelist[j]].tgt
 				for k in range(G.node_info[nk].indegree):
-					if G.edge_info[G.node_info[nk].inelist[k]].src == ni:
+					nl = G.edge_info[G.node_info[nk].inelist[k]].src
+					if nl == ni:
 						num_tris += 1
-
+						
+		num_vees += num_notself * (num_notself - 1)
+		
 	if num_vees == 0:
 		return 0
 	else:
 		return <float> num_tris / <float> num_vees
+
+cpdef float __gcc_undirected(Graph G):
+	cdef int idx
+	cdef int i,j,k
+	cdef int ni,nj,nk,nl
+	cdef int num_vees = 0
+	cdef int num_tris = 0
+	cdef int num_nonself = 0
+
+	# count the number of unique triangles (regardless of node ordering)
+	for ni in range(G.next_node_idx):
+		
+		if not G.node_info[ni].exists:
+			continue
+		
+		# loop over all nodes adjacent to ni
+		num_nonself = 0
+		for i in range(G.node_info[ni].degree):
+			nj = G.endpoint_(i,ni)
+			
+			# keep track of how many of ni's edges are non-self loops.  This 
+			# is used to compute the number of V's
+			if nj != ni:
+				num_nonself += 1
+				
+			if nj <= ni:
+				continue
+				
+			# loop over all nodes adjacent to nj
+			for j in range(G.node_info[nj].degree):
+				nk = G.endpoint_(j,nj)
+				
+				if nk <= nj:
+					continue
+					
+				for k in range(G.node_info[nk].degree):
+					nl = G.endpoint_(k,nk)
+					if nl == ni:
+						num_tris += 1
+						
+		num_vees = num_nonself * (num_nonself - 1)
+			
+	if num_vees == 0:
+		return 0
+	else:
+		return <float> (3 * num_tris) / <float> num_vees
 
 cpdef __wcc_directed(DiGraph G,nbunch,nbunch_,bool avg,bool ids,bool reverse):
 	"""

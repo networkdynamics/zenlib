@@ -69,14 +69,14 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 		G.add_edge('x','z')
 		G.add_edge('y','z')
 
-		x = clustering.local(G,nbunch=['x'],avg=True)
+		x = clustering.lcc(G,nbunch=['x'],avg=True)
 		self.assertEqual(x,0.5)
 
 		G.add_edge('z','y')
-		x = clustering.local(G,nbunch=['x'],avg=True)
+		x = clustering.lcc(G,nbunch=['x'],avg=True)
 		self.assertEqual(x,1.0)
 
-		x = clustering.local(G,avg=True)
+		x = clustering.lcc(G,avg=True)
 		self.assertAlmostEqual(x,0.333333333333333)
 
 	def test_zero_outdegree(self):
@@ -84,7 +84,7 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 		G = DiGraph()
 		G.add_edge('x','y')
 
-		x = clustering.local(G,nbunch=['y'],avg=True)
+		x = clustering.lcc(G,nbunch=['y'],avg=True)
 		self.assertEqual(x,0)
 
 	def test_simple2(self):
@@ -99,9 +99,9 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 			G.add_edge_(n,n-1)
 
 		G.add_edge_(n2,99)	
-		x = clustering.local(G,nbunch_=[n1])
+		x = clustering.lcc(G,nbunch_=[n1])
 		
-class OverallClusteringCoefficientTestCase(unittest.TestCase):
+class GlobalClusteringCoefficientTestCase(unittest.TestCase):
 
 	def test_simple(self):
 
@@ -110,11 +110,11 @@ class OverallClusteringCoefficientTestCase(unittest.TestCase):
 		G.add_edge('x','z')
 		G.add_edge('y','z')
 
-		x = clustering.overall(G)
+		x = clustering.gcc(G)
 		self.assertEqual(x,0.5)
 
 		G.add_edge('z','y')
-		x = clustering.overall(G)
+		x = clustering.gcc(G)
 		self.assertEqual(x,1.0)
 
 	def test_zero_outdegree(self):
@@ -122,7 +122,7 @@ class OverallClusteringCoefficientTestCase(unittest.TestCase):
 		G = DiGraph()
 		G.add_edge('x','y')
 
-		x = clustering.overall(G)
+		x = clustering.gcc(G)
 		self.assertEqual(x,0)
 
 	def test_simple2(self):
@@ -137,7 +137,7 @@ class OverallClusteringCoefficientTestCase(unittest.TestCase):
 			G.add_edge_(n,n-1)
 
 		G.add_edge_(n2,99)	
-		x = clustering.overall(G)
+		x = clustering.gcc(G)
 		
 class TTClusteringCoefficientTestCase(unittest.TestCase):
 
