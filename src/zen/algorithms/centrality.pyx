@@ -18,7 +18,7 @@ Betweenness centrality
 pass through it.  The more paths that pass through it, the higher its rank.
 
 .. note::
-	The algorithm used is from Ulrik Brandes,`A Faster Algorithm for Betweenness Centrality <http://www.inf.uni-konstanz.de/algo/publications/b-fabc-01.pdf>`_. 
+	The algorithm used is from Ulrik Brandes, `A Faster Algorithm for Betweenness Centrality <http://www.inf.uni-konstanz.de/algo/publications/b-fabc-01.pdf>`_. 
 	Journal of Mathematical Sociology 25(2):163-177, 2001.
 
 .. autofunction:: zen.algorithms.centrality.betweenness_centrality
@@ -34,7 +34,7 @@ Eigenvector centrality
 Because this definition is intrinsically recursive, not surprisingly, the best known method for evaluating eigenvector centrality is an iterative algorithm called the `power method <http://en.wikipedia.org/wiki/Power_iteration>`_.  This method finds the eigenvector for the largest eigenvalue of the adjacency matrix of G. A drawback of this approach is that
 its convergence time to the correct solution can be long.
 
-.. warning::
+.. note::
 	Be aware that the power iteration method provides no guarantee of convergence.
 
 .. autofunction:: zen.algorithms.centrality.eigenvector_centrality
