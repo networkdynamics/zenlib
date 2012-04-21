@@ -103,7 +103,7 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 		
 class GlobalClusteringCoefficientTestCase(unittest.TestCase):
 
-	def test_simple(self):
+	def test_simple_dir(self):
 
 		G = DiGraph()
 		G.add_edge('x','y')
@@ -116,6 +116,20 @@ class GlobalClusteringCoefficientTestCase(unittest.TestCase):
 		G.add_edge('z','y')
 		x = clustering.gcc(G)
 		self.assertEqual(x,1.0)
+
+	def test_simple_udir(self):
+
+		G = Graph()
+		G.add_edge('x','y')
+		G.add_edge('x','z')
+		G.add_edge('y','z')
+
+		x = clustering.gcc(G)
+		self.assertEqual(x,1.0)
+
+		G.add_edge('z','w')
+		x = clustering.gcc(G)
+		self.assertAlmostEqual(x,3.0/5.0)
 
 	def test_zero_outdegree(self):
 

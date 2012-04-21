@@ -187,7 +187,7 @@ cpdef float __gcc_undirected(Graph G):
 		# loop over all nodes adjacent to ni
 		num_nonself = 0
 		for i in range(G.node_info[ni].degree):
-			nj = G.endpoint_(i,ni)
+			nj = G.endpoint_(G.node_info[ni].elist[i],ni)
 			
 			# keep track of how many of ni's edges are non-self loops.  This 
 			# is used to compute the number of V's
@@ -199,17 +199,17 @@ cpdef float __gcc_undirected(Graph G):
 				
 			# loop over all nodes adjacent to nj
 			for j in range(G.node_info[nj].degree):
-				nk = G.endpoint_(j,nj)
+				nk = G.endpoint_(G.node_info[nj].elist[j],nj)
 				
 				if nk <= nj:
 					continue
 					
 				for k in range(G.node_info[nk].degree):
-					nl = G.endpoint_(k,nk)
+					nl = G.endpoint_(G.node_info[nk].elist[k],nk)
 					if nl == ni:
 						num_tris += 1
 						
-		num_vees = num_nonself * (num_nonself - 1)
+		num_vees += (num_nonself * (num_nonself - 1)) / 2
 			
 	if num_vees == 0:
 		return 0
