@@ -16,7 +16,7 @@ from exceptions import *
 
 from cpython cimport bool
 
-__all__ = ['overall','individual','weak','tt']
+__all__ = ['gcc','lcc','tt']
 
 cpdef tt(G):
 	"""
