@@ -1,5 +1,4 @@
-
-cpdef tt(G)
+# All public functions are now def'ed, so are not defined here.
 
 # cpdef overall(G)
 
