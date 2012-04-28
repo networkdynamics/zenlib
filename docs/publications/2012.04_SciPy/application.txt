@@ -1,0 +1,53 @@
+========================
+Zen: Introducing a pythonic, high-performance network analysis library
+========================
+
+:Author: Derek Ruths <druths@networkdynamics.org>
+:Affiliation: McGill University
+
+Network datasets are becoming larger; network algorithms are becoming more computationally expensive; and interest in network research is becoming more widespread.  These and other factors are creating a widespread need for a network library that can both handle massive network datasets and still not sacrifice the conventions and designs that make a python library quick-to-learn, elegant, and easy-to-use.
+
+In this talk, we will introduce the Zero-Effort Network (Zen) library.  Developed from scratch in a combination of python and cython, it aims to be the most memory- and computation-efficient network library available while still adhering to the conventions of good pythonic design.  Nearly all functions are implemented in cython, yielding C-level performance.  Currently in its first release, it implements a large suite of network-based functions including algorithms involved in finding shortest paths, clustering, community detection, and matchings.  Overall, these implementations outperform (sometimes by more than an order of magnitude) all popular network libraries (including both those that work with python and those that do not).  
+
+From the outset, we intended for Zen to be applicable to massive network datasets (e.g., hundreds of millions of edges).  In order to achieve this, the data structures involved in holding the networks themselves in memory have been designed to be very memory-efficient.  Furthermore, new storage formats have been designed that both minimizes the storage space required to store network connectivity on disk and maximizes the speed with which it can be loaded from disk into memory.  The result of this combination is that massive network datasets that previously could not be loaded and analyzed in python libraries can now be loaded in a matter of minutes.
+
+Our aim in this presentation is to introduce the Zen library to the community: showing how it can be used to analyze datasets that have previously been beyond the reach of python-based network tools and highlighting the unique designs that allow it to achieve this high-performance without sacrificing pythonic conventions.  Attention will be given to discussing both the overarching design and use of the library and also those specific innovations that possible working with massive network datasets.
+
+...............................................................
+
+Please indicate with an X your preference::
+
+  [X] Only consider this presentation for a talk.
+
+  [ ] Only consider this presentation for a poster.
+
+  [ ] Consider this presentation for either a talk or a poster.
+
+...............................................................
+
+Please indicate with an X whether you are willing to prepare an
+accompanying paper::
+
+  [X] Yes  [ ] No
+
+...............................................................
+
+Optional: Indicate your preference for a specialized main track::
+
+  [X] High Performance Computing with Python
+  [ ] Visualization
+
+Or for one of the smaller domain-specific sessions::
+
+  [ ] Computational bioinformatics
+  [ ] Meteorology and climatology
+  [ ] Astronomy and astrophysics
+  [ ] Geophysics
+
+Please note that this selection is simply a guideline for the program
+committee, and that talks may be scheduled in a different session than
+indicated.
+
+...............................................................
+
+Please email this form to 2012submissions@scipy.org
