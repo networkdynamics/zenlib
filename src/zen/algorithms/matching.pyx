@@ -1,3 +1,16 @@
+"""
+The ``zen.algorithms.matching`` module provides routines for computing `maximum-matchings <???>`_ on various types of graphs.
+
+Functions
+---------
+
+.. autofunction:: maximum_matching
+
+.. autofunction:: maximum_matching_
+
+.. autofunction:: hopcroft_karp_
+"""
+
 from zen.bipartite cimport BipartiteGraph
 from zen.digraph cimport DiGraph
 from zen.exceptions import *
@@ -11,15 +24,19 @@ __all__ = ['maximum_matching','maximum_matching_','hopcroft_karp_']
 
 def maximum_matching(G):
 	"""
-	Return a list of edge endpoints that comprise the edges belonging to the maximum matching for the graph.
+	Find a set of edges that comprise a maximum-matching for the graph ``G``.
 	
-	If the graph is a bipartite graph, then the standard bipartite maximum matching
-	problem is solved.
+		* If the graph is a bipartite graph (:py:class:`zen.BipartiteGraph`), then the standard bipartite maximum-matching
+		  problem is solved using the Hopcroft-Karp algorithm.
+		* If the graph is a directed graph (:py:class:`zen.DiGraph`), then the edge subset is found such that no two edges
+		  in the subset share a common starting vertex or a common ending vertex.
+		* If the graph is undirected, an error is thrown as this is not currently supported.
 	
-	If the graph is a directed graph, then the edge subset is found such that no two edges
-	in the subset share a common starting vertex or a common ending vertex.
-	
-	If the graph is undirected, an error is thrown as this is not currently supported.
+	**Returns**:
+		:py:class:`list`. The list of edge endpoint pairs that comprise the edges belonging to a maximum-matching for the graph.
+		
+	**Raises**:
+		:py:exc:`zen.ZenException`: if ``G`` is an undirected graph.
 	"""
 	eidx_matching = maximum_matching_(G)
 	
@@ -27,15 +44,19 @@ def maximum_matching(G):
 
 cpdef maximum_matching_(G):
 	"""
-	Return a list of edge ids that comprise the maximum matching for the graph.
+	Find a set of edges that comprise a maximum-matching for the graph ``G``.
+
+		* If the graph is a bipartite graph (:py:class:`zen.BipartiteGraph`), then the standard bipartite maximum-matching
+		  problem is solved using the Hopcroft-Karp algorithm.
+		* If the graph is a directed graph (:py:class:`zen.DiGraph`), then the edge subset is found such that no two edges
+		  in the subset share a common starting vertex or a common ending vertex.
+		* If the graph is undirected, an error is thrown as this is not currently supported.
+
+	**Returns**:
+		:py:class:`list`. The list of edge indices that indicate the edges belonging to a maximum-matching for the graph.
 	
-	If the graph is a bipartite graph, then the standard bipartite maximum matching
-	problem is solved.
-	
-	If the graph is a directed graph, then the edge subset is found such that no two edges
-	in the subset share a common starting vertex or a common ending vertex.
-	
-	If the graph is undirected, an error is thrown as this is not currently supported.
+	**Raises**:
+		:py:exc:`zen.ZenException`: if ``G`` is an undirected graph.
 	"""
 	if type(G) == BipartiteGraph:
 		return __bipartite_hopcroft_karp_(<BipartiteGraph>G)
@@ -46,7 +67,13 @@ cpdef maximum_matching_(G):
 
 def hopcroft_karp_(G):
 	"""
-	Return a list of edge ids that comprise the maximum matching for the graph.
+	Find a set of edges that comprise a maximum-matching for the bipartite graph ``G`` using the `Hopcroft-Karp algorithm <???>`_.
+
+	**Returns**:
+		:py:class:`list`. The list of edge indices that indicate the edges belonging to a maximum-matching for the graph.
+	
+	**Raises**:
+		:py:exc:`zen.ZenException`: if ``G`` is not a bipartite graph.
 	"""
 	if type(G) == BipartiteGraph:
 		return __bipartite_hopcroft_karp_(<BipartiteGraph>G)
