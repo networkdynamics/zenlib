@@ -9,13 +9,13 @@ in a network's connectivity:
 Functions
 ---------
 
-.. autofunction:: gcc
+.. autofunction:: gcc(G)
 
-.. autofunction:: ncc
+.. autofunction:: ncc(G)
 
-.. autofunction:: lcc
+.. autofunction:: lcc(G)
 
-.. autofunction:: lcc_
+.. autofunction:: lcc_(G)
 
 """
 

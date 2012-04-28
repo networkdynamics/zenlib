@@ -11,6 +11,7 @@ Zen Library Documentation
 
 	API Reference <api/api.rst>
 	Tutorials <tutorials/tutorials_top.rst>
+	Developer Documents <dev/index.rst>
 	
 Welcome to Zen's technical documentation.  This documentation consists of three main parts.
 

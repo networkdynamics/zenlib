@@ -21,9 +21,9 @@ pass through it.  The more paths that pass through it, the higher its rank.
 	The algorithm used is from Ulrik Brandes, `A Faster Algorithm for Betweenness Centrality <http://www.inf.uni-konstanz.de/algo/publications/b-fabc-01.pdf>`_. 
 	Journal of Mathematical Sociology 25(2):163-177, 2001.
 
-.. autofunction:: zen.algorithms.centrality.betweenness_centrality
+.. autofunction:: zen.algorithms.centrality.betweenness_centrality(G[,normalized=True,weighted=False])
 
-.. autofunction:: zen.algorithms.centrality.betweenness_centrality_
+.. autofunction:: zen.algorithms.centrality.betweenness_centrality_(G[,normalized=True,weighted=False])
 
 
 Eigenvector centrality

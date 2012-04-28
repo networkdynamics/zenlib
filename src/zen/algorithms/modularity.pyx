@@ -1,3 +1,10 @@
+"""
+The ``zen.algorithms.modularity`` module implements functions concerning the quantification of the presence of sub-groupings
+of nodes in the network.  Functions in the module are available by importing the root-level ``zen`` package.
+
+.. autofunction:: modularity(G,C,weighted=False)
+"""
+
 import numpy as np
 cimport numpy as np
 from zen.graph cimport Graph
@@ -25,8 +32,29 @@ cpdef double total_weight(Graph graph):
 	return(tweight)
 		
 	
-cpdef double modularity(graph, communities, weighted=False):
-    
+def modularity(G, C, **kwargs):
+	"""
+	Compute the modularity of the groupings of nodes in ``C``.
+	
+	.. warning::
+		This function will be revised very soon.  Expect changes.
+	
+	**Args**:
+		* ``G`` (:py:class:`zen.Graph`): the undirected graph on which to compute the modularity of the groupings of nodes provided.
+		* `C` (:py:class:`dict`): the group assignment of nodes in ``G``.  C[i] is the set of nodes which belong to group ``i``.
+		
+	**KwArgs**:
+		* ``weighted [=False]`` (boolean): whether or not the weight of edges should influence the degree to which directly
+		  connected nodes are associated with one another.
+	"""
+	weighted = kwargs.pop('weighted')
+	
+	if type(G) != Graph:
+		raise ZenException, 'Only graphs of type zen.Graph are supported'
+	
+	return _modularity(G,C,weighted)
+	
+cpdef double _modularity(graph, communities, weighted):
 	cdef double modularity_value=0.0
 	cdef int i
 	cdef int upper_limit = graph.max_node_idx + 1
