@@ -21,9 +21,9 @@ Other rules:
 Functions
 ---------
 
-.. autofunction:: zen.io.scn.read
+.. autofunction:: zen.io.scn.read(filename[,node_obj_fxn=str,directed=False,ignore_duplicate_edges=False,merge_graph=None,weighted=False,max_line_len=500])
 
-.. autofunction:: zen.io.scn.write
+.. autofunction:: zen.io.scn.write(G,filename[,num_node_props=0,num_edge_props=0,use_node_indices=False,node_data_fxn=None,edge_data_fxn=None])
 	
 """
 from zen.digraph cimport DiGraph

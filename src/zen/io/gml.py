@@ -9,7 +9,7 @@ GML is a flexible language for specifying the structure of a network (nodes and 
 Functions
 ---------
 
-.. autofunction:: zen.io.gml.read
+.. autofunction:: zen.io.gml.read(fname[,weight_fxn=None])
 """
 
 from zen.exceptions import *

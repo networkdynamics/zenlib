@@ -8,9 +8,9 @@ where ``<n1>`` and ``<n2>`` are node identifiers at the endpoints of the edge an
 
 Both directed and undirected networks can be specified in this format: when reading a directed network, ``<n1>`` is taken to be the source and ``<n2>`` is taken to be the target of the edge.  Since the directedness of the network is not explicitly indicated in the format, it is up to the code reading the file to decide whether or not to read the data assuming that each edge has a direction.
 
-.. autofunction:: zen.io.edgelist.read
+.. autofunction:: zen.io.edgelist.read(filename[,node_obj_fxn=str,directed=False,ignore_duplicate_edges=False,merge_graph=None,weighted=False])
 
-.. autofunction:: zen.io.edgelist.write
+.. autofunction:: zen.io.edgelist.write(G,filename[,use_weights=False,use_node_indices=False])
 
 """
 

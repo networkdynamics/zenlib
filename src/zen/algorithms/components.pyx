@@ -6,7 +6,7 @@ In undirected graphs, interest is generally focused on identifying the
 `connected component <http://en.wikipedia.org/wiki/Connected_component_(graph_theory)>`_.  This is the
 function that is available at present.
 
-.. autofunction:: zen.algorithms.components.components
+.. autofunction:: zen.algorithms.components.components(G)
 
 .. Add this in once the functions are available.
 .. In directed graphs, there are multiple types of connected components:

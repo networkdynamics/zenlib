@@ -29,9 +29,9 @@ See :py:meth:`zen.Graph.compact` or :py:meth:`zen.DiGraph.compact` for more info
 Functions
 ---------
 
-.. autofunction:: zen.io.memlist.read
+.. autofunction:: zen.io.memlist.read(filename[,node_obj_fxn=None,directed=False,ignore_duplicate_edges=False,weighted=False])
 
-.. autofunction:: zen.io.memlist.write
+.. autofunction:: zen.io.memlist.write(G,filename)
 """
 from zen.digraph cimport DiGraph
 from zen.graph cimport Graph

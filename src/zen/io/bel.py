@@ -33,9 +33,9 @@ Supported keywords include the following:
 	  no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
 	  performance cost due to the check.
 
-.. autofunction:: zen.io.bel.read
+.. autofunction:: zen.io.bel.read(fh[,node_obj_fxn=str,directed=False])
 
-.. autofunction:: zen.io.bel.read_str
+.. autofunction:: zen.io.bel.read_str(fh[,node_obj_fxn=str,directed=False])
 
 Writing
 -------
@@ -52,9 +52,9 @@ representation of the ``G``, so no argument equivalent of ``fh`` exists).
 ``G`` must be compact (an exception will be raised if the graph is not compact).  The graph is stored in 
 the binary edge list format and node indexes are used to index the edge list when writing.
 
-.. autofunction:: zen.io.bel.write
+.. autofunction:: zen.io.bel.write(G,fh)
 
-.. autofunction:: zen.io.bel.write_str
+.. autofunction:: zen.io.bel.write_str(G)
 
 Citations
 ---------
