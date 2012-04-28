@@ -1,3 +1,26 @@
+"""
+The ``zen.BipartiteGraph`` class provides an undirected `bipartite graph <http://en.wikipedia.org/wiki/Bipartite_graph>`_.  
+Each node must belong to one of two classes: ``U`` or ``V``.  Edges must connect nodes in different classes.  
+Besides this, the graph	object follows the same rules and exposes the same functions as the standard undirected
+graph.
+
+Because this class extends :py:class:`zen.Graph`, it implements the same methods with a handful of 
+exceptions:
+
+	* Nodes must be explicitly added as either a ``U`` node or a ``V`` node.  To enforce this, 
+	  :py:meth:`.add_node` raises a :py:exc:`zen.ZenException`.  In place of this method,
+	  the following options exist
+		
+	  * :py:meth:`.add_node_by_class`
+	  * :py:meth:`.add_u_node`
+	  * :py:meth:`.add_v_node`
+		
+	* Edges must have one endpoint in the ``U`` set and one in the ``V`` set.  Thus if 
+	  :py:meth:`.add_edge` is called with nodes that are not members of the graph,
+	  it is not explicit which node belongs to which set.  A :py:exc:`zen.ZenException` is
+	  now raised by this method if the endpoints are not part of the graph.
+"""
+
 from graph cimport Graph
 from exceptions import *
 
@@ -14,34 +37,12 @@ __all__ = ['BipartiteGraph']
 # * There should be iterator functions
 
 cdef class BipartiteGraph(Graph):
-	"""
-	This class provides an undirected `bipartite graph <http://en.wikipedia.org/wiki/Bipartite_graph>`_.  
-	Each node must belong to one of two classes: ``U`` or ``V``.  Edges must connect nodes in different classes.  
-	Besides this, the graph	object follows the same rules and exposes the same functions as the standard undirected
-	graph.
-	
-	Because this class extends :py:class:`zen.Graph`, it implements the same methods with a handful of 
-	exceptions:
-	
-		* Nodes must be explicitly added as either a ``U`` node or a ``V`` node.  To enforce this, 
-			:py:meth:`.add_node` raises a :py:exc:`zen.ZenException`.  In place of this method,
-			the following options exist::
-			
-			* :py:meth:`.add_node_by_class`
-			* :py:meth:`.add_u_node`
-			* :py:meth:`.add_v_node`
-			
-		* Edges must have one endpoint in the ``U`` set and one in the ``V`` set.  Thus if 
-			:py:meth:`.add_edge` is called with nodes that are not members of the graph,
-			it is not explicit which node belongs to which set.  A :py:exc:`zen.ZenException` is
-			now raised by this method if the endpoints are not part of the graph.
-	"""
 	
 	def __init__(self,**kwargs):
 		"""
 		Create a new :py:class:`BipartiteGraph` object.
 		
-		**Keyword Args**:
+		**KwArgs**:
 		
 		  * ``node_capacity [=100]`` (int): the initial number of nodes this graph has space to hold.
 		  * ``edge_capacity [=100]`` (int): the initial number of edges this graph has space to hold.
@@ -62,9 +63,9 @@ cdef class BipartiteGraph(Graph):
 		**Args**:
 		
 			* ``as_u`` (boolean): if ``True``, then the node is added to the ``U`` class.  Otherwise, the node
-				is added to the ``V`` class.
+			  is added to the ``V`` class.
 			* ``nobj [=None]``: the object to be associated as an identifier for the node created.  If ``None``,
-				then no object will be associated as an idenifier for the node.
+			  then no object will be associated as an idenifier for the node.
 			* ``data [=None]``: the data object to associate with the node created.
 		
 		**Returns**:
@@ -92,7 +93,7 @@ cdef class BipartiteGraph(Graph):
 		**Args**:
 		
 			* ``nobj [=None]``: the object to be associated as an identifier for the node created.  If ``None``,
-				then no object will be associated as an idenifier for the node.
+			  then no object will be associated as an idenifier for the node.
 			* ``data [=None]``: the data object to associate with the node created.
 		
 		**Returns**:
@@ -107,7 +108,7 @@ cdef class BipartiteGraph(Graph):
 		**Args**:
 		
 			* ``nobj [=None]``: the object to be associated as an identifier for the node created.  If ``None``,
-				then no object will be associated as an idenifier for the node.
+			  then no object will be associated as an idenifier for the node.
 			* ``data [=None]``: the data object to associate with the node created.
 		
 		**Returns**:

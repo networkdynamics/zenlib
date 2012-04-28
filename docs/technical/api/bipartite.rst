@@ -1,7 +1,7 @@
 The bipartite graph
 ====================
 
-.. autoclass:: zen.BipartiteGraph()
+.. automodule:: zen.bipartite
 
 In this section, only those features of the :py:class:`zen.BipartiteGraph` that differ from its parent class, :py:class:`zen.Graph` are documented.
 For a comprehensive set of features (methods and properties), see the :py:class:`zen.Graph` reference documentation.
