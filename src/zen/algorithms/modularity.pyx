@@ -47,7 +47,7 @@ def modularity(G, C, **kwargs):
 		* ``weighted [=False]`` (boolean): whether or not the weight of edges should influence the degree to which directly
 		  connected nodes are associated with one another.
 	"""
-	weighted = kwargs.pop('weighted')
+	weighted = kwargs.pop('weighted',False)
 	
 	if type(G) != Graph:
 		raise ZenException, 'Only graphs of type zen.Graph are supported'
