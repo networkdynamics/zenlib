@@ -69,14 +69,14 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 		G.add_edge('x','z')
 		G.add_edge('y','z')
 
-		x = clustering.lcc(G,nbunch=['x'],avg=True)
-		self.assertEqual(x,0.5)
+		x = clustering.lcc(G) #,nbunch=['x'],avg=True)
+		self.assertEqual(x['x'],0.5)
 
 		G.add_edge('z','y')
-		x = clustering.lcc(G,nbunch=['x'],avg=True)
-		self.assertEqual(x,1.0)
+		x = clustering.lcc(G) #,nbunch=['x'],avg=True)
+		self.assertEqual(x['x'],1.0)
 
-		x = clustering.lcc(G,avg=True)
+		x = clustering.ncc(G) #,avg=True)
 		self.assertAlmostEqual(x,0.333333333333333)
 
 	def test_zero_outdegree(self):
@@ -84,8 +84,8 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 		G = DiGraph()
 		G.add_edge('x','y')
 
-		x = clustering.lcc(G,nbunch=['y'],avg=True)
-		self.assertEqual(x,0)
+		x = clustering.lcc(G) #,nbunch=['y'],avg=True)
+		self.assertEqual(x['y'],0)
 
 	def test_simple2(self):
 		G = DiGraph()
@@ -99,7 +99,7 @@ class LocalClusteringCoefficientTestCase(unittest.TestCase):
 			G.add_edge_(n,n-1)
 
 		G.add_edge_(n2,99)	
-		x = clustering.lcc(G,nbunch_=[n1])
+		x = clustering.lcc(G)
 		
 class GlobalClusteringCoefficientTestCase(unittest.TestCase):
 
@@ -153,40 +153,40 @@ class GlobalClusteringCoefficientTestCase(unittest.TestCase):
 		G.add_edge_(n2,99)	
 		x = clustering.gcc(G)
 		
-class TTClusteringCoefficientTestCase(unittest.TestCase):
-
-	def test_simple(self):
-
-		G = DiGraph()
-		G.add_edge('x','y')
-		G.add_edge('x','z')
-		G.add_edge('y','z')
-
-		x = clustering.tt(G)
-		self.assertEqual(x,1.0)
-
-		G.add_edge('z','y')
-		x = clustering.tt(G)
-		self.assertEqual(x,1.0)
-
-	def test_zero_outdegree(self):
-
-		G = DiGraph()
-		G.add_edge('x','y')
-
-		x = clustering.tt(G)
-		self.assertEqual(x,0)
-
-	def test_simple2(self):
-		G = DiGraph()
-		n1 = G.add_node()
-		n2 = G.add_node()
-		G.add_edge_(n1,n2)
-
-		for i in range(2,100):
-			n = G.add_node()
-			G.add_edge_(n1,n)
-			G.add_edge_(n,n-1)
-
-		G.add_edge_(n2,99)	
-		x = clustering.tt(G)
+# class TTClusteringCoefficientTestCase(unittest.TestCase):
+# 
+# 	def test_simple(self):
+# 
+# 		G = DiGraph()
+# 		G.add_edge('x','y')
+# 		G.add_edge('x','z')
+# 		G.add_edge('y','z')
+# 
+# 		x = clustering.tt(G)
+# 		self.assertEqual(x,1.0)
+# 
+# 		G.add_edge('z','y')
+# 		x = clustering.tt(G)
+# 		self.assertEqual(x,1.0)
+# 
+# 	def test_zero_outdegree(self):
+# 
+# 		G = DiGraph()
+# 		G.add_edge('x','y')
+# 
+# 		x = clustering.tt(G)
+# 		self.assertEqual(x,0)
+# 
+# 	def test_simple2(self):
+# 		G = DiGraph()
+# 		n1 = G.add_node()
+# 		n2 = G.add_node()
+# 		G.add_edge_(n1,n2)
+# 
+# 		for i in range(2,100):
+# 			n = G.add_node()
+# 			G.add_edge_(n1,n)
+# 			G.add_edge_(n,n-1)
+# 
+# 		G.add_edge_(n2,99)	
+# 		x = clustering.tt(G)

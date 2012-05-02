@@ -194,9 +194,9 @@ cpdef np.ndarray[np.float_t, ndim=1] __lcc_directed(DiGraph G):
 
 		# compute the icc for this node
 		if num_vees == 0:
-			C[idx] = 0.0
+			C[ni] = 0.0
 		else:
-			C[idx] = <float> num_tris / <float> num_vees
+			C[ni] = <float> num_tris / <float> num_vees
 
 	return C
 		
@@ -244,19 +244,19 @@ cpdef np.ndarray[np.float_t, ndim=1] __lcc_undirected(Graph G):
 					num_tris += 1
 				
 		if num_vees == 0:
-			C[idx] = 0.0
+			C[ni] = 0.0
 		else:
-			C[idx] = <float> num_tris / <float> num_vees
+			C[ni] = <float> num_tris / <float> num_vees
 			
 		idx += 1
 
 	return C
 	
-cpdef float ncc(G):
+cpdef float ncc(G) except -1:
 	"""
 	Compute the `network (average) clustering coefficient <http://en.wikipedia.org/wiki/Clustering_coefficient#Network_average_clustering_coefficient>`_
 	for graph ``G``.
 	"""
 	cdef np.ndarray[np.float_t, ndim=1] C = lcc_(G)
 	
-	return <float> ma.masked_equal(C,-1.0).avg()
+	return <float> np.ma.masked_equal(C,-1.0).mean()
