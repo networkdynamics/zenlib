@@ -15,6 +15,9 @@ Functions also compute either the path from one node to all other nodes (single-
 	
 The exceptions to the rules above are the ``floyd_warshall`` functions which only compute all-pairs shortest paths.
 
+Convenience functions are also provided for converting predecessor arrays returned by shortest path functions into lists 
+of nodes.
+
 Single-source shortest path functions
 -------------------------------------
 
@@ -111,6 +114,16 @@ All-pairs shortest path functions return either a dictionary or 2D numpy arrays.
 .. autofunction:: all_pairs_bellman_ford_path_length(G)
 
 .. autofunction:: all_pairs_bellman_ford_path_length_(G)
+
+Converting from predecessors to paths
+-------------------------------------
+
+Two functions are provided for converting the predecessor dictionaries and arrays/matrices returned by the shortest-path methods
+into actual paths.
+
+.. autofunction:: pred2path(source,target,R)
+
+.. autofunction:: pred2path_(source,target,P)
 
 """
 
@@ -937,16 +950,25 @@ cdef bellman_ford_u_(Graph G, int start_idx, bint gen_predecessors):
 	else:
 		return distance
 
-cpdef pred2path(start_obj, end_obj, R):
+cpdef pred2path(source, target, R):
 	"""
-	Construct a shortest path from start_obj to end_obj using the output of a shortest path
-	function, R. The path is a list of encountered node objects from start_obj to end_obj.
+	Construct a shortest path from ``source`` to ``target`` using the output of a shortest path
+	function.
+	
+	**Args**:
+		* ``source``: the node object of the source node.
+		* ``target``: the node object of the target node.
+		* ``R`` (:py:class:`dict`): a dictionary returned by either a single-source or all-pairs shortest path function.
+		  This object must be returned by a function that computes the paths, not just the path *lengths*.
+		
+	**Returns**:
+		:py:class:`list`. The list of node objects of nodes encountered on a shortest path from ``source`` to ``target``.
   	"""
-	if type(R[start_obj]) == dict:
-		R = R[start_obj]
-		return _pred2path_sssp_output(start_obj,end_obj,R)
+	if type(R[source]) == dict:
+		R = R[source]
+		return _pred2path_sssp_output(source,target,R)
 	else:
-		return _pred2path_sssp_output(start_obj,end_obj,R)
+		return _pred2path_sssp_output(source,target,R)
 			
 cdef _pred2path_sssp_output(start_obj, end_obj, R):
 
@@ -967,12 +989,20 @@ cdef _pred2path_sssp_output(start_obj, end_obj, R):
 
 	return path
 
-cpdef pred2path_(int start_idx, int end_idx, np.ndarray predecessor):
+cpdef pred2path_(int source, int target, np.ndarray P):
 	"""
-	Construct a shortest path from start_idx to end_idx using the predecessor output of a shortest
-	path algorithm.	The path returned is a list of encountered node indexes from start_idx to end_idx.
-
-	start_idx and end_idx must be node indexes for valid nodes in the graph.
+	Construct a shortest path from ``source`` to ``target`` using the output of a shortest path
+	function.
+	
+	**Args**:
+		* ``source``: the index of the source node.
+		* ``target``: the index of the target node.
+		* ``P`` (:py:class:`numpy.ndarray`): a predecessor array or matrix returned by either a single-source or 
+		  all-pairs shortest path function.  This object must be returned by a function that computes 
+		  the paths, not just the path *lengths*.
+		
+	**Returns**:
+		:py:class:`list`. The list of indices of nodes encountered on a shortest path from ``source`` to ``target``.
   	"""
 	# NOTE(druths): It would generally be preferable for this function to return a path as a numpy array
 	# since this would be more consistent with the index-oriented return policies.  However, the reason 
@@ -983,10 +1013,10 @@ cpdef pred2path_(int start_idx, int end_idx, np.ndarray predecessor):
 	# the length of the path, and then build a numpy array rather than build a list (since this requires)
 	# multiple calls into the Python VM.  This is a topic that should be investigated further.
 	
-	if predecessor.ndim == 1:
-		return _pred2path_sssp_output_(start_idx, end_idx, <np.ndarray> predecessor)
-	elif predecessor.ndim == 2:
-		return _pred2path_apsp_output_(start_idx, end_idx, <np.ndarray> predecessor)
+	if P.ndim == 1:
+		return _pred2path_sssp_output_(source, target, P)
+	elif P.ndim == 2:
+		return _pred2path_apsp_output_(source, target, P)
 	else:
 		raise ZenException, 'distance and predecessor numpy objects must have 1 or 2 dimensions'
 
