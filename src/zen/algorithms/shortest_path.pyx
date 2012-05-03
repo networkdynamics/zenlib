@@ -1,4 +1,118 @@
-#cython: embedsignature=True
+"""
+The ``zen.algorithms.shortest_path`` module provides a number of functions for finding shortest paths in 
+directed and undirected graphs.  All functions are available by importing the root-level ``zen`` package.
+
+Functions return either paths or path lenghts.  These are distinguished by the end of their function name:
+
+	* ``<method_name>_path`` and ``<method_name>_path_`` return paths.
+	* ``<method_name>_path_length`` and ``<method_name>_path_length_`` return path lengths.
+	
+Functions also compute either the path from one node to all other nodes (single-source) or from all nodes to all other nodes
+(all-pairs).  These functions are distinguished from one another by the beginning of their function name:
+
+	* In general, ``<method_name>*`` compute single-source shortest paths.
+	* In general, ``all_pairs_<method_name>*`` compute all-pairs shortest paths.
+	
+The exceptions to the rules above are the ``floyd_warshall`` functions which only compute all-pairs shortest paths.
+
+Single-source shortest path functions
+-------------------------------------
+
+Single-source shortest path functions return either a dictionary or 1D numpy arrays.
+
+	* If the function called operates on the node object-level, then a dictionary, ``D``, is returned
+	  where ``D[n]`` is the shortest path information for the node with object ``n``.
+		* If the function returns path lengths, then ``D[n]`` will contain the path length from the source node
+		  to ``n``.
+		* If the function returns paths, then ``D[n]`` will contain a tuple ``(d,p)`` where ``d`` is the distance
+		  from the source to ``n`` and ``p`` is the predecessor node object on the path from the source to ``n``.
+	* If the function called operates on the node index-level, then 1D numpy arrays are returned.
+		* If the function returns path lengths, then one numpy array, ``D``, is returned where ``D[i]`` is the
+		  distance from the source node to the node with index ``i``.
+		* If the function returns paths, then two numpy arrays, ``D`` and ``P``, are returned containing distance
+		  and predecessor information, respectively.  ``D[i]`` holds the distance from the source node to the node
+		  with index ``i`` (as in the case above) and ``P[i]`` holds the index of the predecessor node on the path leading
+		  from the source node to the node with index ``i``.
+		
+.. note::
+	Note that if numpy arrays are returned and your graph is not compact, some entries in the numpy array may be invalid.  If,
+	for example, there is no nodes with index ``8``, then ``D[8]`` will contain an indeterminate value.  Besides the presence
+	of indeterminiate entries, this can produce a small hit to performance and memory-efficiency since arrays must be created
+	that are larger than the number of nodes in the network.
+
+.. autofunction:: single_source_shortest_path(G,source,target=None)
+
+.. autofunction:: single_source_shortest_path_(G,source,target=-1)
+
+.. autofunction:: single_source_shortest_path_length(G,source,target=None)
+
+.. autofunction:: single_source_shortest_path_length_(G,source,target=-1)
+
+.. autofunction:: dijkstra_path(G,source,target=None)
+
+.. autofunction:: dijkstra_path_(G,source,target=-1)
+
+.. autofunction:: dijkstra_path_length(G,source,target=None)
+
+.. autofunction:: dijkstra_path_length_(G,source,target=-1)
+
+.. autofunction:: bellman_ford_path(G,source)
+
+.. autofunction:: bellman_ford_path_(G,source)
+
+.. autofunction:: bellman_ford_path_length(G,source)
+
+.. autofunction:: bellman_ford_path_length_(G,source)
+
+All-pairs shortest path functions
+---------------------------------
+
+All-pairs shortest path functions return either a dictionary or 2D numpy arrays.
+
+	* If the function called operates on the node object-level, then a dictionary, ``D``, is returned
+	  where ``D[x][y]`` is the shortest path information for the path starting at node ``x`` and ending at node ``y``.
+		* If the function returns path lengths, then ``D[x][y]`` will contain the path length from ``x`` to ``y``.
+		* If the function returns paths, then ``D[x][y]`` will contain a tuple ``(d,p)`` where ``d`` is the distance
+		  from ``x`` to ``y`` and ``p`` is the predecessor node object on the path from ``x`` to ``y``.
+	* If the function called operates on the node index-level, then 1D numpy arrays are returned.
+		* If the function returns path length, then one numpy array, ``D``, is returned where ``D[i]`` is the
+		  distance from the source node to the node with index ``i``.
+		* If the function returns paths, then two numpy arrays, ``D`` and ``P``, are returned containing distance
+		  and predecessor information, respectively.  ``D[i]`` holds the distance from the source node to the node
+		  with index ``i`` (as in the case above) and ``P[i]`` holds the index of the predecessor node on the path leading
+		  from the source node to the node with index ``i``.
+		
+.. note::
+	Note that if numpy arrays are returned and your graph is not compact, some entries in the numpy arrays may be invalid.  If,
+	for example, there is no nodes with index ``8``, then ``D[1,8]`` will contain an indeterminate value.  Besides the presence
+	of indeterminiate entries, this can produce a small hit to performance and memory-efficiency since arrays must be created
+	that are larger than the number of nodes in the network.
+
+.. autofunction:: all_pairs_shortest_path(G)
+
+.. autofunction:: all_pairs_shortest_path_(G)
+
+.. autofunction:: all_pairs_shortest_path_length(G)
+
+.. autofunction:: all_pairs_shortest_path_length_(G)
+
+.. autofunction:: all_pairs_dijkstra_path(G)
+
+.. autofunction:: all_pairs_dijkstra_path_(G)
+
+.. autofunction:: all_pairs_dijkstra_path_length(G)
+
+.. autofunction:: all_pairs_dijkstra_path_length_(G)
+
+.. autofunction:: all_pairs_bellman_ford_path(G)
+
+.. autofunction:: all_pairs_bellman_ford_path_(G)
+
+.. autofunction:: all_pairs_bellman_ford_path_length(G)
+
+.. autofunction:: all_pairs_bellman_ford_path_length_(G)
+
+"""
 
 import heapq 
 from zen.digraph cimport DiGraph
@@ -43,16 +157,24 @@ __all__ = [
 
 cpdef single_source_shortest_path(G,source,target=None):
 	"""
-	This function computes the single source shortest path in an unweighted network
-	by trading space for speed.  The algorithm requires several blocks of memory whose
-	size are on the order of the number of nodes in the network.  Thus for very large networks,
-	dijkstra's algorithm may be faster.
+	Computes the single source shortest paths in an unweighted network by trading space for speed.  
 	
-	Return value is a dictionary, D, where D[x] is a tuple (d,p), d is the distance of node x
-	from the source and p is the predecessor of node x on the path to the source. 
+	This algorithm requires several blocks of memory whose size are on the order of the number of 
+	nodes in the network.  Thus for very large networks, dijkstra's algorithm may be faster.
 	
-	If the target is specified, the return value is the distance from source to target and the path
-	from source to target, returned as a list of nodes along the path.
+	**Args**:
+		
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node object of the source node.
+		* ``target [=None]``: the node object of the target node.
+	
+	**Returns**:
+		The return value depends on the value of ``target``.
+			
+			* :py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``x``
+		 	  from the source and ``p`` is the predecessor of node ``x`` on the path to the source. 
+			* :py:class:`list` if ``target`` is not ``None``.  In this case, the return value is the distance from 
+			  source to target and the path from source to target, returned as a list of nodes along the path.
 	"""
 	cdef int i, num_nodes
 	cdef int src_idx, tgt_idx
@@ -92,14 +214,23 @@ cpdef single_source_shortest_path(G,source,target=None):
 
 cpdef single_source_shortest_path_length(G,source,target=None):
 	"""
-	This function computes the single source shortest path in an unweighted network
-	by trading space for speed.  The algorithm requires several blocks of memory whose
-	size are on the order of the number of nodes in the network.  Thus for very large networks,
-	dijkstra's algorithm may be faster.
-
-	Return value is a dictionary, D, where D[x] is the distance of node x from the source.
-
-	If the target is specified, the return value is the distance from source to target
+	Computes the single source shortest path lengths in an unweighted network by trading space for speed.  
+	
+	This algorithm requires several blocks of memory whose size are on the order of the number of 
+	nodes in the network.  Thus for very large networks, dijkstra's algorithm may be faster.
+	
+	**Args**:
+		
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node object of the source node.
+		* ``target [=None]``: the node object of the target node.
+	
+	**Returns**:
+		The return value depends on the value of ``target``.
+			
+			* :py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is the distance of node ``x`` from the source.
+			* :py:class:`list` if ``target`` is not ``None``.  In this case, the return value is the distance from 
+			  source to target and the path from source to target.
 	"""
 	cdef int i, num_nodes
 	cdef int src_idx, tgt_idx
@@ -124,14 +255,22 @@ cpdef single_source_shortest_path_length(G,source,target=None):
 				
 cpdef single_source_shortest_path_(G,int source,int target=-1):
 	"""
-	This function computes the single source shortest path in an unweighted network
-	by trading space for speed.  The algorithm requires several blocks of memory whose
-	size are on the order of the number of nodes in the network.  Thus for very large networks,
-	dijkstra's algorithm may be faster.
+	Computes the single source shortest paths in an unweighted network by trading space for speed.  
 	
-	Return values are a distance and predecessor numpy arrays.  If the target is specified, the algorithm
-	halts when the target node is reached.  In this case, the distance and predecessor arrays will
-	be partially completed.
+	This algorithm requires several blocks of memory whose size are on the order of the number of 
+	nodes in the network.  Thus for very large networks, dijkstra's algorithm may be faster.
+	
+	**Args**:
+		
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node index of the source node.
+		* ``target [=None]``: the node index of the target node.
+	
+	**Returns**:
+		numpy ``ndarray``, ``D`` and ``P``.  ``D[i]`` is the distance of node with index ``i`` from the source.  ``P[i]``
+		is the index of the immediate predecessor to node with index ``i`` on the path from the source node.
+		If the target is specified, the algorithm halts when the target node is reached.  In this case, 
+		the distance and predecessor arrays will be partially completed.
 	"""
 	if type(G) == Graph:
 		return single_source_shortest_path_u_(<Graph> G,source,target,True)
@@ -140,14 +279,21 @@ cpdef single_source_shortest_path_(G,int source,int target=-1):
 		
 cpdef single_source_shortest_path_length_(G,int source,int target=-1):
 	"""
-	This function computes the single source shortest path in an unweighted network
-	by trading space for speed.  The algorithm requires several blocks of memory whose
-	size are on the order of the number of nodes in the network.  Thus for very large networks,
-	dijkstra's algorithm may be faster.
-
-	Return value is a distance numpy array.  If the target is specified, the algorithm
-	halts when the target node is reached.  In this case, the distance array will
-	be partially completed.
+	Computes the single source shortest path lengths in an unweighted network by trading space for speed.  
+	
+	This algorithm requires several blocks of memory whose size are on the order of the number of 
+	nodes in the network.  Thus for very large networks, dijkstra's algorithm may be faster.
+	
+	**Args**:
+		
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node index of the source node.
+		* ``target [=None]``: the node index of the target node.
+	
+	**Returns**:
+		numpy ``ndarray``, ``D``.  ``D[i]`` is the distance of node with index ``i`` from the source.
+		If the target is specified, the algorithm halts when the target node is reached.  In this case, 
+		the distance array will be partially completed.
 	"""
 	if type(G) == Graph:
 		return single_source_shortest_path_u_(<Graph> G,source,target,False)
@@ -287,14 +433,28 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bint gen_pr
 	else:
 		return distance
 		
-cpdef dijkstra_path(G, start, end=None):
-	""" 
-	if end is not None: returns (distance, path) from start to end.
-	if end is not reachable, (inf, None) is returned.
+cpdef dijkstra_path(G, source, target=None):
+	"""
+	Computes the single source shortest path using the Dijkstra algorithm.
 
-	if end is None, returns a dictionary where D[x] = (distance to x, predecessor to x)
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node object of the source node.
+		* ``target [=None]``: the node object of the target node.
+
+	**Returns**:
+		The return value depends on the value of ``target``.
+		
+			* :py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``x``
+		 	  from the source and ``p`` is the predecessor of node ``x`` on the path to the source. 
+			* :py:class:`list` if ``target`` is not ``None``.  In this case, the return value is the distance from 
+			  source to target and the path from source to target, returned as a list of nodes along the path.
 	"""
 	cdef int i, pred_idx, end_idx, n
+	
+	start = source
+	end = target
 	
 	# compute the result
 	if end in G:
@@ -339,15 +499,28 @@ cpdef dijkstra_path(G, start, end=None):
 		else:
 			return distance[end_idx], [G.node_object(x) for x in path]
 			
-cpdef dijkstra_path_length(G, start, end=None):
-	""" 
-	if end is not None: returns distance from start to end.
-	if end is not reachable, inf is returned.
+cpdef dijkstra_path_length(G, source, target=None):
+	"""
+	Computes the single source shortest path lengths using Dijkstra's algorithm.
 
-	if end is None, returns a dictionary where D[x] = distance to x
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node object of the source node.
+		* ``target [=None]``: the node object of the target node.
+
+	**Returns**:
+		The return value depends on the value of ``target``.
+		
+			* :py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is the distance of node ``x`` from the source.
+			* :py:class:`list` if ``target`` is not ``None``.  In this case, the return value is the distance from 
+			  source to target and the path from source to target.
 	"""
 	cdef int i, pred_idx, end_idx, n
 
+	start = source
+	end = target
+	
 	# compute the result
 	if end in G:
 		end_idx = G.node_idx(end)
@@ -374,32 +547,48 @@ cpdef dijkstra_path_length(G, start, end=None):
 		return distance[end_idx]
 		
 	
-cpdef dijkstra_path_(G, int start_idx, int end_idx=-1):
+cpdef dijkstra_path_(G, int source, int target=-1):
 	"""
-	Return a distance array D and predecessor array P where D[i] is the length of the shortest path 
-	from node with index start_idx to the node with index i and P[i] is the precedecessor index for node with 
-	index i
+	Computes the single source shortest paths using Dijkstra's algorithm.
 
-	If any indexes are -1, then there was no distance / no predecessor
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node index of the source node.
+		* ``target [=None]``: the node index of the target node.
+
+	**Returns**:
+		numpy ``ndarray``, ``D`` and ``P``.  ``D[i]`` is the distance of node with index ``i`` from the source.  ``P[i]``
+		is the index of the immediate predecessor to node with index ``i`` on the path from the source node.
+		If the target is specified, the algorithm halts when the target node is reached.  In this case, 
+		the distance and predecessor arrays will be partially completed.
 	"""
 	if type(G) == DiGraph:
-		return dijkstra_d_(<DiGraph> G, start_idx, end_idx, True)
+		return dijkstra_d_(<DiGraph> G, source, target, True)
 	elif type(G) == Graph:
-		return dijkstra_u_(<Graph> G, start_idx, end_idx, True)
+		return dijkstra_u_(<Graph> G, source, target, True)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 		
-cpdef dijkstra_path_length_(G, int start_idx, int end_idx=-1):
+cpdef dijkstra_path_length_(G, int source, int target=-1):
 	"""
-	Return a distance array D where D[i] is the length of the shortest path 
-	from node with index start_idx to the node with index i.
+	Computes the single source shortest path lengths using Dijkstra's algorithm.
 
-	If any indexes are -1, then there was no distance / no predecessor
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node index of the source node.
+		* ``target [=None]``: the node index of the target node.
+
+	**Returns**:
+		numpy ``ndarray``, ``D``.  ``D[i]`` is the distance of node with index ``i`` from the source.
+		If the target is specified, the algorithm halts when the target node is reached.  In this case, 
+		the distance array will be partially completed.
 	"""
 	if type(G) == DiGraph:
-		return dijkstra_d_(<DiGraph> G, start_idx, end_idx, False)
+		return dijkstra_d_(<DiGraph> G, source, target, False)
 	elif type(G) == Graph:
-		return dijkstra_u_(<Graph> G, start_idx, end_idx, False)
+		return dijkstra_u_(<Graph> G, source, target, False)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
@@ -518,13 +707,22 @@ cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bint gen_predecessors):
 	else:
 		return distance
 
-cpdef bellman_ford_path(G, start):
-	""" 
-	Returns a dictionary where R[x] = (distance to x, predecessor to x)
+cpdef bellman_ford_path(G, source):
+	"""
+	Computes the single source shortest path using the Bellman-Ford algorithm.  
+
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node object of the source node.
+
+	**Returns**:
+		:py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``x``
+		from the source and ``p`` is the predecessor of node ``x`` on the path to the source.
 	"""
 	cdef int i, pred_idx, n
 	
-	start_idx = G.node_idx(start)
+	start_idx = G.node_idx(source)
 
 	distance, predecessor = bellman_ford_path_(G, start_idx)
 
@@ -549,13 +747,21 @@ cpdef bellman_ford_path(G, start):
 
 	return result
 
-cpdef bellman_ford_path_length(G, start):
-	""" 
-	Returns a dictionary where D[x] = distance to x
+cpdef bellman_ford_path_length(G, source):
+	"""
+	Computes the single source shortest path lengths using the Bellman-Ford algorithm.
+	
+	**Args**:
+		
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node object of the source node.
+	
+	**Returns**:
+		:py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is the distance of node ``x`` from the source.
 	"""
 	cdef int i, pred_idx, n
 	
-	start_idx = G.node_idx(start)
+	start_idx = G.node_idx(source)
 
 	distance = bellman_ford_path_length_(G, start_idx)
 
@@ -571,33 +777,45 @@ cpdef bellman_ford_path_length(G, start):
 
 	return result
 
-cpdef bellman_ford_path_(G, int start_idx):
+cpdef bellman_ford_path_(G, int source):
 	"""
-	Return a distance array D and predecessor array P where D[i] is the length of the shortest path 
-	from node with index start_idx to the node with index i and P[i] is the precedecessor index for node with 
-	index i
+	Computes the single source shortest paths using the Bellman-Ford algorithm.
 
-	If any indexes are -1, then there was no distance / no predecessor
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node index of the source node.
+
+	**Returns**:
+		numpy ``ndarray``, ``D`` and ``P``.  ``D[i]`` is the distance of node with index ``i`` from the source.  ``P[i]``
+		is the index of the immediate predecessor to node with index ``i`` on the path from the source node.
 	"""
 	if type(G) == DiGraph:
-		return bellman_ford_d_(<DiGraph> G, start_idx, True)
+		return bellman_ford_d_(<DiGraph> G, source, True)
 	elif type(G) == Graph:
-		return bellman_ford_u_(<Graph> G, start_idx, True)
+		return bellman_ford_u_(<Graph> G, source, True)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
-cpdef bellman_ford_path_length_(G, int start_idx):
+cpdef bellman_ford_path_length_(G, int source):
 	"""
-	Return a distance array D and predecessor array P where D[i] is the length of the shortest path 
-	from node with index start_idx to the node with index i and P[i] is the precedecessor index for node with 
-	index i
-
-	If any indexes are -1, then there was no distance / no predecessor
+	Computes the single source shortest path lengths in an unweighted network by trading space for speed.  
+	
+	This algorithm requires several blocks of memory whose size are on the order of the number of 
+	nodes in the network.  Thus for very large networks, dijkstra's algorithm may be faster.
+	
+	**Args**:
+		
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``source``: the node index of the source node.
+	
+	**Returns**:
+		numpy ``ndarray``, ``D``.  ``D[i]`` is the distance of node with index ``i`` from the source.
 	"""
 	if type(G) == DiGraph:
-		return bellman_ford_d_(<DiGraph> G, start_idx, False)
+		return bellman_ford_d_(<DiGraph> G, source, False)
 	elif type(G) == Graph:
-		return bellman_ford_u_(<Graph> G, start_idx, False)
+		return bellman_ford_u_(<Graph> G, source, False)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
@@ -825,8 +1043,14 @@ cpdef flag_unreachable(np.ndarray A):
 
 cpdef floyd_warshall_path(G):
 	"""
-	Return a dictionary of dictionaries, R, where R[x][y] is a tuple (d,p).  d is the length
-	of the shortest path from x to y and p is the preceeding node to y on the path from x to y.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
+	 	  from node ``x`` and ``p`` is the predecessor of node ``y`` on the path from ``x`` to ``y``. 
 	"""
 	cdef int i,j
 
@@ -849,8 +1073,13 @@ cpdef floyd_warshall_path(G):
 
 cpdef floyd_warshall_path_length(G):
 	"""
-	Return a dictionary of dictionaries, D, where D[x][y] is the length of the shortest path from
-	x to y.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+	
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+
+	**Returns**:
+		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	cdef int i,j
 
@@ -873,9 +1102,15 @@ cpdef floyd_warshall_path_length(G):
 
 cpdef floyd_warshall_path_(G):
 	"""
-	Return a distance matrix D and a predecessor matrix P.
-	D[i,j] is the length of the shortest path from node with index i to the node with index j.
-	P[i,j] is the node preceeding j on a shortest path from i to j.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.  ``P`` is the predecessor
+		matrix where ``P[i,j]`` is the node preceeding ``j on a shortest path from ``i`` to ``j``.
 	"""
 	if type(G) == DiGraph:
 		return floyd_warshall_d_(<DiGraph> G,True)
@@ -884,8 +1119,14 @@ cpdef floyd_warshall_path_(G):
 	
 cpdef floyd_warshall_path_length_(G):
 	"""
-	Return a distance matrix D where D[i,j] is the length of the shortest path 
-	from node with index i to the node with index j.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.
 	"""
 	if type(G) == DiGraph:
 		return floyd_warshall_d_(<DiGraph> G,False)
@@ -1004,8 +1245,14 @@ cpdef floyd_warshall_u_(Graph G,bool gen_predecessors):
 
 cpdef all_pairs_shortest_path(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
-	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
+	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shortest_path`.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
+	 	  from node ``x`` and ``p`` is the predecessor of node ``y`` on the path from ``x`` to ``y``. 
 	"""
 	R = dict()
 	for n in G.nodes_iter():
@@ -1015,8 +1262,13 @@ cpdef all_pairs_shortest_path(G):
 	
 cpdef all_pairs_shortest_path_length(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is 
-	the length of the shortest path from x to y.
+	Computes the shortest paths between all pairs of nodes using the algorithm descibed in :py:func:`single_source_shortest_path`.
+	
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+
+	**Returns**:
+		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	R = dict()
 	for n in G.nodes_iter():
@@ -1026,9 +1278,15 @@ cpdef all_pairs_shortest_path_length(G):
 	
 cpdef all_pairs_shortest_path_(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is two NxN matricies, D and P, containing pairwise distances
-	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
-	on the shortest path from x.  All node identifiers are node indicies.
+	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shortest_path`.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.  ``P`` is the predecessor
+		matrix where ``P[i,j]`` is the node preceeding ``j on a shortest path from ``i`` to ``j``.
 	"""
 	cdef int nidx
 	
@@ -1060,8 +1318,14 @@ cpdef all_pairs_shortest_path_(G):
 	
 cpdef all_pairs_shortest_path_length_(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
-	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
+	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shorest_path`.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.
 	"""
 	cdef int nidx
 	cdef Graph UG
@@ -1089,8 +1353,14 @@ cpdef all_pairs_shortest_path_length_(G):
 
 cpdef all_pairs_dijkstra_path(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
-	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
+	Computes the shortest paths between all pairs of nodes using Dijkstra's algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
+	 	  from node ``x`` and ``p`` is the predecessor of node ``y`` on the path from ``x`` to ``y``. 
 	"""
 	R = dict()
 	for n in G.nodes_iter():
@@ -1100,9 +1370,15 @@ cpdef all_pairs_dijkstra_path(G):
 	
 cpdef all_pairs_dijkstra_path_(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is two NxN matricies, D and P, containing pairwise distances
-	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
-	on the shortest path from x.  All node identifiers are node indicies.
+	Computes the shortest paths between all pairs of nodes using Dijkstra's algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.  ``P`` is the predecessor
+		matrix where ``P[i,j]`` is the node preceeding ``j on a shortest path from ``i`` to ``j``.
 	"""
 	cdef int nidx
 	
@@ -1134,8 +1410,13 @@ cpdef all_pairs_dijkstra_path_(G):
 
 cpdef all_pairs_dijkstra_path_length(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is 
-	the length of the shortest path from x to y.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+	
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+
+	**Returns**:
+		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	R = dict()
 	for n in G.nodes_iter():
@@ -1145,8 +1426,14 @@ cpdef all_pairs_dijkstra_path_length(G):
 
 cpdef all_pairs_dijkstra_path_length_(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
-	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.
 	"""
 	cdef int nidx
 	cdef Graph UG
@@ -1174,8 +1461,14 @@ cpdef all_pairs_dijkstra_path_length_(G):
 	
 cpdef all_pairs_bellman_ford_path(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is a
-	tuple (d,p) indicating the length of the shortest path from x to y, d, and the predecessor on that path.
+	Computes the shortest paths between all pairs of nodes using the Bellman-Ford algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
+	 	  from node ``x`` and ``p`` is the predecessor of node ``y`` on the path from ``x`` to ``y``. 
 	"""
 	R = dict()
 	for n in G.nodes_iter():
@@ -1185,9 +1478,15 @@ cpdef all_pairs_bellman_ford_path(G):
 
 cpdef all_pairs_bellman_ford_path_(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is two NxN matricies, D and P, containing pairwise distances
-	and predecessors respectively.  D[x,y] is the length of the path leading from x to y and P[x,y] is the immediate predecessor to y
-	on the shortest path from x.  All node identifiers are node indicies.
+	Computes the shortest paths between all pairs of nodes using the Bellman-Ford algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.  ``P`` is the predecessor
+		matrix where ``P[i,j]`` is the node preceeding ``j on a shortest path from ``i`` to ``j``.
 	"""
 	cdef int nidx
 
@@ -1219,8 +1518,13 @@ cpdef all_pairs_bellman_ford_path_(G):
 
 cpdef all_pairs_bellman_ford_path_length(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is a dictionary of dictionaries, R, where R[x][y] is 
-	the length of the shortest path from x to y.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+	
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+
+	**Returns**:
+		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	R = dict()
 	for n in G.nodes_iter():
@@ -1230,8 +1534,14 @@ cpdef all_pairs_bellman_ford_path_length(G):
 
 cpdef all_pairs_bellman_ford_path_length_(G):
 	"""
-	Compute the shortest paths between all pairs of nodes in G.  The result is one NxN matricies, D, containing pairwise distances.  
-	D[x,y] is the length of the path leading from x to y. All node identifiers are node indicies.
+	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
+		
+	**Args**:
+		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+	
+	**Returns**:
+		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
+		length of the shortest path from node with index i to the node with index j.
 	"""
 	cdef int nidx
 	cdef Graph UG
