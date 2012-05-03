@@ -1,5 +1,10 @@
 """
-This module provides conversion services to and from NetworkX objects.
+The ``zen.nx`` module provides functions for converting graph objects to and from the `NetworkX <http://networkx.lanl.gov/>`_ library.
+
+.. autofunction:: to_networkx(G)
+
+.. autofunction:: from_networkx(G)
+
 """
 
 from graph import Graph
@@ -10,8 +15,16 @@ __all__ = ['to_networkx','from_networkx']
 
 def to_networkx(G):
 	"""
-	This function accepts a Zen graph object and returns a networkx graph object that is a copy
-	of the Zen graph.
+	Convert a Zen graph object into a NetworkX graph object.
+	
+	In creating the object, the node object and node/edge data will be copied over (a shallow copy).  The
+	edge weight will be lost, as there is no separate edge weight attribute in NetworkX graphs.
+	
+	**Returns**:
+		The return type depends on the input type.
+		
+		* :py:class:`networkx.Graph` if the input graph was a :py:class:`zen.Graph`.
+		* :py:class:`networkx.DiGraph` if the input graph was a :py:class:`zen.DiGraph`.
 	"""
 	import networkx
 	
@@ -72,7 +85,15 @@ def to_networkx(G):
 	
 def from_networkx(G):
 	"""
-	This function converts a graph from a networkx data structure into a Zen graph.
+	Convert a NetworkX graph into a Zen graph object.
+	
+	In creating the object, the NetworkX node object and node/edge data will be copied over (a shallow copy).
+	
+	**Returns**:
+		The return type depends on the input type.
+		
+		* :py:class:`zen.Graph` if the input graph was a :py:class:`networkx.Graph`.
+		* :py:class:`zen.DiGraph` if the input graph was a :py:class:`networkx.DiGraph`.
 	"""
 	Gdest = None
 	if type(G) == networkx.DiGraph:
