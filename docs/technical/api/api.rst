@@ -14,5 +14,5 @@ Zen Library Reference
 	Graph generators <generators.rst>
 	Visualization routines <viz/index.rst>
 	Built-in datasets <datasets.rst>
-	Utilities <utils.rst>
+..	Utilities <utils.rst>
 	
