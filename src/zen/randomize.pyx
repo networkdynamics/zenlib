@@ -1,12 +1,30 @@
-#cython: embedsignature=True
-
 """
-This module provides functions that randomize existing networks.
+This module provides functions that randomly sample from existing networks.  These samples either involve randomly
+selecting nodes/edges from a network or generating a new random network that shares certain features of the input
+network.
 
-Since all functions involve calls to the system random number generator, all functions accept the optional arguments
+Since all functions involve calls to the system random number generator, all functions accept the ``seed`` argument
+that sets the state of the random number generator.
 
-	- seed [=None]: sets the seed to be set in the random generator. If not specified, then no change is made to the
-		random seed.
+	``seed [=-1]`` (int): sets the seed to be set in the random generator. If not specified (i.e. set to ``-1``), 
+	then no change is made to the random seed.
+	
+Random selection of nodes and edges
+-----------------------------------
+
+.. autofunction:: choose_node(G[,seed=-1])
+
+.. autofunction:: choose_node_(G[,seed=-1])
+
+.. autofunction:: choose_edge(G[,seed=-1])
+
+.. autofunction:: choose_edge_(G[,seed=-1])
+
+Graph randomization
+-------------------
+
+.. autofunction:: shuffle(G[,keep_degree=False,self_loops=False,seed=-1])
+
 """
 
 from zen.graph cimport Graph
@@ -26,12 +44,20 @@ __all__ = ['choose_node','choose_node_','choose_edge','choose_edge_','shuffle']
 
 def choose_node(G,**kwargs):
 	"""
-	Choose a random node object from the graph G.  
+	Choose a random node object from the graph ``G``.  
 	
-	From a performance perspective, the performance of this method will degrade as the
-	ratio of num_nodes/max_node_idx approaches zero.  This is because the random node is
-	selected by selecting a random index into the node array.  The more holes that exist
-	in the node array, the more random tries will be required to find a valid node.
+	.. note::
+		From a performance perspective, the performance of this method will degrade as the 
+		ratio of ``G.num_nodes``/``G.max_node_idx`` approaches zero.  This is because the random node is
+		selected by selecting a random index into the node array.  The more holes that exist
+		in the node array, the more random tries will be required to find a valid node.
+	
+	**KwArgs**:
+		* ``seed [=-1]`` (int): sets the seed to be set in the random generator. If not specified (i.e. set to ``-1``), 
+		  then no change is made to the random seed.
+		
+	**Returns**:
+		``object``. The node object of a node selected with uniform random probability from the input graph.
 	"""
 	seed = kwargs.pop('seed',None)
 	
@@ -50,20 +76,25 @@ def choose_node(G,**kwargs):
 	
 def choose_node_(G,**kwargs):
 	"""
-	Choose a random node index from the graph G.  
+	Choose a random node index from the graph ``G``.  
 	
-	From a performance perspective, the performance of this method will degrade as the
-	ratio of num_nodes/max_node_idx approaches zero.  This is because the random node is
-	selected by selecting a random index into the node array.  The more holes that exist
-	in the node array, the more random tries will be required to find a valid node.
+	.. note::
+		From a performance perspective, the performance of this method will degrade as the 
+		ratio of ``G.num_nodes``/``G.max_node_idx`` approaches zero.  This is because the random node is
+		selected by selecting a random index into the node array.  The more holes that exist
+		in the node array, the more random tries will be required to find a valid node.
+	
+	**KwArgs**:
+		* ``seed [=-1]`` (int): sets the seed to be set in the random generator. If not specified (i.e. set to ``-1``), 
+		  then no change is made to the random seed.
+		
+	**Returns**:
+		``int``. The index of a node selected with uniform random probability from the input graph.
 	"""
-	seed = kwargs.pop('seed',None)
+	seed = kwargs.pop('seed',-1)
 	
 	if len(kwargs) > 0:
 		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
-		
-	if seed is None:
-		seed = -1
 		
 	if type(G) == Graph:
 		return ug_choose_node_(<Graph>G,seed)
@@ -98,20 +129,25 @@ cpdef int dg_choose_node_(DiGraph G,int seed):
 
 def choose_edge(G,**kwargs):
 	"""
-	Choose a random edge from the graph G.  
+	Choose a random edge from the graph ``G``.  
 	
-	From a performance perspective, the performance of this method will degrade as the
-	ratio of num_edges/max_edge_idx approaches zero.  This is because the random edge is
-	selected by selecting a random index into the edge array.  The more holes that exist
-	in the edge array, the more random tries will be required to find a valid edge.
+	.. note::
+		From a performance perspective, the performance of this method will degrade as the 
+		ratio of ``G.num_edges``/``G.max_edge_idx`` approaches zero.  This is because the random node is
+		selected by selecting a random index into the edge array.  The more holes that exist
+		in the edge array, the more random tries will be required to find a valid edge.
+	
+	**KwArgs**:
+		* ``seed [=-1]`` (int): sets the seed to be set in the random generator. If not specified (i.e. set to ``-1``), 
+		  then no change is made to the random seed.
+		
+	**Returns**:
+		``tuple``, ``(u,v)``. The endpoints of an edge selected with uniform random probability from the input graph.
 	"""
-	seed = kwargs.pop('seed',None)
+	seed = kwargs.pop('seed',-1)
 	
 	if len(kwargs) > 0:
 		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
-		
-	if seed is None:
-		seed = -1
 	
 	if type(G) == Graph:
 		return G.endpoints(ug_choose_edge_(<Graph>G,seed))
@@ -122,12 +158,20 @@ def choose_edge(G,**kwargs):
 
 def choose_edge_(G,**kwargs):
 	"""
-	Choose a random edge index from the graph G.  
+	Choose a random edge from the graph ``G``.  
 	
-	From a performance perspective, the performance of this method will degrade as the
-	ratio of num_edges/max_edge_idx approaches zero.  This is because the random edge is
-	selected by selecting a random index into the edge array.  The more holes that exist
-	in the edge array, the more random tries will be required to find a valid edge.
+	.. note::
+		From a performance perspective, the performance of this method will degrade as the 
+		ratio of ``G.num_edges``/``G.max_edge_idx`` approaches zero.  This is because the random node is
+		selected by selecting a random index into the edge array.  The more holes that exist
+		in the edge array, the more random tries will be required to find a valid edge.
+	
+	**KwArgs**:
+		* ``seed [=-1]`` (int): sets the seed to be set in the random generator. If not specified (i.e. set to ``-1``), 
+		  then no change is made to the random seed.
+		
+	**Returns**:
+		``int``. The index of an edge selected with uniform random probability from the input graph.
 	"""
 	seed = kwargs.pop('seed',None)
 	
@@ -170,25 +214,23 @@ cpdef int dg_choose_edge_(DiGraph G,int seed):
 	
 def shuffle(G,**kwargs):
 	"""
-	Shuffle the edges in this network.  Keyword arguments can include:
+	Create a copy of graph ``G`` in which its edges have been shuffled.
 	
-	  - keep_degree True/[False] indicates whether the degree of each node in the original network
-								 should be retained in the shuffled version
-	  - self_loops True/[False]  indicates whether self-loops should be permitted in the shuffled version
-								 of the network
-	  - seed [=None]: specify the seed that is used by the random number generator.
+	**KwArgs**:
+	  	* ``keep_degree [=False]`` (``boolean``). Indicates whether the degree 
+		  of each node in the original network should be retained in the shuffled version.
+		* ``self_loops [=False]`` (``boolean``). Indicates whether self-loops 
+		  should be permitted in the shuffled version of the network.
+	  	* ``seed [=-1]`` (int): specify the seed that is used by the random number generator.
 	"""
 	
 	# parse parameters
 	keep_degree = kwargs.pop('keep_degree',False)
 	self_loops = kwargs.pop('self_loops',False)
-	seed = kwargs.pop('seed',None)
+	seed = kwargs.pop('seed',-1)
 	
 	if len(kwargs) > 0:
 		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
-	
-	if seed is None:
-		seed = -1
 		
 	# call the appropriate function
 	if type(G) == Graph:
