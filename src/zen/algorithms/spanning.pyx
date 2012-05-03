@@ -1,7 +1,9 @@
 #cython: embedsignature=True
 
 """
-This module provides functions that calculate spanning trees of a network.
+The ``zen.algorithms.spanning`` module provides functions that calculate spanning trees of a network.
+
+.. autofunction:: minimum_spanning_tree(G)
 """
 
 from zen.graph cimport Graph
@@ -16,10 +18,16 @@ __all__ = ['minimum_spanning_tree']
 
 cpdef minimum_spanning_tree(Graph G):
 	"""
-		This will return the minimum spanning tree (MST) of Graph G, based on Prim's Algorithm.
-		The algorithm was taken from;
-		Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, and Clifford Stein. Introduction to Algorithms, Second Edition. 
-		MIT Press and McGraw-Hill, 2001. ISBN 0-262-03293-7. Chapter 23
+	Compute the minimum spanning tree (MST) of the undirected graph ``G``.
+	
+	.. note::
+		The algorithm used is based on Prim's Algorithm as described in
+			
+			Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, and Clifford Stein. *Introduction to Algorithms*, Second Edition. 
+			MIT Press and McGraw-Hill, 2001. ISBN 0-262-03293-7. Chapter 23.
+			
+	**Returns**:
+		:py:class:`zen.Graph`. The minimum spanning tree of the input graph ``G``.
 	"""
 	cdef Graph Gnew = Graph()
 	cdef np.ndarray[object, ndim=1] fiboheap_nodes = np.empty([G.num_nodes], dtype=object) # holds all of our FiboHeap Nodes Pointers
@@ -74,4 +82,5 @@ cpdef minimum_spanning_tree(Graph G):
 				if v_dis < v_key:
 					node_parents[v] = u
 					Q.decrease_key(<object>fiboheap_nodes[v],v_dis)
+					
 	return Gnew

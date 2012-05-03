@@ -1,9 +1,6 @@
 """
 The ``zen.algorithms.matching`` module provides routines for computing `maximum-matchings <???>`_ on various types of graphs.
 
-Functions
----------
-
 .. autofunction:: maximum_matching
 
 .. autofunction:: maximum_matching_

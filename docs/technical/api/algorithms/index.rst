@@ -2,7 +2,6 @@ Graph and network algorithms
 ============================
 
 .. toctree::
-	:hidden:
 	
 	Centrality measures <centrality.rst>
 	Clustering coefficients <clustering.rst>
