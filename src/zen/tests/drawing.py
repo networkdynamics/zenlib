@@ -13,7 +13,7 @@ class DrawingTestCase(unittest.TestCase):
 		G.add_edge(1,2)
 		G.add_edge(2,3)
 		
-		v = layout.spring(G.skeleton())
+		v = layout.fruchterman_reingold(G.skeleton())
 		v.set_default_shape(['circle',(0.05,)])
 		pylab.ioff()
 		pylab.figure()
