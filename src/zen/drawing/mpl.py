@@ -126,7 +126,7 @@ def draw(view,**kwargs):
 		* ``bounds [=None]`` (:py:class:`tuple`): a tuple indicating the bounds of the plot. 
 		  This influences the portion of the graph that will be visible and where the graph's
 		  components will be positioned in the plot.  If ``None``, then bounds will be chosen
-		  that fit all nodes and edges in the graph with a 10%% buffer on all sides.
+		  that fit all nodes and edges in the graph with a 10% buffer on all sides.
 		
 	**Returns**:
 		*matplotlib figure*. The figure the graph was drawn to.
