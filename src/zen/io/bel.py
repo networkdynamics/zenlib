@@ -97,7 +97,7 @@ def read_str(sbuffer, **kwargs):
 	
 		* ``directed [= False]`` (boolean): indicates whether the data is read as directed
 	
-		* ``check_for_duplicates [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
+		* ``ignore_duplicate_edges [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
 	  	  no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
 	  	  performance cost due to the check.
 	
@@ -109,13 +109,13 @@ def read_str(sbuffer, **kwargs):
 	# handle the keyword arguments
 	node_obj_fxn = kwargs.pop('node_obj_fxn',str)
 	directed = kwargs.pop('directed',False)
-	check_for_duplicates = kwargs.pop('check_for_duplicates',False)
+	check_for_duplicates = kwargs.pop('ignore_duplicate_edges',False)
 	
 	if len(kwargs) > 0:
 		raise ZenException, 'Unknown keyword arguments: %s' % ', '.join(kwargs.keys())
 	
 	if check_for_duplicates and directed:
-		raise ZenException, 'check_for_duplicates can only be set when directed = False'
+		raise ZenException, 'ignore_duplicate_edges can only be set when directed = False'
 		
 	# build the graph
 	G = None
@@ -205,7 +205,7 @@ def read(fh, **kwargs):
 
 		* ``directed [= False]`` (boolean): indicates whether the data is read as directed
 
-		* ``check_for_duplicates [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
+		* ``ignore_duplicate_edges [= False]`` (boolean): applies only when loading an undirected graph. If True, then a check will be made to ensure that
   	  	  no duplicate edges are attempted to be added (in case the underlying graph was originally directed).  Checking incurs a small
 		  performance cost due to the check.
 	
