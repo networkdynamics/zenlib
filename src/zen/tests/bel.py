@@ -16,6 +16,18 @@ class BELTestCase(unittest.TestCase):
 			self.fail('bel.write_str should have raised an exception. G is not compact.')
 		except ZenException,e:
 			pass
+	
+	def test_write_objless(self):
+		G = DiGraph()
+		n1 = G.add_node()
+		n2 = G.add_node()
+		
+		G.add_edge_(n1,n2)
+		
+		x = bel.write_str(G)
+		G2 = bel.read_str(x,directed=True)
+		
+		self.assertTrue(G2.has_edge_(n1,n2))
 			
 	def test_directed_rw1(self):
 		G = DiGraph()

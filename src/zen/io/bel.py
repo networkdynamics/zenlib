@@ -329,7 +329,7 @@ def store_bitvector(G):
 	#####
 	# Write the data section
 	for e in G.edges_iter_():
-		x,y = G.endpoints(e)
+		x,y = G.endpoints_(e)
 		
 		a1 = node2index_lookup[x]
 		a2 = node2index_lookup[y]
