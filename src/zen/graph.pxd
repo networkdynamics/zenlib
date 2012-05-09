@@ -1,4 +1,3 @@
-from cpython cimport bool
 import numpy as np
 cimport numpy as np
 
@@ -50,9 +49,9 @@ cdef class Graph:
 	
 	cpdef np.ndarray[np.float_t] matrix(self)
 	
-	cpdef is_directed(Graph self)
+	cpdef bint is_directed(Graph self)
 	
-	cpdef bool is_compact(Graph self)
+	cpdef bint is_compact(Graph self)
 	
 	cpdef compact(Graph self)
 		
@@ -144,25 +143,25 @@ cdef class Graph:
 	
 	cpdef edge_data_(Graph self,int eidx)
 	
-	cpdef bool has_edge(Graph self,u,v)
+	cpdef bint has_edge(Graph self,u,v)
 		
-	cpdef bool has_edge_(Graph self,int u,int v)
+	cpdef bint has_edge_(Graph self,int u,int v)
 	
 	cpdef edge_idx(Graph self, u, v)
 	
 	cpdef edge_idx_(Graph self, int u, int v)
 	
-	cpdef edges_iter(Graph self,nobj=*,bool data=*,bool weight=*)
+	cpdef edges_iter(Graph self,nobj=*,bint data=*,bint weight=*)
 	
-	cpdef edges_iter_(Graph self,int nidx=*,bool data=*,bool weight=*)
+	cpdef edges_iter_(Graph self,int nidx=*,bint data=*,bint weight=*)
 	
-	cpdef edges(Graph self,nobj=*,bool data=*,bool weight=*)
+	cpdef edges(Graph self,nobj=*,bint data=*,bint weight=*)
 		
-	cpdef edges_(Graph self,int nidx=*,bool data=*,bool weight=*)
+	cpdef edges_(Graph self,int nidx=*,bint data=*,bint weight=*)
 
-	cpdef grp_edges_iter(Graph self,nbunch,bool data=*,bool weight=*)
+	cpdef grp_edges_iter(Graph self,nbunch,bint data=*,bint weight=*)
 	
-	cpdef grp_edges_iter_(Graph self,nbunch,bool data=*,bool weight=*)
+	cpdef grp_edges_iter_(Graph self,nbunch,bint data=*,bint weight=*)
 	
 	cpdef neighbors(Graph self,nobj,data=*)
 	

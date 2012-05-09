@@ -518,13 +518,13 @@ cdef class DiGraph:
 
 		return G
 				
-	cpdef is_directed(DiGraph self):
+	cpdef bint is_directed(DiGraph self):
 		"""
 		Return ``True`` if this graph is directed (which it is).
 		"""
 		return True
 	
-	cpdef bool is_compact(DiGraph self):
+	cpdef bint is_compact(DiGraph self):
 		"""
 		Return ``True`` if the graph is in compact form.  
 		
@@ -1897,7 +1897,7 @@ cdef class DiGraph:
 		else:
 			return None
 			
-	cpdef bool has_edge(DiGraph self,src,tgt):
+	cpdef bint has_edge(DiGraph self,src,tgt):
 		"""
 		Return ``True`` if the graph contains an edge between ``src`` and ``tgt`` (node objects).  
 		If either node object is not in the graph, this method returns ``False``.
@@ -1913,7 +1913,7 @@ cdef class DiGraph:
 		
 		return self.has_edge_(src,tgt)
 		
-	cpdef bool has_edge_(DiGraph self,int src,int tgt):
+	cpdef bint has_edge_(DiGraph self,int src,int tgt):
 		"""
 		Return ``True`` if the graph contains an edge between ``src`` and ``tgt`` (node indices).
 		
@@ -3171,15 +3171,15 @@ cdef class DiGraph:
 		return SomeNeighborIterator(self,nbunch,ITER_OUTDEGREE,obj,data,False)
 								
 cdef class NodeIterator:
-	cdef bool data
+	cdef bint data
 	cdef DiGraph graph
 	cdef int idx
 	cdef int node_count
-	cdef bool nobj
-	cdef bool obj
+	cdef bint nobj
+	cdef bint obj
 	cdef long init_num_changes
 	
-	def __cinit__(NodeIterator self,DiGraph graph,bool obj,bool data,bool nobj):
+	def __cinit__(NodeIterator self,DiGraph graph,bint obj,bint data,bint nobj):
 		self.init_num_changes = graph.num_changes
 		self.data = data
 		self.graph = graph
@@ -3239,11 +3239,11 @@ cdef class NodeIterator:
 		return self
 		
 cdef class AllEdgeIterator:
-	cdef bool data
-	cdef bool weight
+	cdef bint data
+	cdef bint weight
 	cdef DiGraph graph
 	cdef int idx
-	cdef bool endpoints
+	cdef bint endpoints
 	cdef long init_num_changes
 	
 	def __cinit__(AllEdgeIterator self,DiGraph graph,weight=False,data=False,endpoints=False):
@@ -3327,14 +3327,14 @@ cdef int ITER_INDEGREE = 1
 cdef int ITER_OUTDEGREE = 2
 		
 cdef class NodeEdgeIterator:
-	cdef bool data
-	cdef bool weight
+	cdef bint data
+	cdef bint weight
 	cdef DiGraph graph
 	cdef int nidx
 	cdef int deg
 	cdef int idx
 	cdef int which_degree
-	cdef bool endpoints
+	cdef bint endpoints
 	cdef long init_num_changes
 	
 	def __cinit__(NodeEdgeIterator self,DiGraph graph,nidx,which_degree,weight=False,data=False,endpoints=False):
@@ -3498,14 +3498,14 @@ cdef class NodeEdgeIterator:
 		return self
 
 cdef class SomeEdgeIterator:
-	cdef bool data
-	cdef bool weight
+	cdef bint data
+	cdef bint weight
 	cdef DiGraph graph
 	cdef int which_degree
 	cdef touched_edges
 	cdef nbunch_iter
 	cdef edge_iter
-	cdef bool endpoints
+	cdef bint endpoints
 	cdef long init_num_changes
 
 	def __cinit__(SomeEdgeIterator self,DiGraph graph,nbunch,which_degree,weight=False,data=False,endpoints=False):
@@ -3588,13 +3588,13 @@ cdef class SomeEdgeIterator:
 						
 cdef class NeighborIterator:
 	cdef NodeEdgeIterator inner_iter
-	cdef bool data
+	cdef bint data
 	cdef deg
 	cdef int nidx
 	cdef DiGraph G
 	cdef touched_nodes
-	cdef bool use_nobjs
-	cdef bool obj
+	cdef bint use_nobjs
+	cdef bint obj
 	cdef long init_num_changes
 	
 	def __cinit__(NeighborIterator self, DiGraph G, int nidx,which_degree,obj,data,use_nobjs):
@@ -3712,15 +3712,15 @@ cdef class NeighborIterator:
 		return self
 		
 cdef class SomeNeighborIterator:
-	cdef bool data
+	cdef bint data
 	cdef DiGraph graph
 	cdef int idx
 	cdef int which_degree
 	cdef touched_nodes
 	cdef nbunch_iter
 	cdef neighbor_iter
-	cdef bool use_nobjs
-	cdef bool obj
+	cdef bint use_nobjs
+	cdef bint obj
 	cdef long init_num_changes
 
 	def __cinit__(SomeNeighborIterator self,DiGraph graph,nbunch,which_degree,obj,data,use_nobjs):
