@@ -37,11 +37,13 @@ from zen.digraph cimport DiGraph
 from zen.graph cimport Graph
 from zen.exceptions import *
 
-from cpython cimport bool
-
 __all__ = ['read','write']
 
 # include reading capabilities
+cdef extern from "stdlib.h" nogil:
+	int atoi(char* s)
+	float atof(char* s)
+
 cdef extern from "stdio.h" nogil:
 	ctypedef struct FILE
 	
@@ -103,12 +105,15 @@ def read(char* filename,**kwargs):
 	
 	return __inner_read(filename,directed,ignore_duplicate_edges,weighted,node_obj_fxn)
 	
-cpdef __inner_read(char* filename,bool directed,bool ignore_duplicates,bool weighted,node_obj_fxn):
+cpdef __inner_read(char* filename,bint directed,bint ignore_duplicates,bint weighted,node_obj_fxn):
+	
+	cdef Graph uG = None
+	cdef DiGraph dG = None
 	
 	if directed is True:
-		G = DiGraph()
+		dG = DiGraph()
 	else:
-		G = Graph()
+		uG = Graph()
 	
 	cdef FILE* fh
 	cdef int MAX_LINE_LEN = 100
@@ -117,6 +122,7 @@ cpdef __inner_read(char* filename,bool directed,bool ignore_duplicates,bool weig
 	str_buffer = '0'*MAX_LINE_LEN
 	
 	cdef char* buffer = str_buffer
+	cdef char* result
 
 	# open the file
 	fh = fopen(filename,'r')
@@ -157,8 +163,11 @@ cpdef __inner_read(char* filename,bool directed,bool ignore_duplicates,bool weig
 		
 	if num_nodes == -1:
 		raise ZenException, 'The number of nodes was not specified'
-		
-	G.add_nodes(num_nodes,node_obj_fxn)
+	
+	if directed:	
+		dG.add_nodes(num_nodes,node_obj_fxn)
+	else:
+		uG.add_nodes(num_nodes,node_obj_fxn)
 	
 	while not feof(fh):
 		line_no += 1
@@ -213,7 +222,7 @@ cpdef __inner_read(char* filename,bool directed,bool ignore_duplicates,bool weig
 			if end3 == buf_len-1 and not isspace(<int>buffer[end3]):
 				end3 += 1
 				
-			w = float(buffer[start3:end3])
+			w = atof(&buffer[start3])
 		else:		
 			if end2 == buf_len-1 and not isspace(<int>buffer[end2]):
 				end2 += 1
@@ -221,17 +230,23 @@ cpdef __inner_read(char* filename,bool directed,bool ignore_duplicates,bool weig
 		if start1 >= end1 or start2 >= end2 or (weighted and start3 >= end3):
 			raise Exception, 'Line %d was incorrectly formatted: %s' % (line_no,buffer)
 				
-		nidx1 = int(buffer[start1:end1])
-		nidx2 = int(buffer[start2:end2])
+		nidx1 = atoi(&buffer[start1]) #int(buffer[start1:end1])
+		nidx2 = atoi(&buffer[start2]) #int(buffer[start2:end2])
 		
 		if nidx1 >= num_nodes or nidx2 >= num_nodes:
 			raise ZenException, 'Line %d: edge (%d,%d) referenced a node with index larger than max number of nodes (%d)' % (line_no,nidx1,nidx2,num_nodes)
 		
-		if ignore_duplicates and G.has_edge_(nidx1,nidx2):
+		if ignore_duplicates and ( (directed and dG.has_edge_(nidx1,nidx2)) or (not directed and uG.has_edge_(nidx1,nidx2)) ):
 			continue
-			
-		G.add_edge_(nidx1,nidx2,weight=w) if weighted else G.add_edge_(nidx1,nidx2)
+		
+		if directed:	
+			dG.add_edge_(nidx1,nidx2,None,w) if weighted else dG.add_edge_(nidx1,nidx2)
+		else:
+			uG.add_edge_(nidx1,nidx2,None,w) if weighted else uG.add_edge_(nidx1,nidx2)
 				
 	fclose(fh)
 	
-	return G
+	if directed:
+		return dG
+	else:
+		return uG
