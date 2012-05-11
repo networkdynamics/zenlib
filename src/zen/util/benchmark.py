@@ -41,6 +41,11 @@ the interface supports generating two kinds of output:
 	  benchmark showing the relative performance of each benchmark method in a given benchmark.  The histogram
 	  is saved in PNG format to the current working directory.
 	
+		* ``plots`` generates histograms in which the y-axis is the time taken by each benchmark method.
+		
+		* ``xplots`` generates histograms in which the y-axis is the order of improvement of each benchmark method
+		  relative to the slowest benchmark.
+	
 """
 
 import time
