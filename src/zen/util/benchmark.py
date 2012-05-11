@@ -1,3 +1,48 @@
+"""
+A core objective of Zen is to provide among the fastest network-based functionality available.  In order to do this, the Zen
+library includes a benchmarking class.  Much like a unit test, a benchmark subclass defines a set of methods that run code
+whose performance will be quantified.  Benchmarking is implicitly comparative - so the benchmark class is designed to make
+comparison between the performance of the different benchmark methods easy.  Textual and graphical output can be produced
+showing how the performance of the different benchmark functions performed.
+
+The remainder of this document explains how the ``zen.util.benchmark.Benchmark`` class should be subclassed and used.
+
+Initialization
+--------------
+
+A subclass should call the :py:meth:`Benchmark.__init__(name,number)` function.
+
+.. automethod:: Benchmark.__init__(name,number=3)
+
+Setup and teardown
+------------------
+
+Prior to running the individual benchmarks, the ``Benchmark.setup()`` method is called.  Any work done in this
+method is not included in the timed computations.
+
+After the benchmarks have been run, the ``Benchmark.teardown()`` method is called.  This function can do any cleanup
+or releasing of resources that were allocated for the benchmarking functions.
+
+Command-line Interface
+----------------------
+
+The ``zen.util.benchmark`` module provides a ``main()`` function that, when executed, finds 
+all ``Benchmark`` subclasses within the current namespace, and runs the the benchmarks according
+the the command-line arguments provided (note that the function accepts no arguments - all configuration
+is assumed to come through ``sys.argv``).
+
+Detailed instruction for the command-line interface can be found by providing the ``-h`` flag.  Of note,
+the interface supports generating two kinds of output:
+
+	* *Textual.* By default and in all cases, the tool will generate text output showing the results of
+	  each benchmark run.
+	
+	* *Graphical.* When the ``plots`` or ``xplots`` commands are given, a histogram is generated for each
+	  benchmark showing the relative performance of each benchmark method in a given benchmark.  The histogram
+	  is saved in PNG format to the current working directory.
+	
+"""
+
 import time
 import inspect
 import sys
@@ -6,6 +51,9 @@ import warnings
 class Benchmark:
 	
 	def __init__(self,name,number=3):
+		"""
+		Initialize the 
+		"""
 		self.number = number
 		self.name = name
 		self.tests = {}
