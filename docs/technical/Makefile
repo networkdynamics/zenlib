@@ -36,6 +36,9 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
+upload:
+	scp -r _build/html dwebf:/home/druths/webapps/rr_static/zen
+
 html:
 	export PYTHONPATH=../../src:${PYTHONPATH}; \
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
