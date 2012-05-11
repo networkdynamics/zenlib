@@ -442,13 +442,13 @@ cdef class Graph:
 				
 		return G
 		
-	cpdef is_directed(Graph self):
+	cpdef bint is_directed(Graph self):
 		"""
 		Return ``True`` if this graph is directed (which it is not).
 		"""
 		return False
 	
-	cpdef bool is_compact(Graph self):
+	cpdef bint is_compact(Graph self):
 		"""
 		Return ``True`` if the graph is in compact form.  
 		
@@ -1676,7 +1676,7 @@ cdef class Graph:
 		else:
 			return None
 			
-	cpdef bool has_edge(Graph self,u,v):
+	cpdef bint has_edge(Graph self,u,v):
 		"""
 		Return ``True`` if the graph contains an edge between ``u`` and ``v`` (node objects).  
 		If either node object is not in the graph, this method returns ``False``.
@@ -1691,7 +1691,7 @@ cdef class Graph:
 		
 		return self.has_edge_(u,v)
 		
-	cpdef bool has_edge_(Graph self,int u,int v):
+	cpdef bint has_edge_(Graph self,int u,int v):
 		"""
 		Return ``True`` if the graph contains an edge between ``u`` and ``v`` (node indices).
 		
@@ -1748,7 +1748,7 @@ cdef class Graph:
 		else:			
 			raise ZenException, 'Edge (%d,%d) does not exist.' % (u,v)
 	
-	cpdef edges_iter(Graph self,nobj=None,bool data=False,bool weight=False):
+	cpdef edges_iter(Graph self,nobj=None,bint data=False,bint weight=False):
 		"""
 		Return an iterator over edges in the graph.
 		
@@ -1789,7 +1789,7 @@ cdef class Graph:
 		else:
 			return NodeEdgeIterator(self,self.node_idx_lookup[nobj],weight,data,True)
 	
-	cpdef edges_iter_(Graph self,int nidx=-1,bool data=False,bool weight=False):
+	cpdef edges_iter_(Graph self,int nidx=-1,bint data=False,bint weight=False):
 		"""
 		Return an iterator over edges in the graph.
 		
@@ -1833,7 +1833,7 @@ cdef class Graph:
 				
 			return NodeEdgeIterator(self,nidx,weight,data,False)
 	
-	cpdef edges(Graph self,nobj=None,bool data=False,bool weight=False):
+	cpdef edges(Graph self,nobj=None,bint data=False,bint weight=False):
 		"""
 		Return a list of edges in the graph.
 	
@@ -1923,7 +1923,7 @@ cdef class Graph:
 			
 			return result
 				
-	cpdef edges_(Graph self,int nidx=-1,bool data=False,bool weight=False):
+	cpdef edges_(Graph self,int nidx=-1,bint data=False,bint weight=False):
 		"""
 		Return a ``numpy.ndarray`` containing edges in the graph.
 	
@@ -2018,7 +2018,7 @@ cdef class Graph:
 			
 			return result
 	
-	cpdef grp_edges_iter(Graph self,nbunch,bool data=False,bool weight=False):
+	cpdef grp_edges_iter(Graph self,nbunch,bint data=False,bint weight=False):
 		"""
 		Return an iterator over the edges of a group of nodes.  
 		
@@ -2037,7 +2037,7 @@ cdef class Graph:
 		"""
 		return SomeEdgeIterator(self,[self.node_idx_lookup[x] for x in nbunch],weight,data,True)
 		
-	cpdef grp_edges_iter_(Graph self,nbunch,bool data=False,bool weight=False):
+	cpdef grp_edges_iter_(Graph self,nbunch,bint data=False,bint weight=False):
 		"""
 		Return an iterator over edges incident to some nodes in the graph.
 		
@@ -2265,15 +2265,15 @@ cdef class Graph:
 		return SomeNeighborIterator(self,nbunch,obj,data,False)
 								
 cdef class NodeIterator:
-	cdef bool data
+	cdef bint data
 	cdef Graph graph
 	cdef int idx
 	cdef int node_count
-	cdef bool nobj
-	cdef bool obj
+	cdef bint nobj
+	cdef bint obj
 	cdef long init_num_changes
 	
-	def __cinit__(NodeIterator self,Graph graph,bool obj,bool data,bool nobj):
+	def __cinit__(NodeIterator self,Graph graph,bint obj,bint data,bint nobj):
 		self.init_num_changes = graph.num_changes
 		self.data = data
 		self.graph = graph
@@ -2333,11 +2333,11 @@ cdef class NodeIterator:
 		return self
 		
 cdef class AllEdgeIterator:
-	cdef bool data
-	cdef bool weight
+	cdef bint data
+	cdef bint weight
 	cdef Graph graph
 	cdef int idx
-	cdef bool endpoints
+	cdef bint endpoints
 	cdef long init_num_changes
 	
 	def __cinit__(AllEdgeIterator self,Graph graph,weight=False,data=False,endpoints=False):
@@ -2416,13 +2416,13 @@ cdef class AllEdgeIterator:
 		return self
 		
 cdef class NodeEdgeIterator:
-	cdef bool data
-	cdef bool weight
+	cdef bint data
+	cdef bint weight
 	cdef Graph graph
 	cdef int nidx
 	cdef int deg
 	cdef int idx
-	cdef bool endpoints
+	cdef bint endpoints
 	cdef long init_num_changes
 	
 	def __cinit__(NodeEdgeIterator self,Graph graph,nidx,weight=False,data=False,endpoints=False):
@@ -2504,13 +2504,13 @@ cdef class NodeEdgeIterator:
 		return self
 
 cdef class SomeEdgeIterator:
-	cdef bool data
-	cdef bool weight
+	cdef bint data
+	cdef bint weight
 	cdef Graph graph
 	cdef touched_edges
 	cdef nbunch_iter
 	cdef edge_iter
-	cdef bool endpoints
+	cdef bint endpoints
 	cdef long init_num_changes
 	
 	def __cinit__(SomeEdgeIterator self,Graph graph,nbunch,weight=False,data=False,endpoints=False):
@@ -2592,12 +2592,12 @@ cdef class SomeEdgeIterator:
 						
 cdef class NeighborIterator:
 	cdef NodeEdgeIterator inner_iter
-	cdef bool data
+	cdef bint data
 	cdef int nidx
 	cdef Graph G
 	cdef touched_nodes
-	cdef bool use_nobjs
-	cdef bool obj
+	cdef bint use_nobjs
+	cdef bint obj
 	cdef long init_num_changes
 	
 	def __cinit__(NeighborIterator self, Graph G, int nidx,obj,data,use_nobjs):
@@ -2715,14 +2715,14 @@ cdef class NeighborIterator:
 		return self
 		
 cdef class SomeNeighborIterator:
-	cdef bool data
+	cdef bint data
 	cdef Graph graph
 	cdef int idx
 	cdef touched_nodes
 	cdef nbunch_iter
 	cdef neighbor_iter
-	cdef bool use_nobjs
-	cdef bool obj
+	cdef bint use_nobjs
+	cdef bint obj
 	cdef long init_num_changes
 
 	def __cinit__(SomeNeighborIterator self,Graph graph,nbunch,obj,data,use_nobjs):

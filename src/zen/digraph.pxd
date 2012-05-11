@@ -1,5 +1,3 @@
-from cpython cimport bool
-
 import numpy as np
 cimport numpy as np
 
@@ -57,9 +55,9 @@ cdef class DiGraph:
 	
 	cpdef copy(DiGraph self)
 	
-	cpdef is_directed(DiGraph self)
+	cpdef bint is_directed(DiGraph self)
 	
-	cpdef bool is_compact(DiGraph self)
+	cpdef bint is_compact(DiGraph self)
 	
 	cpdef compact(DiGraph self)
 	
@@ -175,9 +173,9 @@ cdef class DiGraph:
 	
 	cpdef edge_data_(DiGraph self,int eidx)
 	
-	cpdef bool has_edge(DiGraph self,src,tgt)
+	cpdef bint has_edge(DiGraph self,src,tgt)
 		
-	cpdef bool has_edge_(DiGraph self,int src,int tgt)
+	cpdef bint has_edge_(DiGraph self,int src,int tgt)
 	
 	cpdef edge_idx(DiGraph self, src, tgt, data=*)
 	

@@ -1,2 +1,2 @@
 
-cpdef layout(GV,num_iterations=*,bbox=*)
+cpdef layout(GV,bbox)

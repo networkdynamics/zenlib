@@ -70,7 +70,8 @@ class Benchmark:
 	def __load_benchmarks(self):
 		methods = dict(inspect.getmembers(self,inspect.ismethod))
 		bm_names = map(lambda x: x[3:], filter(lambda x: x.startswith('bm_'),methods.keys()))
-
+		self.max_name_len = max([len(x) for x in bm_names])
+		
 		for n in bm_names:
 			test_fxn = methods['bm_%s' % n]
 			setup_name = 'setup_%s' % n
@@ -95,7 +96,7 @@ class Benchmark:
 		print '\n%s:' % self.name
 		for name,fxns in self.tests.items():
 			run_times = []
-			print '\tTest: %s' % name[:10].ljust(12,' '),
+			print '\tTest: %s' % name.ljust(self.max_name_len+2,' '),
 			setup_fxn,test_fxn,teardown_fxn = fxns
 			
 			for r in range(self.number):
@@ -122,10 +123,12 @@ class Benchmark:
 		import pylab
 
 		if order is None:
-			order = self.times.keys()
-			order.sort(cmp=lambda x,y: -cmp(x,y))
+			# by default order from fastest to slowest
+			order = self.times.items()
+			order.sort(cmp=lambda x,y: cmp(x[1],y[1]))
+			order = map(lambda x: x[0], order)
 			
-		names = order
+		names = map(lambda x: x.replace('_',' '),order)
 
 		data = [self.times[k] for k in order]
 		
@@ -137,22 +140,32 @@ class Benchmark:
 		width = 0.8
 		pylab.bar(range(len(data)),data,width=0.8)
 		pylab.title(self.name,fontsize=20,fontweight='bold')
-		pylab.ylabel('Speed boost',fontsize=18,fontweight='bold')
 		
-		locs,labels = pylab.yticks()
-		pylab.yticks(locs,['%sx' % str(int(x)) for x in locs])
+		if raw:
+			pylab.ylabel('Elapsed time (sec)',fontsize=18,fontweight='bold')
+		else:
+			pylab.ylabel('Speed boost',fontsize=18,fontweight='bold')
+		
+			locs,labels = pylab.yticks()
+			pylab.yticks(locs,['%sx' % str(int(x)) for x in locs])
 		
 		# TODO: Make bar labels
-		pylab.xticks([x+width/2.0 for x in range(len(data))],order,fontsize=18,fontweight='bold')
+		pylab.xticks([x+width/2.0 for x in range(len(data))],names,fontsize=18,fontweight='bold')
 			
 def main():
 	
 	args = sys.argv
 	
 	gen_fig_files = False
-	if len(args) == 2 and args[1] == 'plots':
-		gen_fig_files = True
-		import pylab as pl
+	if len(args) == 2:
+		if args[1] == 'xplots':
+			gen_fig_files = True
+			use_raw = False
+			import pylab as pl
+		elif args[1] == 'plots':
+			gen_fig_files = True
+			import pylab as pl
+			use_raw = True
 		
 	caller = inspect.currentframe().f_back
 	m_name = caller.f_globals['__name__']
@@ -171,6 +184,6 @@ def main():
 		
 		if gen_fig_files is True:
 			pl.figure()
-			b.plot_bars()
+			b.plot_bars(raw=use_raw)
 			pl.savefig('%s.png' % b.name.replace(' ','_'))
 			

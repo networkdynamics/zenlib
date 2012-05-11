@@ -124,7 +124,7 @@ cpdef __inner_read(char* filename,directed,node_obj_fxn,bool ignore_duplicate_ed
 	if G is not None and directed is not None:
 		raise Exception, 'A graph and the directed argument cannot both be specified'
 		
-	if directed is None:
+	if G is not None:
 		directed = G.is_directed()
 	else:
 		if directed is True:
