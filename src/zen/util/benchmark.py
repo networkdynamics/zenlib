@@ -10,7 +10,7 @@ The remainder of this document explains how the ``zen.util.benchmark.Benchmark``
 Initialization
 --------------
 
-A subclass should call the :py:meth:`Benchmark.__init__(name,number)` function.
+A subclass should call the :py:meth:`Benchmark.__init__` function.
 
 .. automethod:: Benchmark.__init__(name,number=3)
 
@@ -23,7 +23,18 @@ method is not included in the timed computations.
 After the benchmarks have been run, the ``Benchmark.teardown()`` method is called.  This function can do any cleanup
 or releasing of resources that were allocated for the benchmarking functions.
 
-Command-line Interface
+Benchmark methods
+-----------------
+
+A benchmark method has the form ``bm_<name>()``, where ``bm_`` is flags it as a benchmark method and ``<name>`` is the name
+of the specific item being benchmarked by this method.  The method accepts no arguments and returns no values.  Literally
+anything can be done inside the method since the benchmark class is only interested in how long it takes for the function
+to return.
+
+Typically more than one benchmark method will be defined per benchmark class in order to permit the comparison of 
+several different techniques, libraries, implementations, or algorithms.
+
+Command-line interface
 ----------------------
 
 The ``zen.util.benchmark`` module provides a ``main()`` function that, when executed, finds 
@@ -57,7 +68,9 @@ class Benchmark:
 	
 	def __init__(self,name,number=3):
 		"""
-		Initialize the 
+		Initialize a new Benchmark object that has the name given by ``name``.  ``number`` indicates the number
+		of times each benchmark method will be run (only the fastest time for each method will be reported in
+		the final results).
 		"""
 		self.number = number
 		self.name = name
