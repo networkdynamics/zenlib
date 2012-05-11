@@ -215,6 +215,26 @@ class DiGraphPickleTestCase(unittest.TestCase):
 		
 class DiGraphTestCase(unittest.TestCase):
 
+	def test_in_edges_weights(self):
+		G = DiGraph()
+		G.add_edge(1,2,data=(1,2),weight=2)
+		G.add_edge(2,3,data=(2,3),weight=2)
+		
+		E = G.in_edges(2,weight=True)
+		e1 = E[0]
+		self.assertEquals(len(e1),3)
+		self.assertEquals(e1[2],2)
+		
+	def test_out_edges_weights(self):
+		G = DiGraph()
+		G.add_edge(1,2,data=(1,2),weight=2)
+		G.add_edge(2,3,data=(2,3),weight=2)
+
+		E = G.out_edges(1,weight=True)
+		e1 = E[0]
+		self.assertEquals(len(e1),3)
+		self.assertEquals(e1[2],2)
+
 	def test_add_node_x_error(self):
 		G = DiGraph()
 		

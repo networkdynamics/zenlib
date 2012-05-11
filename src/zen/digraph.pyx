@@ -2332,7 +2332,7 @@ cdef class DiGraph:
 				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
 				value of the ``data`` argument).
 		"""
-		return list(self.in_edges_iter(nobj,weight,data))
+		return list(self.in_edges_iter(nobj,data,weight))
 
 	cpdef in_edges_(DiGraph self,int nidx,data=False,weight=False):
 		"""
@@ -2445,7 +2445,7 @@ cdef class DiGraph:
 				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
 				value of the ``data`` argument).
 		"""
-		return list(self.out_edges_iter(nobj,weight,data))
+		return list(self.out_edges_iter(nobj,data,weight))
 
 	cpdef out_edges_(DiGraph self,int nidx,data=False,weight=False):
 		"""
