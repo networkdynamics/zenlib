@@ -4,4 +4,4 @@ Zen is a Python library that provides a high-speed, easy-to-use API for analysin
 
 Official site: http://zen.networkdynamics.org/
 
-License: GPLv2
+License: BSD
