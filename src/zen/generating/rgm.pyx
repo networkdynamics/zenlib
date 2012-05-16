@@ -65,7 +65,7 @@ cdef __inner_barabasi_albert_udir(int n, int m, int seed):
 	
 	# add the first (m+1)th node
 	for i in range(m):
-		G.add_edge_(i,m)
+		G.add_edge_(m,i)
 	
 	# add the remaining nodes
 	num_endpoints = 2 * m
@@ -121,7 +121,7 @@ cdef __inner_barabasi_albert_dir(int n, int m, int seed):
 
 	# add the first (m+1)th node
 	for i in range(m):
-		G.add_edge_(i,m)
+		G.add_edge_(m,i)
 
 	# add the remaining nodes
 	num_endpoints = 2 * m
