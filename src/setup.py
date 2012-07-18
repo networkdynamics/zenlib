@@ -1,5 +1,5 @@
-#from distutils.core import setup
-from setuptools import setup
+from distutils.core import setup
+#from setuptools import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 import os.path
@@ -57,20 +57,20 @@ setup(
 					'zen.layout' : ['*.pxd'],
 					'zen.tests' : ['*.pxd','*.scn','*.elist','*.helist','*.rdot', '*.memlist', '*.gml'],
 					'zen.util' : ['*.pxd'],
-					'zen.data' : ['*.scn','*.gml'] },
+					'zen.data' : ['*.scn','*.gml'] }#,
 	
-	# dependencies
-	setup_requires = ['cython>=0.14'],
-	install_requires = ['numpy>=1.6.1','matplotlib>=1.0.1'],
-	
-	# testing suite
-	test_suite = 'zen.test',
-	
-	# project metadata
-	author = 'Derek Ruths',
-	author_email = 'druths@networkdynamics.org',
-	description = 'Zen is a high-performance, easy-to-use network library developed specifically for Python.',
-	license = 'BSD',
-	url = 'http://zen.networkdynamics.org',
-	download_url = 'https://github.com/networkdynamics/zenlib'
+	# # dependencies
+	# setup_requires = ['cython>=0.14'],
+	# install_requires = ['numpy>=1.6.1','matplotlib>=1.0.1'],
+	# 
+	# # testing suite
+	# test_suite = 'zen.test',
+	# 
+	# # project metadata
+	# author = 'Derek Ruths',
+	# author_email = 'druths@networkdynamics.org',
+	# description = 'Zen is a high-performance, easy-to-use network library developed specifically for Python.',
+	# license = 'BSD',
+	# url = 'http://zen.networkdynamics.org',
+	# download_url = 'https://github.com/networkdynamics/zenlib'
 )
