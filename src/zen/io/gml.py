@@ -15,6 +15,7 @@ Functions
 from zen.exceptions import *
 from zen.graph import Graph
 from zen.digraph import DiGraph
+import os
 
 __all__ = ['read']
 
@@ -25,6 +26,64 @@ ID_TOK = 'ID'
 SLIST_TOK = '['
 ELIST_TOK = ']'
 
+# E: the function should be called "write" - take a look at the convention documentation in __init__ in this package.
+# E: filename shouldn't have a default value.  How could the program know what the user wants to save their network as?
+# E: the graph variable (g) should be upper-case, by convention.
+def write_gml(g,filename='zen_graph.gml'):
+	# E: This can come later, but see the sphinx-style commenting that is used in other functions (for example read).
+	# there is also documentation in the developer guide section of the website that discusses the documentation conventions
+	# in more details.
+	"""Writes graph to file according to graph modelling language"""
+	
+	# E: don't do any checks for this, just open it.
+	if (filename[0:1] != "/"): 		#absolutize filename if necessary
+		filename = os.getcwd() + "/" + filename
+	#do some validation of filename?
+	# E: No validation necessary - the open function will raise an exception if there's a problem - not your code's
+	# job to handle those errors.
+	
+	# E: the file handle returned should be called "fh"
+	# E: My convention in python is to use single quotes with strings whenever possible (this applies throughout)
+	f = open(filename, "w")
+	
+	# E: no need for the buffer.  Just make multiple calls to fh.write(...)
+	fbuff = []
+	fbuff.append("#This is a graph object in gml file format")
+	fbuff.append("#produced by the zen graph library")
+	fbuff.append("graph [")
+	#fbuff.append("\tcomment \"COMMENT\"")		 #TODO get comment from graph data if exists
+	if g.is_directed():
+		fbuff.append("\tdirected 1")
+	else:
+		fbuff.append("\tdirected 0")
+	#fbuff.append("\tIsPlanar 1")		
+	#fbuff.append("label \"LABEL\"")
+	# E: Excellent use of the node access iterator!
+	for nidx, nobj, ndata in g.nodes_iter_(obj=True, data=True):
+		fbuff.append("\tnode [")
+		fbuff.append("\t\tid " + str(nidx))
+		if nobj:
+			# name is the preferred place for the node object.  Something for you to think about:
+			# the node object needn't have a pretty string representation.  How will you handle that?
+			# what if the string representations have spaces in them?  You need to handle these situations.
+			fbuff.append("\t\tlabel " + str(nobj))
+		fbuff.append("\t]")
+	
+	# E: In comments, leave a space between the comment character and the first character in your comment.  E.g.:
+	# iterate or edges (not #iterate over edges)
+	#iterate over edges
+	for eidx, edata, wieght in g.edges_iter_(data=True, weight=True):
+		fbuff.append("\tedge [")
+		fbuff.append("\t\tsource " + str(g.endpoints_(eidx)[0]))	#for digraphs, assumes endpoints order [source, target]
+		fbuff.append("\t\ttarget " + str(g.endpoints_(eidx)[1]))
+		
+		# E: there's a weight attribute to include as well...
+		
+		fbuff.append("\t]")
+	fbuff.append("]")
+	f.write("\n".join(fbuff))
+	f.close()
+	
 def add_token_metadata(token,in_str,lineno):
 	
 	if in_str:
