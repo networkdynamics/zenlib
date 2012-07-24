@@ -15,6 +15,7 @@ Functions
 from zen.exceptions import *
 from zen.graph import Graph
 from zen.digraph import DiGraph
+import os
 
 __all__ = ['read']
 
@@ -25,6 +26,39 @@ ID_TOK = 'ID'
 SLIST_TOK = '['
 ELIST_TOK = ']'
 
+def write_gml(g,filename='zen_graph.gml'):
+	"""Writes graph to file according to graph modelling language"""
+	if (filename[0:1] != "/"): 		#absolutize filename if necessary
+		filename = os.getcwd() + "/" + filename
+	#do some validation of filename?
+	f = open(filename, "w")
+	fbuff = []
+	fbuff.append("#This is a graph object in gml file format")
+	fbuff.append("#produced by the zen graph library")
+	fbuff.append("graph [")
+	#fbuff.append("\tcomment \"COMMENT\"")		 #TODO get comment from graph data if exists
+	if g.is_directed():
+		fbuff.append("\tdirected 1")
+	else:
+		fbuff.append("\tdirected 0")
+	#fbuff.append("\tIsPlanar 1")		
+	#fbuff.append("label \"LABEL\"")
+	for nidx, nobj, ndata in g.nodes_iter_(obj=True, data=True):
+		fbuff.append("\tnode [")
+		fbuff.append("\t\tid " + str(nidx))
+		if nobj:
+			fbuff.append("\t\tlabel " + str(nobj))
+		fbuff.append("\t]")
+	#iterate over nodes
+	for eidx, edata, wieght in g.edges_iter_(data=True, weight=True):
+		fbuff.append("\tedge [")
+		fbuff.append("\t\tsource " + str(g.endpoints_(eidx)[0]))	#for digraphs, assumes endpoints order [source, target]
+		fbuff.append("\t\ttarget " + str(g.endpoints_(eidx)[1]))
+		fbuff.append("\t]")
+	fbuff.append("]")
+	f.write("\n".join(fbuff))
+	f.close()
+	
 def add_token_metadata(token,in_str,lineno):
 	
 	if in_str:
