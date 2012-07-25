@@ -18,7 +18,7 @@ from zen.digraph import DiGraph
 from zen.bipartite import BipartiteGraph
 import os
 
-__all__ = ['read']
+__all__ = ['read','write']
 
 STR_TOK = 'STRING'
 INT_TOK = 'INT'
@@ -28,14 +28,14 @@ SLIST_TOK = '['
 ELIST_TOK = ']'
 
 def write(G,filename):
-	# Use sphynx style...
+	# E: Use sphynx style...
 	'''Writes graph to file according to graph modelling language
 	based on http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf'''
 	
-	#if (filename[0:1] != '/'): 		# absolutize filename if necessary
-	#filename = os.getcwd() + "/" + filename
 	fh = open(filename, 'w')
 	
+	# E: Always put the '\n' character at the END of a string - not at the beginning.  That's why the character is called an End-Line character.
+	# Make the change throughout.
 	fh.write('# This is a graph object in gml file format')
 	fh.write('\n# produced by the zen graph library')
 	fh.write('\ngraph [')
@@ -53,8 +53,12 @@ def write(G,filename):
 		fh.write('\n\tnode [')
 		fh.write('\n\t\tid ' + str(nidx))
 		if nobj != None:
+			# E: Check line 258 - preference is given to 'name' ... or at least it should.
 			fh.write('\n\t\tlabel ' + write_obj(nobj)) 		# I know you were saying to use name, but gml.read() looks at label for nobj
 		if ndata != None:
+			# E: Let's think about this.  Hard to know exactly what the right thing to do is.  gml.read() puts all the properties of the
+			# node into a single dictionary that is the node data.  However, as you've noted, I think gml.read(gml.write()) should return the 
+			# same object - so what should be the proper rule.  Thoughts?  Email me about this ... so we don't have a discussion via git :)
 			fh.write('\n\t\tzen_data ' + write_obj(ndata))
 		fh.write('\n\t]')
 	
@@ -64,6 +68,7 @@ def write(G,filename):
 		fh.write('\n\t\tsource ' + str(G.endpoints_(eidx)[0]))	# for digraphs, assumes endpoints order [source, target]
 		fh.write('\n\t\ttarget ' + str(G.endpoints_(eidx)[1]))
 		if edata != None:
+			# E: Same issue as above with node
 			fh.write('\n\t\tzen_data ' + write_obj(edata))
 		fh.write('\n\t\tweight ' + str(weight))
 		fh.write('\n\t]')
@@ -71,13 +76,21 @@ def write(G,filename):
 	fh.close()
 
 def write_obj(obj):
+	# E: Make this a set to speed up the lookup.
 	supported_objs = [str, bool, int, long, float]
+	# E: use 'and' not '&'.
 	if (type(obj) not in supported_objs) & (obj != None):
 		raise ZenException('gml.write() supports node / edge objects: bool, str, Numeric, None')
+	# E: Always add a line of whitespace after the end of a conditional block (and usually after the end of any block).  Make this change throughout.
+	
+	# E: Make this check 'type(obj) == str or type(obj) == long'
 	if type(obj) in [str, long]:
+		# E: why does this work for a long?  Is this an error?
 		obj = '"' + obj.replace('"', '\\"') + '"' # gml specifies integers larger than 32 bit signed must be strings
+		
+		# E: If a proper escape doesn't exist, don't make one up.  Just raise an exception.
 		# TODO: find a proper escape technique.  GML may not support backslash escape
-	# TODO: add arbitrary object serialization here (read() needs unserialize)
+
 	return str(obj)
 
 	

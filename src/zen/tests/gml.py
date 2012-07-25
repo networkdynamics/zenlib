@@ -80,6 +80,7 @@ class GMLWriteTestCase(unittest.TestCase):
 		self.assertEqual(type(G),Graph)
 		self.assertEqual(len(G),0)
 		self.assertEqual(G.size(),0)
+		# E: Delete this file once the test is done.
 		
 	def test_empty_digraph(self):	
 		test_path = path.dirname(__file__) + '/test4.gml'
@@ -89,6 +90,7 @@ class GMLWriteTestCase(unittest.TestCase):
 		self.assertEqual(type(G),DiGraph)
 		self.assertEqual(len(G),0)
 		self.assertEqual(G.size(),0)
+		# E: Delete this file once the test is done.
 		
 	def test_empty_BipartiteGraph(self):
 		test_path = path.dirname(__file__) + '/test4.gml'
@@ -99,6 +101,7 @@ class GMLWriteTestCase(unittest.TestCase):
 		# self.assertEqual(type(G_copy),BipartiteGraph)
 		self.assertEqual(len(G_copy),0)
 		self.assertEqual(G_copy.size(),0)
+		# E: Delete this file once the test is done.
 		
 	def test_graph_obj_data(self):
 		test_path = path.dirname(__file__) + '/test5'
@@ -124,6 +127,7 @@ class GMLWriteTestCase(unittest.TestCase):
 		self.assertTrue(G_copy.has_edge('A', 'B'))				
 		self.assertEqual(G_copy.node_data(nobj)['zen_data'], ndatum)			
 		self.assertEqual(G_copy.edge_data(nobj, 'A')['zen_data'], edatum)
+		# E: Delete this file once the test is done.
 		
 	def test_graph_weight(self):
 		test_path = path.dirname(__file__) + '/test6.gml'
@@ -139,6 +143,7 @@ class GMLWriteTestCase(unittest.TestCase):
 		self.assertEqual(G_copy.weight('A','B'),0)
 		self.assertEqual(G_copy.weight('B','C'),10)		
 		self.assertEqual(G_copy.weight('C','A'),3.141592)
+		# E: Delete this file once the test is done.
 			
 		
 	def test_large_graph(self):
@@ -152,9 +157,11 @@ class GMLWriteTestCase(unittest.TestCase):
 		self.assertEqual(len(G), 100000)
 		preserved_edges = True
 		for i in range(99999):
+			# E: use 'and' not '&'
 			preserved_edges = preserved_edges & G.has_edge_(i, i+1)
 		self.assertTrue(preserved_edges)
 		self.assertEqual(G.size(), 99999)
+		# E: Delete this file once the test is done.
 		
 
 if __name__ == '__main__':
