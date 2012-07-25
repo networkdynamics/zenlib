@@ -15,6 +15,7 @@ Functions
 from zen.exceptions import *
 from zen.graph import Graph
 from zen.digraph import DiGraph
+from zen.bipartite import BipartiteGraph
 import os
 
 __all__ = ['read']
@@ -26,63 +27,60 @@ ID_TOK = 'ID'
 SLIST_TOK = '['
 ELIST_TOK = ']'
 
-# E: the function should be called "write" - take a look at the convention documentation in __init__ in this package.
-# E: filename shouldn't have a default value.  How could the program know what the user wants to save their network as?
-# E: the graph variable (g) should be upper-case, by convention.
-def write_gml(g,filename='zen_graph.gml'):
-	# E: This can come later, but see the sphinx-style commenting that is used in other functions (for example read).
-	# there is also documentation in the developer guide section of the website that discusses the documentation conventions
-	# in more details.
-	"""Writes graph to file according to graph modelling language"""
+def write(G,filename):
+	# Use sphynx style...
+	'''Writes graph to file according to graph modelling language
+	based on http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf'''
 	
-	# E: don't do any checks for this, just open it.
-	if (filename[0:1] != "/"): 		#absolutize filename if necessary
-		filename = os.getcwd() + "/" + filename
-	#do some validation of filename?
-	# E: No validation necessary - the open function will raise an exception if there's a problem - not your code's
-	# job to handle those errors.
+	#if (filename[0:1] != '/'): 		# absolutize filename if necessary
+	#filename = os.getcwd() + "/" + filename
+	fh = open(filename, 'w')
 	
-	# E: the file handle returned should be called "fh"
-	# E: My convention in python is to use single quotes with strings whenever possible (this applies throughout)
-	f = open(filename, "w")
-	
-	# E: no need for the buffer.  Just make multiple calls to fh.write(...)
-	fbuff = []
-	fbuff.append("#This is a graph object in gml file format")
-	fbuff.append("#produced by the zen graph library")
-	fbuff.append("graph [")
-	#fbuff.append("\tcomment \"COMMENT\"")		 #TODO get comment from graph data if exists
-	if g.is_directed():
-		fbuff.append("\tdirected 1")
+	fh.write('# This is a graph object in gml file format')
+	fh.write('\n# produced by the zen graph library')
+	fh.write('\ngraph [')
+	#fh.write('\n\tcomment \"COMMENT\"')		 #TODO get comment from graph data if exists
+	if G.is_directed():
+		fh.write('\n\tdirected 1')
 	else:
-		fbuff.append("\tdirected 0")
-	#fbuff.append("\tIsPlanar 1")		
-	#fbuff.append("label \"LABEL\"")
-	# E: Excellent use of the node access iterator!
-	for nidx, nobj, ndata in g.nodes_iter_(obj=True, data=True):
-		fbuff.append("\tnode [")
-		fbuff.append("\t\tid " + str(nidx))
-		if nobj:
-			# name is the preferred place for the node object.  Something for you to think about:
-			# the node object needn't have a pretty string representation.  How will you handle that?
-			# what if the string representations have spaces in them?  You need to handle these situations.
-			fbuff.append("\t\tlabel " + str(nobj))
-		fbuff.append("\t]")
+		fh.write('\n\tdirected 0')
+	if type(G) == BipartiteGraph:		# to allow recovering proper graph type
+		fh.write('\n\tbipartite 1')
+	else:
+		fh.write('\n\tbipartite 0')		
+	#fh.write('\nlabel \"LABEL\"')		# TODO get this from graph obj if exists
+	for nidx, nobj, ndata in G.nodes_iter_(obj=True, data=True):
+		fh.write('\n\tnode [')
+		fh.write('\n\t\tid ' + str(nidx))
+		if nobj != None:
+			fh.write('\n\t\tlabel ' + write_obj(nobj)) 		# I know you were saying to use name, but gml.read() looks at label for nobj
+		if ndata != None:
+			fh.write('\n\t\tzen_data ' + write_obj(ndata))
+		fh.write('\n\t]')
 	
-	# E: In comments, leave a space between the comment character and the first character in your comment.  E.g.:
-	# iterate or edges (not #iterate over edges)
-	#iterate over edges
-	for eidx, edata, wieght in g.edges_iter_(data=True, weight=True):
-		fbuff.append("\tedge [")
-		fbuff.append("\t\tsource " + str(g.endpoints_(eidx)[0]))	#for digraphs, assumes endpoints order [source, target]
-		fbuff.append("\t\ttarget " + str(g.endpoints_(eidx)[1]))
-		
-		# E: there's a weight attribute to include as well...
-		
-		fbuff.append("\t]")
-	fbuff.append("]")
-	f.write("\n".join(fbuff))
-	f.close()
+	# iterate over edges
+	for eidx, edata, weight in G.edges_iter_(data=True, weight=True):
+		fh.write('\n\tedge [')
+		fh.write('\n\t\tsource ' + str(G.endpoints_(eidx)[0]))	# for digraphs, assumes endpoints order [source, target]
+		fh.write('\n\t\ttarget ' + str(G.endpoints_(eidx)[1]))
+		if edata != None:
+			fh.write('\n\t\tzen_data ' + write_obj(edata))
+		fh.write('\n\t\tweight ' + str(weight))
+		fh.write('\n\t]')
+	fh.write('\n]')
+	fh.close()
+
+def write_obj(obj):
+	supported_objs = [str, bool, int, long, float]
+	if (type(obj) not in supported_objs) & (obj != None):
+		raise ZenException('gml.write() supports node / edge objects: bool, str, Numeric, None')
+	if type(obj) in [str, long]:
+		obj = '"' + obj.replace('"', '\\"') + '"' # gml specifies integers larger than 32 bit signed must be strings
+		# TODO: find a proper escape technique.  GML may not support backslash escape
+	# TODO: add arbitrary object serialization here (read() needs unserialize)
+	return str(obj)
+
+	
 	
 def add_token_metadata(token,in_str,lineno):
 	
