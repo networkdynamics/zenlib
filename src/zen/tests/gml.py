@@ -72,65 +72,77 @@ class GMLReadTestCase(unittest.TestCase):
 		self.assertEqual(G.weight('N2','N3'),3)
 
 class GMLWriteTestCase(unittest.TestCase):
+	
 	def test_empty_graph(self):
-		test_path = path.dirname(__file__) + '/test4.gml'
+		test_file = path.dirname(__file__) + '/test4.gml'
 		G = Graph()
-		gml.write(G, test_path)
-		G_ = gml.read(test_path)
+		gml.write(G, test_file)
+		G_ = gml.read(test_file)
 		self.assertEqual(type(G),Graph)
 		self.assertEqual(len(G),0)
 		self.assertEqual(G.size(),0)
-		# E: Delete this file once the test is done.
+		os.remove(test_file)
 		
 	def test_empty_digraph(self):	
-		test_path = path.dirname(__file__) + '/test4.gml'
+		test_file = path.dirname(__file__) + '/test4.gml'
 		G = DiGraph()
-		gml.write(G, test_path)
-		G_ = gml.read(test_path)
+		gml.write(G, test_file)
+		G_ = gml.read(test_file)
 		self.assertEqual(type(G),DiGraph)
 		self.assertEqual(len(G),0)
 		self.assertEqual(G.size(),0)
-		# E: Delete this file once the test is done.
+		os.remove(test_file)
 		
 	def test_empty_BipartiteGraph(self):
-		test_path = path.dirname(__file__) + '/test4.gml'
+		test_file = path.dirname(__file__) + '/test4.gml'
 		G = BipartiteGraph()
-		gml.write(G, test_path)
-		G_copy = gml.read(test_path)
+		gml.write(G, test_file)
+		G_copy = gml.read(test_file)
 		# TODO: consider recognizing a bipartite parameter during read
 		# self.assertEqual(type(G_copy),BipartiteGraph)
 		self.assertEqual(len(G_copy),0)
 		self.assertEqual(G_copy.size(),0)
-		# E: Delete this file once the test is done.
+		os.remove(test_file)
 		
 	def test_graph_obj_data(self):
-		test_path = path.dirname(__file__) + '/test5'
-		# commented nobj, and datum below would be good in test, but are not yet supported.
+		test_file = path.dirname(__file__) + '/test5.gml'
+		
 		# nobj = 'she said "&!*<{[(\\"'
 		# nobj = (1, 'A', ('nested', 'tuple'))
-		nobj = "aString"
 		# datum = {'alist':[1,'two', 3.14], "nested_dict":{'special_chars':'she said "&!*<{[(\'"}}
-		ndatum = "bString"
-		edatum = "cString"
+		
 		G = Graph()
-		G.add_node(nobj=nobj, data=ndatum)
-		G.add_node('A')
-		G.add_node('B')
-		G.add_edge(nobj, 'A', data=edatum)
-		G.add_edge('A', 'B')
-		gml.write(G, test_path)
-		G_copy = gml.read(test_path)
+		G.add_node(nobj='A', data='B')
+		G.add_node(nobj=1, data=2)				# causes error: zen/io/gml.py ln# 268 enforces this must be str
+		G.add_node(nobj=True, data=False)
+		G.add_node(nobj=2**33, data=2**33+1)	# tests use of long type for nobj and data
+		G.add_edge('A', 1, data='C')
+		G.add_edge(1, True, data=3)
+		G.add_edge(True, 2**33, data=False)
+		G.add_edge(2**33, 'A', 2**33+2) 
+		gml.write(G, test_file)
+		G_copy = gml.read(test_file)
 		self.assertEqual(type(G_copy), Graph)
-		self.assertEqual(len(G_copy), 3)
-		self.assertEqual(G_copy.size(), 2)
-		self.assertTrue(G_copy.has_edge(nobj, 'A'))				
-		self.assertTrue(G_copy.has_edge('A', 'B'))				
-		self.assertEqual(G_copy.node_data(nobj)['zen_data'], ndatum)			
-		self.assertEqual(G_copy.edge_data(nobj, 'A')['zen_data'], edatum)
-		# E: Delete this file once the test is done.
+		self.assertEqual(len(G_copy), 4)
+		self.assertEqual(G_copy.size(), 4)
+		
+		self.assertTrue(G_copy.edge_data('A', 1), 'C')		# see note below**
+		self.assertTrue(G_copy.edge_data(1, True), 3)		
+		self.assertTrue(G_copy.edge_data(True, str(2**33)), False)
+		self.assertTrue(G_copy.edge_data(2**33, 'A'), 2**33+2) 
+		
+		self.assertEqual(G_copy.node_data('A')['zen_data'], 'B')	# see note below**			
+		self.assertEqual(G_copy.node_data(1)['zen_data'], 2)				
+		self.assertEqual(G_copy.node_data(True)['zen_data'], False)			
+		self.assertEqual(G_copy.node_data(2**33)['zen_data'], 2**33+2)
+		
+		# these tests all fail because read / write causes bool -> str(bool) and numeric -> str(numeric)
+		# it will be necessary to add evaluation to gml.read() which is the intention
+		os.remove(test_file)
+		
 		
 	def test_graph_weight(self):
-		test_path = path.dirname(__file__) + '/test6.gml'
+		test_file = path.dirname(__file__) + '/test6.gml'
 		G = Graph()
 		G.add_node('A')
 		G.add_node('B')
@@ -138,30 +150,36 @@ class GMLWriteTestCase(unittest.TestCase):
 		G.add_edge('A', 'B', weight=0)
 		G.add_edge('B', 'C', weight=10)
 		G.add_edge('C', 'A', weight=3.141592)
-		gml.write(G, test_path)
-		G_copy = gml.read(test_path,weight_fxn=lambda data:data['weight'])
+		gml.write(G, test_file)
+		G_copy = gml.read(test_file,weight_fxn=lambda data:data['weight'])
 		self.assertEqual(G_copy.weight('A','B'),0)
 		self.assertEqual(G_copy.weight('B','C'),10)		
 		self.assertEqual(G_copy.weight('C','A'),3.141592)
-		# E: Delete this file once the test is done.
-			
+		os.remove(test_file)
+	
+	#TODO: test including longs in obj / data
+	#TODO: test including internal quotes -- expect exception		
 		
 	def test_large_graph(self):
-		test_path = path.dirname(__file__) + '/test6.gml'
+		test_file = path.dirname(__file__) + '/test7.gml'
 		G = Graph()
-		G.add_nodes(100000)
-		for i in range (99999): # make a large line
+		num_nodes = 10#0000
+		G.add_nodes(num_nodes)
+
+		for i in range (num_nodes -1): # make a large line
 			G.add_edge_(i, i+1)
-		gml.write(G, test_path)
-		G_copy = gml.read(test_path)
-		self.assertEqual(len(G), 100000)
+
+		gml.write(G, test_file)
+		G_copy = gml.read(test_file)
+		self.assertEqual(len(G), num_nodes)
 		preserved_edges = True
-		for i in range(99999):
-			# E: use 'and' not '&'
-			preserved_edges = preserved_edges & G.has_edge_(i, i+1)
+
+		for i in range(num_nodes - 1):
+			preserved_edges = preserved_edges and G.has_edge_(i, i+1)
+
 		self.assertTrue(preserved_edges)
-		self.assertEqual(G.size(), 99999)
-		# E: Delete this file once the test is done.
+		self.assertEqual(G.size(), num_nodes - 1)
+		os.remove(test_file)
 		
 
 if __name__ == '__main__':

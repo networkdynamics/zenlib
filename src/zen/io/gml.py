@@ -28,70 +28,91 @@ SLIST_TOK = '['
 ELIST_TOK = ']'
 
 def write(G,filename):
-	# E: Use sphynx style...
-	'''Writes graph to file according to graph modelling language
-	based on http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf'''
+	# Like this?...
+	"""
+	Writes graph to file using Graph Modeling Language (gml).  Node / Edge / Graph objects, if not None, are stored in the `name` 
+	attribute, and are restricted to numeric (but not complex), string, and boolean data types, otherwise an exception is raised.  
+	Node / Edge / Graph data, if not None, are stored in a zen_data attribute and are similarly restricted.
+	Support may be added later for serialization of arbitrary objects / data and associated to zen graphs.
+	
+	see http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf for more
+	info about gml.
+
+	**Args**
+		* ``G`` (:py:class:`zen.Graph`, :py:class:'zen.Digraph`, :py:class:`zen.BipartiteGraph): Graph object to be
+			written to file. Hypergraphs are not supported.
+	
+		* ``filename`` (str): Absolute path for the file to be written.
+	
+	**Returns**:
+		None
+	"""
 	
 	fh = open(filename, 'w')
+	fh.write('# This is a graph object in gml file format\n')
+	fh.write('# produced by the zen graph library\n')
+	fh.write('graph [\n')
 	
-	# E: Always put the '\n' character at the END of a string - not at the beginning.  That's why the character is called an End-Line character.
-	# Make the change throughout.
-	fh.write('# This is a graph object in gml file format')
-	fh.write('\n# produced by the zen graph library')
-	fh.write('\ngraph [')
-	#fh.write('\n\tcomment \"COMMENT\"')		 #TODO get comment from graph data if exists
 	if G.is_directed():
-		fh.write('\n\tdirected 1')
+		fh.write('\tdirected 1\n')
 	else:
-		fh.write('\n\tdirected 0')
+		fh.write('\tdirected 0\n')
+	
 	if type(G) == BipartiteGraph:		# to allow recovering proper graph type
-		fh.write('\n\tbipartite 1')
+		fh.write('\tbipartite 1\n')
 	else:
-		fh.write('\n\tbipartite 0')		
-	#fh.write('\nlabel \"LABEL\"')		# TODO get this from graph obj if exists
+		fh.write('\tbipartite 0\n')		
+	
 	for nidx, nobj, ndata in G.nodes_iter_(obj=True, data=True):
-		fh.write('\n\tnode [')
-		fh.write('\n\t\tid ' + str(nidx))
+		fh.write('\tnode [\n')
+		fh.write('\t\tid ' + str(nidx) + '\n')
+		
 		if nobj != None:
-			# E: Check line 258 - preference is given to 'name' ... or at least it should.
-			fh.write('\n\t\tlabel ' + write_obj(nobj)) 		# I know you were saying to use name, but gml.read() looks at label for nobj
+			fh.write('\t\tname ' + write_obj(nobj) + '\n')
+		
 		if ndata != None:
 			# E: Let's think about this.  Hard to know exactly what the right thing to do is.  gml.read() puts all the properties of the
 			# node into a single dictionary that is the node data.  However, as you've noted, I think gml.read(gml.write()) should return the 
 			# same object - so what should be the proper rule.  Thoughts?  Email me about this ... so we don't have a discussion via git :)
-			fh.write('\n\t\tzen_data ' + write_obj(ndata))
-		fh.write('\n\t]')
+			fh.write('\t\tzen_data ' + write_obj(ndata) + '\n')
+		
+		fh.write('\t]\n')
 	
 	# iterate over edges
 	for eidx, edata, weight in G.edges_iter_(data=True, weight=True):
-		fh.write('\n\tedge [')
-		fh.write('\n\t\tsource ' + str(G.endpoints_(eidx)[0]))	# for digraphs, assumes endpoints order [source, target]
-		fh.write('\n\t\ttarget ' + str(G.endpoints_(eidx)[1]))
+		fh.write('\tedge [\n')
+		fh.write('\t\tsource ' + str(G.endpoints_(eidx)[0]) + '\n')	# for digraphs, assumes endpoints order [source, target]
+		fh.write('\t\ttarget ' + str(G.endpoints_(eidx)[1]) + '\n')
 		if edata != None:
-			# E: Same issue as above with node
-			fh.write('\n\t\tzen_data ' + write_obj(edata))
-		fh.write('\n\t\tweight ' + str(weight))
-		fh.write('\n\t]')
-	fh.write('\n]')
+			fh.write('\t\tzen_data ' + write_obj(edata) + '\n')
+		
+		fh.write('\t\tweight ' + str(weight) + '\n')
+		fh.write('\t]\n')
+	
+	fh.write(']\n')
 	fh.close()
 
 def write_obj(obj):
-	# E: Make this a set to speed up the lookup.
-	supported_objs = [str, bool, int, long, float]
-	# E: use 'and' not '&'.
-	if (type(obj) not in supported_objs) & (obj != None):
-		raise ZenException('gml.write() supports node / edge objects: bool, str, Numeric, None')
-	# E: Always add a line of whitespace after the end of a conditional block (and usually after the end of any block).  Make this change throughout.
+	supported_objs = set([str, bool, int, long, float])
+	if (type(obj) not in supported_objs) and (obj != None):
+		raise ZenException('gml.write() supports node / edge objects: bool, str, Numeric (not complex), None')
 	
-	# E: Make this check 'type(obj) == str or type(obj) == long'
-	if type(obj) in [str, long]:
-		# E: why does this work for a long?  Is this an error?
-		obj = '"' + obj.replace('"', '\\"') + '"' # gml specifies integers larger than 32 bit signed must be strings
+	if type(obj) == bool:
+		obj = str(obj)
+	
+	if type(obj) == int or type(obj) == long:		
+		if obj > 2147483647 or obj < -2147483648:	# gml specifies integers larger than 32 bit signed must be strings
+			obj = str(obj)
 		
-		# E: If a proper escape doesn't exist, don't make one up.  Just raise an exception.
-		# TODO: find a proper escape technique.  GML may not support backslash escape
-
-	return str(obj)
+	if type(obj) == str: # note bool and big numerics go in here too
+		if '"' in obj:
+			raise ZenException('gml values cannot contain nested double quotes')
+		obj = '"' + obj + '"'
+	
+	# TODO: how will gml.read() know when to evaluate a string as bool or numeric?  Just adopt policy that 
+	# strings which look like numbers / bool will be eval'd as such?
+	
+	return str(obj) # additional application of str() to strings has no effect, needed for other types
 
 	
 	
