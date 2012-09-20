@@ -949,6 +949,15 @@ class GraphTestCase(unittest.TestCase):
 			self.fail('No error should be thrown')
 		
 		G.validate()
+		
+	def test_edges_no_data(self):
+		G = Graph()
+		G.add_edge(1,2,data=None)
+
+		for e in G.edges_(G.node_idx(1),data=True):
+			pass
+
+		# if we made it here, we won
 
 if __name__ == '__main__':
 	unittest.main()
