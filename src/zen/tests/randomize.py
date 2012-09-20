@@ -140,6 +140,16 @@ class RandomizeTestCase(unittest.TestCase):
 		for v1,v2 in zip(d1,d2):
 			self.assertEquals(v1,v2)
 	
+	def test_dg_shuffle_one_node_network_mix_iodegrees(self):
+		G = DiGraph()
+		G.add_node(5)
+		
+		G2 = shuffle(G,keep_degree=True,link_iodegrees=False)
+		
+		self.assertEqual(G.nodes(),G2.nodes())
+		
+		# if we got here, we win!
+	
 	def test_dg_shuffle_keep_degree_mix_iodegrees(self):
 		G = DiGraph()
 		G.add_edge(1,2)

@@ -390,7 +390,9 @@ cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool link_iodegrees,bool self
 					
 		# next swap every node's out-degree with another node in order to break
 		# the io degree linkage (if requested)
-		if not link_iodegrees:
+		# Note that we can't de-link the in and out degrees of nodes if there's only
+		# one node. Our job is trivially done if the graph is one node.
+		if not link_iodegrees and len(dG) > 1:
 			for i in dG.nodes_():
 				j = i
 				while j == i:
