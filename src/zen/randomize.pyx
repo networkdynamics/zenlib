@@ -396,7 +396,7 @@ cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool link_iodegrees,bool self
 			for i in dG.nodes_():
 				j = i
 				while j == i:
-					j = choose_node(dG)
+					j = choose_node_(dG)
 				
 				iout_neighbors = []
 				for e,d,w in dG.out_edges_(i,True,True):

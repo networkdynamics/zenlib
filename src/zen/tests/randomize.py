@@ -179,6 +179,7 @@ class RandomizeTestCase(unittest.TestCase):
 		
 		self.assertEquals(out_degree,out_degree2)
 		self.assertNotEquals(out_degree,out_degree3)
+		self.assertEquals(set(out_degree),set(out_degree3))
 		
 if __name__ == '__main__':
 	unittest.main()
