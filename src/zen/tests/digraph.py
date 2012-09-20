@@ -215,6 +215,15 @@ class DiGraphPickleTestCase(unittest.TestCase):
 		
 class DiGraphTestCase(unittest.TestCase):
 
+	def test_out_edges_no_data(self):
+		G = DiGraph()
+		G.add_edge(1,2,data=None)
+		
+		for e in G.out_edges_(G.node_idx(1),data=True):
+			pass
+			
+		# if we made it here, we won
+
 	def test_in_edges_weights(self):
 		G = DiGraph()
 		G.add_edge(1,2,data=(1,2),weight=2)
