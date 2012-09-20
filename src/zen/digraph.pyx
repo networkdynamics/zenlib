@@ -2365,14 +2365,14 @@ cdef class DiGraph:
 			
 			for i in range(indegree):
 				result[i,0] = elist[i]
-				result[i,1] = self.edge_data_lookup[elist[i]]
+				result[i,1] = self.edge_data_lookup.get(elist[i],None)
 				result[i,2] = self.edge_info[elist[i]].weight
 		elif data:
 			result = numpy.empty( (indegree,2), dtype=numpy.object_)
 			
 			for i in range(indegree):
 				result[i,0] = elist[i]
-				result[i,1] = self.edge_data_lookup[elist[i]]
+				result[i,1] = self.edge_data_lookup.get(elist[i],None)
 		elif weight:
 			result = numpy.empty( (indegree,2), dtype=numpy.object_)
 			
@@ -2479,14 +2479,14 @@ cdef class DiGraph:
 			
 			for i in range(outdegree):
 				result[i,0] = elist[i]
-				result[i,1] = self.edge_data_lookup[elist[i]]
+				result[i,1] = self.edge_data_lookup.get(elist[i],None)
 				result[i,2] = self.edge_info[elist[i]].weight
 		elif data:
 			result = numpy.empty( (outdegree,2), dtype=numpy.object_)
 			
 			for i in range(outdegree):
 				result[i,0] = elist[i]
-				result[i,1] = self.edge_data_lookup[elist[i]]
+				result[i,1] = self.edge_data_lookup.get(elist[i],None)
 		elif weight:
 			result = numpy.empty( (outdegree,2), dtype=numpy.object_)
 			
