@@ -77,12 +77,19 @@ cdef class HyperGraph:
 		cdef Graph G = Graph()
 		cdef int i,j
 		
+		# BUGBUG: For whatever reason, when building against Cython 0.17,
+		# the functions nodes_iter and edges_iter cannot be called inline with
+		# the for ... in construct.  Hence, they're being called before and the
+		# iterator returned is being passed in as a variable.  Weird!
+		
 		# add all nodes
-		for nobj,ndata in self.nodes_iter(data=True):
+		nit = self.nodes_iter(data=True)
+		for nobj,ndata in nit:
 			G.add_node(nobj,ndata)
 		
 		# add all edges
-		for epts,edata in self.edges_iter(data=True):
+		eit = self.edges_iter(data=True)
+		for epts,edata in eit:
 			for i in range(len(epts)):
 				for j in range(i+1,len(epts)):
 					u = epts[i]
