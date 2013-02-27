@@ -1,5 +1,8 @@
-from distutils.core import setup
-#from setuptools import setup
+try:
+	from setuptools import setup
+except ImportError:
+	#This should not be the case though
+	from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 import os.path
@@ -28,15 +31,15 @@ ext_modules = [	Extension('zen.graph', ['zen/graph.pyx'], include_dirs=[numpy_in
 				Extension('zen.algorithms.centrality', ['zen/algorithms/centrality.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.layout.spring_layout', ['zen/layout/spring_layout.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.layout.random_layout', ['zen/layout/random_layout.pyx'], include_dirs=[numpy_include_dir]),
-				Extension('zen.layout.forceatlas_layout', ['zen/layout/forceatlas_layout.pyx'], include_dirs=[numpy_include_dir]),				
-				Extension('zen.layout.fruchtermanreingold_layout', ['zen/layout/fruchtermanreingold_layout.pyx'], include_dirs=[numpy_include_dir]),								
+				Extension('zen.layout.forceatlas_layout', ['zen/layout/forceatlas_layout.pyx'], include_dirs=[numpy_include_dir]),
+				Extension('zen.layout.fruchtermanreingold_layout', ['zen/layout/fruchtermanreingold_layout.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.algorithms.shortest_path', ['zen/algorithms/shortest_path.pyx'], include_dirs=[numpy_include_dir, fiboheap_include_dir]),
 				Extension('zen.algorithms.properties', ['zen/algorithms/properties.pyx'], include_dirs=[numpy_include_dir]),
-                Extension('zen.algorithms.modularity', ['zen/algorithms/modularity.pyx'], include_dirs=[numpy_include_dir]),
+				Extension('zen.algorithms.modularity', ['zen/algorithms/modularity.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.algorithms.spanning', ['zen/algorithms/spanning.pyx'], include_dirs=[numpy_include_dir, fiboheap_include_dir]),
 				Extension('zen.algorithms.matching', ['zen/algorithms/matching.pyx'], include_dirs=[numpy_include_dir]),
 				Extension('zen.generating.rgm', ['zen/generating/rgm.pyx'], include_dirs=[numpy_include_dir]),
-                Extension('zen.algorithms.community.label_propagation', ['zen/algorithms/community/label_propagation.pyx'], include_dirs=[numpy_include_dir])]
+				Extension('zen.algorithms.community.label_propagation', ['zen/algorithms/community/label_propagation.pyx'], include_dirs=[numpy_include_dir])]
 
 
 setup(
@@ -57,20 +60,20 @@ setup(
 					'zen.layout' : ['*.pxd'],
 					'zen.tests' : ['*.pxd','*.scn','*.elist','*.helist','*.rdot', '*.memlist', '*.gml'],
 					'zen.util' : ['*.pxd'],
-					'zen.data' : ['*.scn','*.gml'] }#,
-	
+					'zen.data' : ['*.scn','*.gml'] },
+
 	# # dependencies
-	# setup_requires = ['cython>=0.14'],
-	# install_requires = ['numpy>=1.6.1','matplotlib>=1.0.1'],
-	# 
+	setup_requires = ['distribute','cython>=0.14'],
+	install_requires = ['numpy>=1.6.1','matplotlib>=1.0.1', 'networkx'],
+	#
 	# # testing suite
 	# test_suite = 'zen.test',
-	# 
+	#
 	# # project metadata
-	# author = 'Derek Ruths',
-	# author_email = 'druths@networkdynamics.org',
-	# description = 'Zen is a high-performance, easy-to-use network library developed specifically for Python.',
-	# license = 'BSD',
-	# url = 'http://zen.networkdynamics.org',
-	# download_url = 'https://github.com/networkdynamics/zenlib'
+	author = 'Derek Ruths',
+	author_email = 'druths@networkdynamics.org',
+	description = 'Zen is a high-performance, easy-to-use network library developed specifically for Python.',
+	license = 'BSD',
+	url = 'http://zen.networkdynamics.org',
+	download_url = 'https://github.com/networkdynamics/zenlib'
 )
