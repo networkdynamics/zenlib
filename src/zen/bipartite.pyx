@@ -231,7 +231,7 @@ cdef class BipartiteGraph(Graph):
 		"""
 		Return ``True`` if the node identified by object ``nobj`` is in the ``V`` node class.
 		"""
-		return self.is_in_U_(self.node_idx_lookup[nobj])
+		return self.is_in_V_(self.node_idx_lookup[nobj])
 
 	cpdef bint is_in_V_(self, int nidx) except -1:
 		"""
@@ -305,5 +305,139 @@ cdef class BipartiteGraph(Graph):
 		
 		return self.node_object(ui), self.node_object(vi)
 
+	cpdef uv_edges(self,nobj=None,bint data=False,bint weight=False):
+		"""
+		Return a list of edges in the graph.
+	
+		Unlike the list returned by :py:meth:`Graph.edges`, this list will contain all edges in the graph, each
+		edge as the tuple ``(u,v)``, where ``u`` is the u-class node object and ``v`` is the v-class node object.
 		
+		The arguments are exactly the same as for :py:meth:`Graph.edges`.
+	
+		**Args**:
 		
+			* ``nobj [=None]``: if ``nobj`` is specified (not ``None``), then only the edges touching the node with 
+				object ``nobj`` are included in the list.
+	
+			* ``data [=False]`` (boolean): if ``True``, then the data object associated with the edge
+			 	is added into the tuple returned for each edge (e.g., ``(u,v,d)``).
+	
+			* ``weight [=False]`` (boolean): 	if ``True``, then the weight of the edge is added
+				into the tuple returned for each edge (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the 
+				value of the ``data`` argument).
+		"""
+		cdef int num_edges
+		cdef int* elist
+		cdef int i
+		cdef nidx = -1
+		cdef nidx2 = -1
+		cdef int u,v
+		
+		if nobj is not None:
+			nidx = self.node_idx_lookup[nobj]
+		
+		# iterate over all edges
+		result = []
+		if nidx == -1:
+			idx = 0
+			for i in range(self.next_edge_idx):
+				if self.edge_info[i].exists:
+					if self.edge_info[i].u not in self.node_obj_lookup or self.edge_info[i].v not in self.node_obj_lookup:
+						raise ZenException, 'Edge (idx=%d) does not have endpoints with node objects' % i
+					
+					u = self.edge_info[i].u
+					v = self.edge_info[i].v
+					
+					if self.node_assignments[v]:
+						v = self.edge_info[i].u
+						u = self.edge_info[i].v
+						
+						
+					if data is True:
+						if weight is True:
+							result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v],self.edge_data_(i),self.edge_info[i].weight) )
+						else:
+							result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v],self.edge_data_(i)) )
+					else:
+						if weight:
+							result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v], self.edge_info[i].weight) )
+						else:
+							result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v]) )
+					idx += 1
+					
+			return result
+		else:
+			idx = 0
+			num_edges = self.node_info[nidx].degree
+			elist = self.node_info[nidx].elist
+			for i in range(num_edges):
+				if self.edge_info[elist[i]].u not in self.node_obj_lookup or self.edge_info[elist[i]].v not in self.node_obj_lookup:
+					raise ZenException, 'Edge (idx=%d) does not have endpoints with node objects' % i
+					
+				u = self.edge_info[elist[i]].u
+				v = self.edge_info[elist[i]].v
+				
+				if self.node_assignments[v]:
+					v = self.edge_info[elist[i]].u
+					u = self.edge_info[elist[i]].v
+						
+				if data is True:
+					if weight is True:
+						result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v],self.edge_data_(elist[i]), self.edge_info[elist[i]].weight) )
+					else:
+						result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v],self.edge_data_(elist[i])) )
+				else:
+					if weight:
+						result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v],self.edge_info[elist[i]].weight) )
+					else:
+						result.append( (self.node_obj_lookup[u],self.node_obj_lookup[v]) )
+				idx += 1
+			
+			return result
+
+	cpdef uv_edges_iter(self,nobj=None,bint data=False,bint weight=False):
+		"""
+		Return an iterator over edges in the graph.
+		
+		Unlike the iterator returned by :py:meth:`Graph.edges_iter`, this one will yield all edges in the graph, each
+		edge as the tuple ``(u,v)``, where ``u`` is the u-class node object and ``v`` is the v-class node object.
+		
+		The arguments are exactly the same as for :py:meth:`Graph.edges_iter`.
+		
+		**Args**:
+			
+			* ``nobj [=None]``: if ``nobj`` is specified (not ``None``), then the edges touching the node with 
+				object ``nobj`` are iterated over.
+		
+			* ``data [=False]`` (boolean): if ``True``, then the iterator adds object associated with the edge
+			 	into the tuple returned (e.g., ``(u,v,d)``).
+		
+			* ``weight [=False]`` (boolean): 	if ``True``, then the iterator adds the weight of the edge
+				into the tuple returned (e.g., ``(u,v,w)`` or ``(u,v,data,w)`` depending on the value of the ``data`` argument).
+		"""
+		iterator = self.edges_iter(nobj,data,weight)
+		
+		uv_iterator = UVEdgeIterator(self,iterator)
+		return uv_iterator
+		
+class UVEdgeIterator:
+	"""
+	This iterator wraps another edge iterator.  It ensures that the order in which node objects are returned is u-v.
+	"""
+	def __init__(self,G,iterator):
+		self.G = G
+		self.iterator = iterator
+		
+	def next(self):
+		result = next(self.iterator)
+		
+		x,y = result[0:2]
+		if self.G.is_in_U(y):
+			result = tuple(y,x,*result[2:])
+			
+		return result
+		
+	def __iter__(self):
+		return self
+		
+	
