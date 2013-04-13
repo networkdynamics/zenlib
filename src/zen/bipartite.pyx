@@ -56,6 +56,25 @@ cdef class BipartiteGraph(Graph):
 		self.u_nodes = set()
 		self.v_nodes = set()
 	
+	cpdef copy(BipartiteGraph self):
+		cdef BipartiteGraph G = BipartiteGraph()
+		
+		# copy the raw graph content in
+		self.__copy_graph_self_into(G)
+		
+		# copy the bipartite-specific stuff
+		G.node_assignments_capacity = self.node_assignments_capacity
+		stdlib.free(G.node_assignments)
+		G.node_assignments = <int*> stdlib.malloc(sizeof(int) * G.node_assignments_capacity)
+		for i in range(G.node_assignments_capacity):
+			G.node_assignments[i] = self.node_assignments_capacity
+			
+		G.u_nodes = set(self.u_nodes)
+		G.v_nodes = set(self.v_nodes)
+			
+		# done
+		return G
+	
 	cpdef int add_node_by_class(self,bint as_u,nobj=None,data=None) except -1:
 		"""
 		Add a node to either the ``U`` or the ``V`` class.  
