@@ -30,3 +30,7 @@ cdef class BipartiteGraph(Graph):
 	cpdef V(self)
 	cpdef U_(self)
 	cpdef V_(self)
+	
+	# edge accessors
+	cpdef uv_endpoints_(self,int eidx)
+	cpdef uv_endpoints(self,int eidx)

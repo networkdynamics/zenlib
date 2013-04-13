@@ -47,6 +47,8 @@ cdef class Graph:
 	
 	cpdef copy(Graph self)
 	
+	cdef __copy_graph_self_into(Graph self, Graph G)
+	
 	cpdef np.ndarray[np.float_t] matrix(self)
 	
 	cpdef bint is_directed(Graph self)

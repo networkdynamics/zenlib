@@ -411,14 +411,31 @@ cdef class Graph:
 	cpdef copy(Graph self):
 		"""
 		Create a copy of this graph.  
-		
+
 		.. note:: that node and edge indices are preserved in this copy.
-		
+
 		**Returns**: 
 			:py:class:`zen.Graph`. A new graph object that contains an independent copy of the connectivity of this graph.  
 			Node objects and node/edge data in the new graph reference the same objects as in the old graph.
 		"""
 		cdef Graph G = Graph()
+		self.__copy_graph_self_into(G)
+
+		return G
+
+	cdef __copy_graph_self_into(Graph self,Graph G):
+		"""
+		A helper method for copy functions of Graph and subclasses.  This method copies the graph itself into
+		the graph provided.  This method doesn't return anything since the graph is modified in place.
+
+		.. note:: per the contract of the :py:meth:`Graph.copy` method, the node and edge indices are preserved
+		          in this copy.
+
+		**Args**:
+
+			* ``G`` (Graph): the graph that will be populated with all content.  Note that this graph should be empty.
+
+		"""
 		cdef int i,j,eidx,eidx2
 		cdef double weight
 
@@ -426,22 +443,22 @@ cdef class Graph:
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
 				ndata = self.node_data_(i)
-			
+
 				# this will preserve node index
 				G.add_node_x(i,G.edge_list_capacity,nobj,ndata)
-	
+
 		for eidx in range(self.next_edge_idx):
 			if self.edge_info[eidx].exists:
 				i = self.edge_info[eidx].u
 				j = self.edge_info[eidx].v
 				edata = self.edge_data_(eidx)
 				weight = self.weight_(eidx)
-			
+
 				# this will preserve edge index
 				G.add_edge_x(eidx,i,j,edata,weight)
-				
+
 		return G
-		
+	
 	cpdef bint is_directed(Graph self):
 		"""
 		Return ``True`` if this graph is directed (which it is not).

@@ -277,3 +277,33 @@ cdef class BipartiteGraph(Graph):
 			
 		return v_nodes
 		
+	cpdef uv_endpoints_(self,int eidx):
+		"""
+		Return the endpoints of the edge with index ``eidx`` in u-v order.  The node indicies are returned
+		by this function call.
+		
+		This method contrasts with the :py:meth:`BipartiteGraph.endpoints_` method which returns the
+		endpoints in an, effectively, arbitrary order.
+		"""
+		xi = self.edge_info[eidx].u
+		yi = self.edge_info[eidx].v
+		
+		if self.node_assignments[xi]:
+			return xi,yi
+		else:
+			return yi,xi
+			
+	cpdef uv_endpoints(self,int eidx):
+		"""
+		Return the endpoints of the edge with index ``eidx`` in u-v order.  The node objects are returned
+		by this function call.
+		
+		This method contrasts with the :py:meth:`BipartiteGraph.endpoints` method which returns the
+		endpoints in an, effectively, arbitrary order.
+		"""
+		ui,vi = self.uv_endpoints_(eidx)
+		
+		return self.node_object(ui), self.node_object(vi)
+
+		
+		
