@@ -11,10 +11,10 @@ In order to render a graph, first construct the `UbigraphRenderer` and connect i
 
 A simple use case involving a connection to a local Ubigraph server would look something like::
 
-	G = Graph()
+	G = DiGraph()
 	ur = UbigraphRenderer('http://localhost:20738/RPC2')
-	ur.graph = G
 	ur.default_node_color = '#00ff00' # all nodes will be green
+	ur.graph = G
 	
 	G.add_edge(1,2)
 	G.add_edge(2,3)
@@ -30,7 +30,8 @@ are supported:
 	* ``default_edge_color``
 	* ``default_edge_width``
 	
-All these attributes assume values dictated by the `Ubigraph API <http://ubietylab.net/ubigraph/content/Docs/index.html>`_.
+All these attributes assume values dictated by the `Ubigraph API <http://ubietylab.net/ubigraph/content/Docs/index.html>`_.  Both undirected and directed graphs are
+supported.  Directed graphs will be rendered with directed edges - everything else is the same.
 
 Node/Edge Highlighting
 ======================
@@ -44,8 +45,9 @@ The UbigraphRenderer class
 
 """
 import logging
-
 import xmlrpclib
+
+from zen.digraph import DiGraph
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +87,9 @@ class UbigraphRenderer(object):
 			self.default_node_shape = self._default_node_shape
 			self.default_edge_color = self._default_edge_color
 			self.default_edge_width = self._default_edge_width
+			
+			if type(graph) == DiGraph:
+				self.server_graph.set_edge_style_attribute(0, 'arrow', 'true')
 			
 			# create and set the highlighted styles
 			self.highlighted_node_style = self.server_graph.new_vertex_style(0)
@@ -278,7 +283,7 @@ if __name__ == '__main__':
 	
 	logging.basicConfig(level=logging.DEBUG)
 	
-	G = zen.Graph()
+	G = zen.DiGraph()
 	ur = UbigraphRenderer('http://localhost:20738/RPC2')
 	ur.default_node_shape = 'sphere'
 	ur.default_node_color = '#1100dd'
