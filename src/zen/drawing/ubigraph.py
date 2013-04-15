@@ -58,6 +58,9 @@ class UbigraphRenderer(object):
 		self.server = xmlrpclib.Server(url)
 		self.server_graph = self.server.ubigraph
 		
+		self.highlighted_node_style = self.server_graph.new_vertex_style(0)
+		self.highlighted_edge_style = self.server_graph.new_edge_style(0)
+		
 		self.default_node_color = '#0000bb'
 		self.default_node_shape = 'sphere'
 		self.default_edge_color = '#ffffff'
@@ -74,11 +77,18 @@ class UbigraphRenderer(object):
 		else:
 			self.server_graph.clear()
 			
-			# reapply defaults
+			####
+			# reapply defaults to the server
+			
+			# set the default styles
 			self.default_node_color = self._default_node_color
 			self.default_node_shape = self._default_node_shape
 			self.default_edge_color = self._default_edge_color
 			self.default_edge_width = self._default_edge_width
+			
+			# create and set the highlighted styles
+			self.highlighted_node_style = self.server_graph.new_vertex_style(0)
+			self.highlighted_edge_style = self.server_graph.new_edge_style(0)
 			
 			self.highlighted_node_color = self._hlight_node_color
 			self.highlighted_node_shape = self._hlight_node_shape
@@ -89,6 +99,7 @@ class UbigraphRenderer(object):
 			self._highlighted_edges = set()
 			self._highlighted_nodes = set()
 			
+			####
 			# initialize graph stuff
 			self._graph = graph
 			self.node_map = {}
@@ -157,6 +168,7 @@ class UbigraphRenderer(object):
 		If a color is given, the highlighted node color is changed.  Otherwise, the highlighted color is returned.
 		"""
 		if color is not None:
+			self.server_graph.set_vertex_style_attribute(self.highlighted_node_style, 'color', color)
 			self._hlight_node_color = color
 		else:
 			return self._hlight_node_color
@@ -167,6 +179,7 @@ class UbigraphRenderer(object):
 		"""
 		logger.debug('entering inner hlight node shape with %s' % shape)
 		if shape is not None:
+			self.server_graph.set_vertex_style_attribute(self.highlighted_node_style, 'shape', shape)
 			self._hlight_node_shape = shape
 		else:
 			return self._hlight_node_shape
@@ -176,6 +189,7 @@ class UbigraphRenderer(object):
 		If a shape is given, the hlight edge color is changed.  Otherwise, the hlight color is returned.
 		"""
 		if color is not None:
+			self.server_graph.set_edge_style_attribute(self.highlighted_edge_style, 'color', color)
 			self._hlight_edge_color = color
 		else:
 			return self._hlight_edge_color
@@ -185,6 +199,7 @@ class UbigraphRenderer(object):
 		If a width (string) is given, the hlight edge width is changed.  Otherwise, the hlight width is returned.
 		"""
 		if width is not None:
+			self.server_graph.set_edge_style_attribute(self.highlighted_edge_style, 'width', width)
 			self._hlight_edge_width = width
 		else:
 			return self._hlight_edge_width
@@ -237,8 +252,7 @@ class UbigraphRenderer(object):
 	def highlight_edges_(self,edges):
 		for eidx in edges:
 			if eidx not in self._highlighted_edges:
-				self.server_graph.set_edge_attribute(self.edge_map[eidx], 'color', self._hlight_edge_color)
-				self.server_graph.set_edge_attribute(self.edge_map[eidx], 'width', self._hlight_edge_width)
+				self.server_graph.change_edge_style(self.edge_map[eidx], self.highlighted_edge_style)
 				self._highlighted_edges.add(eidx)
 				
 		return
@@ -246,8 +260,7 @@ class UbigraphRenderer(object):
 	def highlight_nodes_(self,nodes):
 		for nidx in nodes:
 			if nidx not in self._highlighted_nodes:
-				self.server_graph.set_vertex_attribute(self.node_map[nidx], 'color', self._hlight_node_color)
-				self.server_graph.set_vertex_attribute(self.node_map[nidx], 'shape', self._hlight_node_shape)
+				self.server_graph.change_vertex_style(self.node_map[nidx], self.highlighted_node_style)
 				self._highlighted_nodes.add(nidx)
 				
 		return
