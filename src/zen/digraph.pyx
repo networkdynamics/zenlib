@@ -88,6 +88,21 @@ cdef class DiGraph:
 		* ``node_grow_factor`` (int): the multiple by which the node storage array will grow when its capacity is exceeded.
 		* ``edge_grow_factor`` (int): the multiple by which the edge storage array will grow when its capacity is exceeded.
 		* ``edge_list_grow_factor`` (int): the multiple by which the a node's in/out edge list storage array will grow when its capacity is exceeded.
+		
+	**Graph Listeners**:
+
+	Instances of a graph can notify one or more listeners of changes to it.  Listeners should support the following methods:
+
+		* ``node_added(nidx,nobj,data)``
+		* ``node_removed(nidx,nobj)``
+		* ``edge_added(eidx,uidx,vidx,data,weight)``
+		* ``edge_removed(eidx,uidx,vidx)``
+
+	Other event notifications are possible (changes to data, etc...).  These will be supported in future versions.
+
+	It is noteworthy that adding listeners imposes a serious speed limitation on graph building functions.  If no listeners
+	are present in the graph, then node/edge addition/removal proceed as fast as possible.  Notifying listeners requires 
+	these functions to follow non-optimal code paths.
 	"""
 
 	def __init__(DiGraph self,**kwargs):
@@ -136,6 +151,9 @@ cdef class DiGraph:
 		self.edge_data_lookup = {}
 
 		self.edge_list_capacity = edge_list_capacity
+		
+		self.num_graph_listeners = 0
+		self.graph_listeners = set()
 
 	def __dealloc__(DiGraph self):
 		cdef int i
@@ -429,6 +447,20 @@ cdef class DiGraph:
 			i = self.edge_info[i].src
 
 		assert (num_free_edges + num_existing_edges) == self.next_edge_idx, '(# free edges) + (# existing edges) != self.next_edge_idx (%d + %d != %d)' % (num_free_edges,num_existing_edges,self.next_edge_idx)
+
+	def add_listener(self,listener):
+		"""
+		Add a listener to the graph that will be notified of all changes to the graph.
+		"""
+		self.graph_listeners.add(listener)
+		self.num_graph_listeners = len(self.graph_listeners)
+
+	def rm_listener(self,listener):
+		"""
+		Remove a listener so it will no longer be updated with changes to the graph.
+		"""
+		self.graph_listeners.remove(listener)
+		self.num_graph_listeners = len(self.graph_listeners)
 
 	cpdef np.ndarray[np.double_t] matrix(self):
 		"""
@@ -995,6 +1027,12 @@ cdef class DiGraph:
 		self.node_info[node_idx].out_capacity = self.edge_list_capacity
 
 		self.num_nodes += 1
+		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.node_added(node_idx,nobj,data)
+				
 		return
 
 	def __contains__(DiGraph self,nobj):
@@ -1308,6 +1346,11 @@ cdef class DiGraph:
 				self.max_node_idx -= 1
 
 		self.num_nodes -= 1
+		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.node_removed(nidx,nobj)
 
 	cpdef degree(DiGraph self,nobj):
 		"""
@@ -1567,6 +1610,11 @@ cdef class DiGraph:
 		#####
 		# Done
 		self.num_edges += 1
+		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.edge_added(eidx,src,tgt,data,weight)
 
 		return eidx
 
@@ -1719,6 +1767,11 @@ cdef class DiGraph:
 
 		self.num_edges -= 1
 
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.edge_removed(eidx,src,tgt)
+				
 		return
 
 	cdef __remove_edge_from_outelist(DiGraph self, int src, int eidx, int tgt):

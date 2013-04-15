@@ -48,6 +48,9 @@ cdef class DiGraph:
 	
 	cdef readonly int edge_list_capacity
 	
+	cdef readonly bint num_graph_listeners
+	cdef readonly graph_listeners
+	
 	# methods
 	cdef inner_validate(self,bint verbose)
 	
