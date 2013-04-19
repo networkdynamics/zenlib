@@ -47,6 +47,7 @@ The UbigraphRenderer class
 import logging
 import xmlrpclib
 
+from zen.graph import Graph
 from zen.digraph import DiGraph
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,23 @@ class UbigraphRenderer(object):
 	"""
 	The UbigraphRenderer is constructed with a URL to the Ubigraph server it will connect to.  Following this, the graph can be set using the ``.graph`` attribute.
 	"""
-	def __init__(self,url):
+	def __init__(self,url,**kwargs):
+		"""
+		Create an UbigraphRenderer instance that will render graph events to the server indicated in ``url``.
+		
+		**Keyword Args**:
+		
+		  * ``graph [=None]`` (:py:class:`Graph` or :py:class:`DiGraph`): the graph that will be rendered.  This can also be set using
+		    the ``UbigraphRenderer.graph`` property.
+		  * ``event_delay [=0]`` (float): the number of seconds that each event update call should wait.  This is one way of 
+		    making the graph render more slowly.  Of course, this also slows down the graph construction code itself.  Use with care.
+		"""
+		graph = kwargs.pop('graph',None)
+		self._event_delay = kwargs.pop('event_delay',0)
+		
+		if len(kwargs) > 0:
+			raise ZenException, 'Unexpected remaining arguments: %s' % kwargs.keys()
+		
 		logger.debug('connecting to ubigraph server: %s' % url)
 		self.server = xmlrpclib.Server(url)
 		self.server_graph = self.server.ubigraph
@@ -72,6 +89,9 @@ class UbigraphRenderer(object):
 		self.highlighted_node_shape = 'sphere'
 		self.highlighted_edge_color = '#ffff00'
 		self.highlighted_edge_width = '6.0'
+		
+		# now that everything is setup, if a graph was provided, apply it!
+		self.graph = graph
 
 	def __graph(self,graph=None):
 		if graph is None:
@@ -110,14 +130,22 @@ class UbigraphRenderer(object):
 			self.node_map = {}
 			self.edge_map = {}
 			self._graph.add_listener(self)
-	
+			
+			#####
 			# build up the graph as it currently exists
+			
+			# briefly suspend the event delay
+			actual_event_delay = self._event_delay
+			self._event_delay = 0
 			for nidx,nobj,data in self._graph.nodes_iter_(obj=True,data=True):
 				self.node_added(nidx,nobj,data)
 		
 			for eidx,data,weight in self._graph.edges_iter_(data=True,weight=True):
 				uidx,vidx = self._graph.endpoints_(eidx)
 				self.edge_added(eidx,uidx,vidx,data,weight)
+				
+			# put the event delay back in place
+			self._event_delay = actual_event_delay
 	
 	graph = property( __graph, __graph)
 	
