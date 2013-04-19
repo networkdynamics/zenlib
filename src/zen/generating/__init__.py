@@ -23,6 +23,9 @@ Random graph models
 
 .. autofunction:: zen.generating.rgm.barabasi_albert(n,m[,directed=False,seed=-1])
 
+.. autofunction:: zen.generating.duplication_divergence_iky(n,s[,directed=False,seed=-1])
+
 """
 
 from rgm import *
+from duplication import *
