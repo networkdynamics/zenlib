@@ -18,6 +18,8 @@ def duplication_divergence_iky(n, s, **kwargs):
 		* ``directed [=False]`` (boolean): whether to build the graph directed.  If ``True``, then the ``m`` edges created
 		  by a node upon its creation are instantiated as out-edges.  All others are in-edges to that node.
 		* ``seed [=-1]`` (int): a seed for the random number generator
+		* ``graph [=None]`` (:py:class:`zen.Graph` or :py:class:`zen.DiGraph`): this is the actual graph instance to populate. It must be
+		  empty and its directionality must agree with the value of ``directed``.
 	
 	**Returns**:
 		:py:class:`zen.Graph` or :py:class:`zen.DiGraph`. The graph generated.  If ``directed = True``, then a :py:class:`DiGraph` will be returned.
@@ -27,6 +29,13 @@ def duplication_divergence_iky(n, s, **kwargs):
 	"""
 	seed = kwargs.pop('seed',None)
 	directed = kwargs.pop('directed',False)
+	graph = kwargs.pop('graph',None)
+	
+	if graph is not None:
+		if len(graph) > 0:
+			raise ZenException, 'the graph must be empty, if provided'
+		if graph.is_directed() != directed:
+			raise ZenException, 'graph and directed arguments must agree'
 	
 	if len(kwargs) > 0:
 		raise ZenException, 'Unknown arguments: %s' % ', '.join(kwargs.keys())
@@ -44,11 +53,12 @@ def duplication_divergence_iky(n, s, **kwargs):
 		print type(s)
 		raise ZenException, 'Parameter s must be a float, double, or an int'
 		
-	G = None
-	if directed:
-		G = DiGraph()
-	else:
-		G = Graph()
+	G = graph
+	if graph is None:
+		if directed:
+			G = DiGraph()
+		else:
+			G = Graph()
 		
 	# initialize the graph with two connected nodes
 	G.add_edge(0,1)
@@ -92,3 +102,10 @@ def duplication_divergence_iky(n, s, **kwargs):
 
 ###
 # TODO: Implement duplication_mutation
+
+if __name__ == '__main__':
+	from zen.drawing import UbigraphRenderer
+	G = DiGraph()
+	ur = UbigraphRenderer('http://localhost:20738/RPC2',event_delay=1,graph=G)
+	
+	G = duplication_divergence_iky(10, 0.4, directed=True, graph=G)

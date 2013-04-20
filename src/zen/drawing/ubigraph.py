@@ -45,6 +45,7 @@ The UbigraphRenderer class
 
 """
 import logging
+import time
 import xmlrpclib
 
 from zen.graph import Graph
@@ -253,6 +254,8 @@ class UbigraphRenderer(object):
 		self.node_map[nidx] = self.server_graph.new_vertex()
 		self.server_graph.set_vertex
 		
+		time.sleep(self._event_delay)
+		
 		return
 		
 	def node_removed(self,nidx,nobj):
@@ -260,6 +263,8 @@ class UbigraphRenderer(object):
 			logger.debug('removing node %d from the server.' % nidx)
 			self.server_graph.remove_vertex(self.node_map[nidx])
 			del self.node_map[nidx]
+			
+			time.sleep(self._event_delay)
 		else:
 			logger.warn('node %d cannot be removed. No mapping exists.' % nidx)
 		
@@ -272,6 +277,8 @@ class UbigraphRenderer(object):
 		logger.debug('registering edge %d with the server' % eidx)
 		self.edge_map[eidx] = self.server_graph.new_edge(self.node_map[uidx],self.node_map[vidx])
 		
+		time.sleep(self._event_delay)
+		
 		return
 		
 	def edge_removed(self,eidx,uidx,vidx):
@@ -279,6 +286,8 @@ class UbigraphRenderer(object):
 			logger.debug('removing edge %d from the server.' % eidx)
 			self.server_graph.remove_edge(self.edge_map[eidx])
 			del self.edge_map[eidx]
+			
+			time.sleep(self._event_delay)
 		else:
 			logger.warn('edge %d cannot be removed. No mapping exists.' % eidx)
 	
