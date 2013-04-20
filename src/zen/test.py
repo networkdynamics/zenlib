@@ -12,6 +12,7 @@ from tests.bipartite import *
 from tests.generating_er import *
 from tests.generating_ba import *
 from tests.generating_duplication import *
+from tests.generating_local import *
 
 # io
 from tests.edgelist import *
