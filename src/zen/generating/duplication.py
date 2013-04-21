@@ -1,4 +1,5 @@
 import random
+from sys import maxint
 
 from zen.graph import Graph
 from zen.digraph import DiGraph
@@ -68,7 +69,7 @@ def duplication_divergence_iky(n, s, **kwargs):
 	while i < n:
 		
 		# pick an existing node to copy
-		cn_seed = random.random()
+		cn_seed = random.randint(0,100000)
 		u = choose_node(G,seed=cn_seed)
 		
 		#####
