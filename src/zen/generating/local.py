@@ -87,6 +87,8 @@ def local_attachment(n, m, r, **kwargs):
 		for v in (parents + neighbors):
 			G.add_edge(i,v)
 			
+		node_list.append(i)
+			
 	# done
 	return G
 
