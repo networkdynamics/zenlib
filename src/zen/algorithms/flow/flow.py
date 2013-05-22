@@ -25,9 +25,16 @@ def min_cut(G, s , t, capacity='unit'):
 				' edge with id %s has weight %s;' % (eidx, w)
 	residual_capacities = G.copy()
 	residual_capacities = create_residual_digraph(residual_capacities, capacity)
-	dg = residual_capacities.copy()
+	dg = z.DiGraph()
+	dg.add_node(s)
+	for u,v,w in residual_capacities.out_edges(s, weight=True):
+		dg.add_node(v)
+		dg.add_edge(u, v, weight=w)
 
-	residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	try:
+		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	except:
+		return float('inf')
 
 	flows = result_flow(dg, residual_capacities)
 	return sum(flows[u][v] for u,v in dg.out_edges(s))
@@ -55,9 +62,16 @@ def min_cut_(G, sidx, tidx, capacity='unit'):
 	
 	residual_capacities = G.copy()
 	residual_capacities = create_residual_digraph(residual_capacities, capacity)
-	dg = residual_capacities.copy()
+	dg = z.DiGraph()
+	dg.add_node(s)
+	for u,v,w in residual_capacities.out_edges(s, weight=True):
+		dg.add_node(v)
+		dg.add_edge(u, v, weight=w)
 
-	residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	try:
+		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	except:
+		return float('inf')
 
 	flows = result_flow(dg, residual_capacities)
 	return sum(flows[u][v] for u,v in dg.out_edges(s))
@@ -83,7 +97,10 @@ def min_cut_set(G, s, t, capacity='unit'):
 	residual_capacities = G.copy()
 	residual_capacities = create_residual_digraph(residual_capacities, capacity)
 	
-	residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	try:
+		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	except:
+		return G.out_edges(s)
 	
 	edge_set = []
 
@@ -130,7 +147,10 @@ def min_cut_set_(G, sidx, tidx, capacity='unit'):
 	residual_capacities = G.copy()
 	residual_capacities = create_residual_digraph(residual_capacities, capacity)
 	
-	residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	try:
+		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
+	except:
+		return G.out_edges(s)
 	
 	edge_set = []
 
@@ -158,20 +178,23 @@ def ford_fulkerson(G, s, t, capacity):
 	path = get_path(G, s, t)
 	while path != None:
 		flow = min(G.weight(u,v) for u,v in path)
-		for u,v in path:
-			if G.has_edge(u, v):
-				G.set_weight(u, v, (G.weight(u, v) - flow))
-				if G.weight(u,v)<1:
-					G.rm_edge(u,v)
-			else:
-				G.add_edge(u, v, weight=(dg.weight(u,v) - flow))
-			if G.has_edge(v, u):
-				G.set_weight(v, u, (G.weight(v, u) + flow))
-				if G.weight(v,u)<1:
-					G.rm_edge(v,u)
-			else:
-				G.add_edge(v, u, weight=flow)
-		path = get_path(G, s, t)
+		if flow == float('infinity'):
+			raise ZenException, 'path from s to t with infinite capacity;'
+		else:
+			for u,v in path:
+				if G.has_edge(u, v):
+					G.set_weight(u, v, (G.weight(u, v) - flow))
+					if G.weight(u,v)<1:
+						G.rm_edge(u,v)
+				else:
+					G.add_edge(u, v, weight=(dg.weight(u,v) - flow))
+				if G.has_edge(v, u):
+					G.set_weight(v, u, (G.weight(v, u) + flow))
+					if G.weight(v,u)<1:
+						G.rm_edge(v,u)
+				else:
+					G.add_edge(v, u, weight=flow)
+			path = get_path(G, s, t)
 	return G
 	
 
