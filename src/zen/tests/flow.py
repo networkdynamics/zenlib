@@ -33,15 +33,6 @@ class FlowTestCase(unittest.TestCase):
 
 		self.assertEquals(28, f.min_cut(G,'a','h','weight'))
 		self.assertEquals(3, f.min_cut(G,'a','h','unit'))
-"""
-		G.rm_edge('a','d')
-		G.rm_edge('d','g')
-		G.rm_edge('g','h')
-		G.add_edge('a','d',weight=float('infinity'))
-		G.add_edge('d','g',weight=float('infinity'))
-		G.add_edge('g','h',weight=float('infinity'))
-		self.assertEquals(float('infinity'), f.min_cut(G,'a','h','weight'))
-		self.assertEquals(3, f.min_cut(G,'a','h','unit'))"""
 
 	def test_min_cut_(self):
 		#sample graph
@@ -143,17 +134,17 @@ class FlowTestCase(unittest.TestCase):
 
 		cut_set = f.min_cut_set_(G,0,7,'weight')
 		self.assertEquals(5, len(cut_set))
-		self.assertTrue(('a','b') in cut_set)
-		self.assertTrue(('b','c') in cut_set)
-		self.assertTrue(('c','f') in cut_set)
-		self.assertTrue(('f','g') in cut_set)
-		self.assertTrue(('g','h') in cut_set)
+		self.assertTrue(0 in cut_set)
+		self.assertTrue(5 in cut_set)
+		self.assertTrue(6 in cut_set)
+		self.assertTrue(12 in cut_set)
+		self.assertTrue(14 in cut_set)
 
 		cut_set = f.min_cut_set_(G,0,7,'unit')
 		self.assertEquals(3, len(cut_set))
-		self.assertTrue(('a','b') in cut_set)
-		self.assertTrue(('a','c') in cut_set)
-		self.assertTrue(('a','d') in cut_set)
+		self.assertTrue(0 in cut_set)
+		self.assertTrue(1 in cut_set)
+		self.assertTrue(2 in cut_set)
 
 
 if __name__ == '__main__':

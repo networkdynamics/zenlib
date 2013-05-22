@@ -6,38 +6,14 @@ __author__ = James McCorriston
 
 import zen as z
 
-def min_cut(G, s , t, capacity='unit'):
-	if type(G) is not z.DiGraph:
-		raise ZenException, 'min_cut only supports DiGraph;'\
-				' found %s.' % type(G)
+def min_cut(G, s , t, capacity='unit', check_graph=True):
+	if check_graph:
+		for eidx, w in G.edges_(weight=True):
+			if w < 0:
+				raise ZenException, 'min_cut_ only supports non-negative edge weights;'\
+					' edge with id %s has weight %s;' % (eidx, w)
 	
-	if s not in G:
-		raise ZenException, 'the source node is not in the graph;'
-	if t not in G:
-		raise ZenException, 'the sink node is not in the graph;'
-	
-	if capacity != 'unit' and capacity != 'weight':
-		raise ZenException, 'capacity must either be \'unit\' or \'weight\''
-
-	for eidx, w in G.edges_(weight=True):
-		if w < 0:
-			raise ZenException, 'min_cut only supports non-negative edge weights;'\
-				' edge with id %s has weight %s;' % (eidx, w)
-	residual_capacities = G.copy()
-	residual_capacities = create_residual_digraph(residual_capacities, capacity)
-	dg = z.DiGraph()
-	dg.add_node(s)
-	for u,v,w in residual_capacities.out_edges(s, weight=True):
-		dg.add_node(v)
-		dg.add_edge(u, v, weight=w)
-
-	try:
-		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
-	except:
-		return float('inf')
-
-	flows = result_flow(dg, residual_capacities)
-	return sum(flows[u][v] for u,v in dg.out_edges(s))
+	return min_cut_(G, G.node_idx(s), G.node_idx(t), capacity)
 
 def min_cut_(G, sidx, tidx, capacity='unit'):
 	if type(G) is not z.DiGraph:
@@ -54,11 +30,6 @@ def min_cut_(G, sidx, tidx, capacity='unit'):
 		t = G.node_object(tidx)
 	if capacity != 'unit' and capacity != 'weight':
 		raise ZenException, 'capacity must either be \'unit\' or \'weight\''
-
-	for eidx, w in G.edges_(weight=True):
-		if w < 0:
-			raise ZenException, 'min_cut_ only supports non-negative edge weights;'\
-				' edge with id %s has weight %s;' % (eidx, w)
 	
 	residual_capacities = G.copy()
 	residual_capacities = create_residual_digraph(residual_capacities, capacity)
@@ -76,51 +47,18 @@ def min_cut_(G, sidx, tidx, capacity='unit'):
 	flows = result_flow(dg, residual_capacities)
 	return sum(flows[u][v] for u,v in dg.out_edges(s))
 
-def min_cut_set(G, s, t, capacity='unit'):
-	if type(G) is not z.DiGraph:
-		raise ZenException, 'min_cut_set only supports DiGraph;'\
-				' found %s.' % type(G)
+def min_cut_set(G, s, t, capacity='unit', check_graph=True):
+	if check_graph:
+		for eidx, w in G.edges_(weight=True):
+			if w < 0:
+				raise ZenException, 'min_cut_set only supports non-negative edge weights;'\
+					' edge with id %s has weight %s;' % (eidx, w)
 	
-	if s not in G:
-		raise ZenException, 'the source node is not in the graph;'
-	if t not in G:
-		raise ZenException, 'the sink node is not in the graph;'
-	
-	if capacity != 'unit' and capacity != 'weight':
-		raise ZenException, 'capacity must either be \'unit\' or \'weight\''
+	edge_set_idxs = min_cut_set_(G, G.node_idx(s), G.node_idx(t), capacity)
 
-	for eidx, w in G.edges_(weight=True):
-		if w < 0:
-			raise ZenException, 'min_cut_set only supports non-negative edge weights;'\
-				' edge with id %s has weight %s;' % (eidx, w)
-
-	residual_capacities = G.copy()
-	residual_capacities = create_residual_digraph(residual_capacities, capacity)
-	
-	try:
-		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
-	except:
-		return G.out_edges(s)
-	
 	edge_set = []
-
-	H = z.DiGraph()
-	for node in residual_capacities.nodes():
-		if z.algorithms.shortest_path.dijkstra_path(residual_capacities, s, node)[1] == None:
-			G.set_node_data(node, 'B')
-		else:
-			G.set_node_data(node, 'A')
-
-	for node,data in G.nodes(data=True):
-		if data=='A':
-			for u,v in G.out_edges(node):
-				d = G.node_data(v)
-				if d=='B':
-					edge_set = edge_set + [(u,v)]
-			for u,v in G.in_edges(node):
-				d = G.node_data(u)
-				if d=='B':
-					edge_set = edge_set + [(u,v)]
+	for i in edge_set_idxs:
+		edge_set = edge_set + [(G.src(i), G.tgt(i))]
 	return edge_set
 			
 def min_cut_set_(G, sidx, tidx, capacity='unit'):
@@ -139,11 +77,6 @@ def min_cut_set_(G, sidx, tidx, capacity='unit'):
 	if capacity != 'unit' and capacity != 'weight':
 		raise ZenException, 'capacity must either be \'unit\' or \'weight\''
 
-	for eidx, w in G.edges_(weight=True):
-		if w < 0:
-			raise ZenException, 'min_cut_set_ only supports non-negative edge weights;'\
-				' edge with id %s has weight %s;' % (eidx, w)
-
 	residual_capacities = G.copy()
 	residual_capacities = create_residual_digraph(residual_capacities, capacity)
 	
@@ -154,23 +87,21 @@ def min_cut_set_(G, sidx, tidx, capacity='unit'):
 	
 	edge_set = []
 
-	H = z.DiGraph()
+	H = G.copy()
 	for node in residual_capacities.nodes():
 		if z.algorithms.shortest_path.dijkstra_path(residual_capacities, s, node)[1] == None:
-			G.set_node_data(node, 'B')
+			H.set_node_data(node, 'B')
 		else:
-			G.set_node_data(node, 'A')
+			H.set_node_data(node, 'A')
 
-	for node,data in G.nodes(data=True):
+	for node,data in H.nodes(data=True):
 		if data=='A':
-			for u,v in G.out_edges(node):
-				d = G.node_data(v)
-				if d=='B':
-					edge_set = edge_set + [(u,v)]
-			for u,v in G.in_edges(node):
-				d = G.node_data(u)
-				if d=='B':
-					edge_set = edge_set + [(u,v)]
+			for u,v in H.out_edges(node):
+				if H.node_data(v) == 'B':
+					edge_set = edge_set + [H.edge_idx(u,v)]
+			for u,v in H.in_edges(node):
+				if H.node_data(u) == 'B':
+					edge_set = edge_set + [H.edge_idx(u,v)]
 	return edge_set		
 
 def ford_fulkerson(G, s, t, capacity):
