@@ -32,6 +32,7 @@ def min_cut(G, s , t, capacity='unit'):
 		dg.add_edge(u, v, weight=w)
 
 	try:
+		print 'test'
 		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
 	except:
 		return float('inf')

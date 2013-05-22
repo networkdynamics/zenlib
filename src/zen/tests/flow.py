@@ -31,7 +31,16 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('f','h',weight=10)
 		G.add_edge('g','h',weight=10)
 
-		self.assertEquals(28, f.min_cut(G,'a','h','weight'))
+		#self.assertEquals(28, f.min_cut(G,'a','h','weight'))
+		#self.assertEquals(3, f.min_cut(G,'a','h','unit'))
+
+		G.rm_edge('a','d')
+		G.rm_edge('d','g')
+		G.rm_edge('g','h')
+		G.add_edge('a','d',weight=float('infinity'))
+		G.add_edge('d','g',weight=float('infinity'))
+		G.add_edge('g','h',weight=float('infinity'))
+		self.assertEquals(float('infinity'), f.min_cut(G,'a','h','weight'))
 		self.assertEquals(3, f.min_cut(G,'a','h','unit'))
 
 	def test_min_cut_(self):
