@@ -50,10 +50,11 @@ setup(
 	ext_modules = ext_modules,
 	packages = ['zen','zen.data','zen.drawing','zen.generating','zen.io','zen.layout',
 				'zen.tests','zen.util','zen.algorithms.community','zen.benchmarks',
-				'zen.algorithms'],
+				'zen.algorithms','zen.control', 'zen.algorithms.flow'],
 	package_data = {'zen' : ['*.pxd'],
 					'zen.algorithms' : ['*.pxd'],
 					'zen.algorithms.community' : ['*.pxd'],
+					#'zen.control' : ['*.pxd']
 					'zen.drawing' : ['*.pxd'],
 					'zen.data' : ['*.scn','*.elist','*.gml'],
 					'zen.generating' : ['*.pxd'],
