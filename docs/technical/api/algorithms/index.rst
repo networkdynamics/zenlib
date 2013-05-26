@@ -7,6 +7,7 @@ Graph and network algorithms
 	Clustering coefficients <clustering.rst>
 	Community detection <community.rst>
 	Component identification <components.rst>
+	Flow algorithms <flow.rst>
 	Maximum-matching <matching.rst>
 	Modularity measures <modularity.rst>
 	Shortest paths <shortest_path.rst>
