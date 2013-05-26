@@ -1,20 +1,48 @@
 """
-This module implements min_cut, min_cut_, min_cut_set and min_cut_set_
+The ``zen.algorithms.flow.min_cut`` module implements functions for computing the minimum cut of a network.  Note that all of the functions in this module
+are imported in the main ``zen`` module.
 
-__author__ = James McCorriston
+.. autofunction:: min_cut
+
+.. autofunction:: min_cut_
+
+.. autofunction:: min_cut_set
+
+.. autofunction:: min_cut_set_
 """
+
+__author__ = 'James McCorriston'
 
 import zen as z
 
-"""
-This function returns the min-cut/max flow of the graph G with source node s and sink node t.
-The parameter capacity can be set to 'unit' or 'weight' which determines whether edges in the
-graph will have capacity 1 or capacity equal to their weight, respectively. If check_graph is
-set to true, then the function checks to make sure there are no negative edge weights if the 
-capacity is set to 'weight' mode.
-"""
-def min_cut(G, s , t, capacity='unit', check_graph=True):
-	if check_graph and capacity=='weight':
+__all__ = ['min_cut','min_cut_','min_cut_set','min_cut_set_','UNIT_CAPACITY','WEIGHT_CAPACITY']
+
+UNIT_CAPACITY = 'unit'
+WEIGHT_CAPACITY = 'weight'
+
+def min_cut(G,s,t,capacity=UNIT_CAPACITY,**kwargs):
+	"""
+	Compute the min-cut/max-flow of graph ``G`` with source node ``s`` and sink node ``t``.
+	
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.DiGraph`): the graph to compute the flow on.
+		* ``s``: the node object of the source node.
+		* ``t``: the node object of the target node.
+		* ``capacity [=UNIT_CAPACITY]``: the capacity that each edge has.  This value can be either ``UNIT_CAPACITY``
+		  or ``WEIGHT_CAPACITY``.  If set to ``UNIT_CAPACITY``, then each edge has the same capacity (of 1).  If 
+		  ``WEIGHT_CAPACITY``, then the weight of each edge is used as its capacity.
+		
+	**KwArgs**:
+		* ``check_graph [=True]``: whether to ensure that the graph is valid before computing the flow. Specifically,
+		  this check ensures that no edge weights are negative if the capacity is ``WEIGHT_CAPACITY``.
+	
+	**Returns**:
+	The weight of the min-cut (also indicating the max-flow).
+	"""
+	check_graph = kwargs.pop('check_graph',True)
+	
+	if check_graph and capacity==WEIGHT_CAPACITY:
 		for eidx, w in G.edges_(weight=True):
 			if w < 0:
 				raise ZenException, 'min_cut_ only supports non-negative edge weights;'\
@@ -22,14 +50,24 @@ def min_cut(G, s , t, capacity='unit', check_graph=True):
 	
 	return min_cut_(G, G.node_idx(s), G.node_idx(t), capacity)
 
-"""
-This function is identical to min_cut except it receives the indeces of the source and sink
-nodes instead of the node object. Also there is no check for negative edge weights.
-"""
-def min_cut_(G, sidx, tidx, capacity='unit'):
+def min_cut_(G,sidx,tidx,capacity=UNIT_CAPACITY):
+	"""
+	Compute the min-cut/max-flow of graph ``G`` with source node ``s`` and sink node ``t``.
+	
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.DiGraph`): the graph to compute the flow on.
+		* ``sidx``: the node index of the source node.
+		* ``tidx``: the node index of the target node.
+		* ``capacity [=UNIT_CAPACITY]``: the capacity that each edge has.  This value can be either ``UNIT_CAPACITY``
+		  or ``WEIGHT_CAPACITY``.  If set to ``UNIT_CAPACITY``, then each edge has the same capacity (of 1).  If 
+		  ``WEIGHT_CAPACITY``, then the weight of each edge is used as its capacity.
+	
+	**Returns**:
+	The weight of the min-cut (also indicating the max-flow).
+	"""
 	if type(G) is not z.DiGraph:
-		raise ZenException, 'min_cut_ only supports DiGraph;'\
-				' found %s.' % type(G)
+		raise ZenException, 'min_cut_ only supports DiGraph; found %s.' % type(G)
 	
 	if G.node_object(sidx) == None:
 		raise ZenException, 'the source node is not in the graph;'
@@ -39,7 +77,7 @@ def min_cut_(G, sidx, tidx, capacity='unit'):
 		raise ZenException, 'the sink node is not in the graph;'
 	else:
 		t = G.node_object(tidx)
-	if capacity != 'unit' and capacity != 'weight':
+	if capacity != UNIT_CAPACITY and capacity != WEIGHT_CAPACITY:
 		raise ZenException, 'capacity must either be \'unit\' or \'weight\''
 	
 	#copies the inputted graph, the copy will be used as the residual capacities graph
@@ -69,7 +107,26 @@ edges of weight 0, is labeled 'A' and all unreachable nodes are labeled 'B'. The
 between the subset of nodes labeled 'A' and the subset labeled 'B' is the min-cut set.
 The edge set is returned as a list of (src, tgt) tuples.
 """
-def min_cut_set(G, s, t, capacity='unit', check_graph=True):
+def min_cut_set(G,s,t,capacity=UNIT_CAPACITY,check_graph=True):
+	"""
+	Compute the edges in a min-cut of graph ``G`` with source node ``s`` and sink node ``t``.
+	
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.DiGraph`): the graph to compute the flow on.
+		* ``s``: the node object of the source node.
+		* ``t``: the node object of the target node.
+		* ``capacity [=UNIT_CAPACITY]``: the capacity that each edge has.  This value can be either ``UNIT_CAPACITY``
+		  or ``WEIGHT_CAPACITY``.  If set to ``UNIT_CAPACITY``, then each edge has the same capacity (of 1).  If 
+		  ``WEIGHT_CAPACITY``, then the weight of each edge is used as its capacity.
+		
+	**KwArgs**:
+		* ``check_graph [=True]``: whether to ensure that the graph is valid before computing the flow. Specifically,
+		  this check ensures that no edge weights are negative if the capacity is ``WEIGHT_CAPACITY``.
+	
+	**Returns**:
+	The list of edges in a min-cut.  Each edge is the tuple of node-object endpoints.
+	"""
 	if check_graph:
 		for eidx, w in G.edges_(weight=True):
 			if w < 0:
@@ -81,7 +138,7 @@ def min_cut_set(G, s, t, capacity='unit', check_graph=True):
 	edge_set = []
 	#convert the list of edge indexes to a list of (src, tgt) tuples
 	for i in edge_set_idxs:
-		edge_set = edge_set + [(G.src(i), G.tgt(i))]
+		edge_set.append((G.src(i), G.tgt(i)))
 	return edge_set
 		
 
@@ -92,7 +149,22 @@ edges of weight 0, is labeled 'A' and all unreachable nodes are labeled 'B'. The
 between the subset of nodes labeled 'A' and the subset labeled 'B' is the min-cut set.
 The edge set is returned as a list of edge indexes.
 """	
-def min_cut_set_(G, sidx, tidx, capacity='unit'):
+def min_cut_set_(G,sidx,tidx,capacity=UNIT_CAPACITY):
+	"""
+	Compute the edges in a min-cut of graph ``G`` with source node ``s`` and sink node ``t``.
+	
+	**Args**:
+	
+		* ``G`` (:py:class:`zen.DiGraph`): the graph to compute the flow on.
+		* ``sidx``: the node index of the source node.
+		* ``tidx``: the node index of the target node.
+		* ``capacity [=UNIT_CAPACITY]``: the capacity that each edge has.  This value can be either ``UNIT_CAPACITY``
+		  or ``WEIGHT_CAPACITY``.  If set to ``UNIT_CAPACITY``, then each edge has the same capacity (of 1).  If 
+		  ``WEIGHT_CAPACITY``, then the weight of each edge is used as its capacity.
+	
+	**Returns**:
+	The list of edges in a min-cut.  Each edge is the index of an edge in the graph.
+	"""
 	if type(G) is not z.DiGraph:
 		raise ZenException, 'min_cut_set_ only supports DiGraph;'\
 				' found %s.' % type(G)
@@ -105,7 +177,7 @@ def min_cut_set_(G, sidx, tidx, capacity='unit'):
 		raise ZenException, 'the sink node is not in the graph;'
 	else:
 		t = G.node_object(tidx)
-	if capacity != 'unit' and capacity != 'weight':
+	if capacity != UNIT_CAPACITY and capacity != WEIGHT_CAPACITY:
 		raise ZenException, 'capacity must either be \'unit\' or \'weight\''
 
 	residual_capacities = G.copy()
@@ -134,11 +206,11 @@ def min_cut_set_(G, sidx, tidx, capacity='unit'):
 			#edges from A to B
 			for u,v in H.out_edges(node):
 				if H.node_data(v) == 'B':
-					edge_set = edge_set + [H.edge_idx(u,v)]
+					edge_set.append(H.edge_idx(u,v))
 			#edges from B to A
 			for u,v in H.in_edges(node):
 				if H.node_data(u) == 'B':
-					edge_set = edge_set + [H.edge_idx(u,v)]
+					edge_set.append(H.edge_idx(u,v))
 	return edge_set		
 
 #implementation of the Ford-Fulkerson algorithm
@@ -178,7 +250,7 @@ def create_residual_digraph(G, capacity):
 	residual = z.DiGraph()
 	for node in G.nodes():
 		residual.add_node(nobj = node)
-	if capacity == 'unit':
+	if capacity == UNIT_CAPACITY:
 		for u,v in G.edges():
 			residual.add_edge(u, v, weight=1)
 	else:
