@@ -35,6 +35,9 @@ from tests.bellman_ford import *
 from tests.dijkstra import *
 from tests.unweighted_sssp import *
 
+# flow algorithms
+from tests.flow import *
+
 # matching algorithms
 from tests.max_matching import *
  

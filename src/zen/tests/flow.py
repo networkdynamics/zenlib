@@ -1,6 +1,5 @@
 import unittest
 import zen
-import zen.algorithms.flow.flow as f
 
 class FlowTestCase(unittest.TestCase):
 	
@@ -31,8 +30,8 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('f','h',weight=10)
 		G.add_edge('g','h',weight=10)
 
-		self.assertEquals(28, f.min_cut(G,'a','h','weight'))
-		self.assertEquals(3, f.min_cut(G,'a','h','unit'))
+		self.assertEquals(28, zen.min_cut(G,'a','h','weight'))
+		self.assertEquals(3, zen.min_cut(G,'a','h','unit'))
 
 	def test_min_cut_(self):
 		#sample graph
@@ -61,8 +60,8 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('f','h',weight=10)
 		G.add_edge('g','h',weight=10)
 
-		self.assertEquals(28, f.min_cut_(G,0,7,'weight'))
-		self.assertEquals(3, f.min_cut_(G,0,7,'unit'))
+		self.assertEquals(28, zen.min_cut_(G,0,7,'weight'))
+		self.assertEquals(3, zen.min_cut_(G,0,7,'unit'))
 
 	def test_min_cut_set(self):
 		#sample graph
@@ -91,7 +90,7 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('f','h',weight=10)
 		G.add_edge('g','h',weight=10)
 
-		cut_set = f.min_cut_set(G,'a','h','weight')
+		cut_set = zen.min_cut_set(G,'a','h','weight')
 		self.assertEquals(5, len(cut_set))
 		self.assertTrue(('a','b') in cut_set)
 		self.assertTrue(('b','c') in cut_set)
@@ -99,7 +98,7 @@ class FlowTestCase(unittest.TestCase):
 		self.assertTrue(('f','g') in cut_set)
 		self.assertTrue(('g','h') in cut_set)
 
-		cut_set = f.min_cut_set(G,'a','h','unit')
+		cut_set = zen.min_cut_set(G,'a','h','unit')
 		self.assertEquals(3, len(cut_set))
 		self.assertTrue(('a','b') in cut_set)
 		self.assertTrue(('a','c') in cut_set)
@@ -132,7 +131,7 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('f','h',weight=10)
 		G.add_edge('g','h',weight=10)
 
-		cut_set = f.min_cut_set_(G,0,7,'weight')
+		cut_set = zen.min_cut_set_(G,0,7,'weight')
 		self.assertEquals(5, len(cut_set))
 		self.assertTrue(0 in cut_set)
 		self.assertTrue(5 in cut_set)
@@ -140,7 +139,7 @@ class FlowTestCase(unittest.TestCase):
 		self.assertTrue(12 in cut_set)
 		self.assertTrue(14 in cut_set)
 
-		cut_set = f.min_cut_set_(G,0,7,'unit')
+		cut_set = zen.min_cut_set_(G,0,7,'unit')
 		self.assertEquals(3, len(cut_set))
 		self.assertTrue(0 in cut_set)
 		self.assertTrue(1 in cut_set)

@@ -44,36 +44,36 @@ Extension('zen.algorithms.community.label_propagation', ['zen/algorithms/communi
 
 
 setup(
-name = 'Zen Library',
-version = '0.9',
-cmdclass = {'build_ext': build_ext},
-ext_modules = ext_modules,
-packages = ['zen','zen.data','zen.drawing','zen.generating','zen.io','zen.layout',
-'zen.tests','zen.util','zen.algorithms.community','zen.benchmarks',
-'zen.algorithms', 'zen.algorithms.flow'],
-package_data = {'zen' : ['*.pxd'],
-'zen.algorithms' : ['*.pxd'],
-'zen.algorithms.community' : ['*.pxd'],
-'zen.drawing' : ['*.pxd'],
-'zen.data' : ['*.scn','*.elist','*.gml'],
-'zen.generating' : ['*.pxd'],
-'zen.io' : ['*.pxd'],
-'zen.layout' : ['*.pxd'],
-'zen.tests' : ['*.pxd','*.scn','*.elist','*.helist','*.rdot', '*.memlist', '*.gml'],
-'zen.util' : ['*.pxd'],
-'zen.data' : ['*.scn','*.gml'] },
-# # dependencies
-setup_requires = ['distribute','cython>=0.14'],
-install_requires = ['numpy>=1.6.1','matplotlib>=1.0.1', 'networkx'],
-#
-# # testing suite
-# test_suite = 'zen.test',
-#
-# # project metadata
-author = 'Derek Ruths',
-author_email = 'druths@networkdynamics.org',
-description = 'Zen is a high-performance, easy-to-use network library developed specifically for Python.',
-license = 'BSD',
-url = 'http://zen.networkdynamics.org',
-download_url = 'https://github.com/networkdynamics/zenlib'
+	name = 'Zen Library',
+	version = '0.9',
+	cmdclass = {'build_ext': build_ext},
+	ext_modules = ext_modules,
+	packages = ['zen','zen.data','zen.drawing','zen.generating','zen.io','zen.layout',
+				'zen.tests','zen.util','zen.algorithms.community','zen.benchmarks',
+				'zen.algorithms', 'zen.algorithms.flow'],
+	package_data = {'zen' : ['*.pxd'],
+	'zen.algorithms' : ['*.pxd'],
+	'zen.algorithms.community' : ['*.pxd'],
+	'zen.drawing' : ['*.pxd'],
+	'zen.data' : ['*.scn','*.elist','*.gml'],
+	'zen.generating' : ['*.pxd'],
+	'zen.io' : ['*.pxd'],
+	'zen.layout' : ['*.pxd'],
+	'zen.tests' : ['*.pxd','*.scn','*.elist','*.helist','*.rdot', '*.memlist', '*.gml'],
+	'zen.util' : ['*.pxd'],
+	'zen.data' : ['*.scn','*.gml'] },
+	# # dependencies
+	setup_requires = ['distribute','cython>=0.14'],
+	install_requires = ['numpy>=1.6.1','matplotlib>=1.0.1', 'networkx'],
+	#
+	# # testing suite
+	# test_suite = 'zen.test',
+	#
+	# # project metadata
+	author = 'Derek Ruths',
+	author_email = 'druths@networkdynamics.org',
+	description = 'Zen is a high-performance, easy-to-use network library developed specifically for Python.',
+	license = 'BSD',
+	url = 'http://zen.networkdynamics.org',
+	download_url = 'https://github.com/networkdynamics/zenlib'
 )
