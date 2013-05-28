@@ -207,10 +207,6 @@ def min_cut_set_(G,sidx,tidx,capacity=UNIT_CAPACITY):
 			for u,v in H.out_edges(node):
 				if H.node_data(v) == 'B':
 					edge_set.append(H.edge_idx(u,v))
-			#edges from B to A
-			for u,v in H.in_edges(node):
-				if H.node_data(u) == 'B':
-					edge_set.append(H.edge_idx(u,v))
 	return edge_set		
 
 #implementation of the Ford-Fulkerson algorithm

@@ -91,11 +91,9 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('g','h',weight=10)
 
 		cut_set = zen.min_cut_set(G,'a','h','weight')
-		self.assertEquals(5, len(cut_set))
+		self.assertEquals(3, len(cut_set))
 		self.assertTrue(('a','b') in cut_set)
-		self.assertTrue(('b','c') in cut_set)
 		self.assertTrue(('c','f') in cut_set)
-		self.assertTrue(('f','g') in cut_set)
 		self.assertTrue(('g','h') in cut_set)
 
 		cut_set = zen.min_cut_set(G,'a','h','unit')
@@ -132,11 +130,9 @@ class FlowTestCase(unittest.TestCase):
 		G.add_edge('g','h',weight=10)
 
 		cut_set = zen.min_cut_set_(G,0,7,'weight')
-		self.assertEquals(5, len(cut_set))
+		self.assertEquals(3, len(cut_set))
 		self.assertTrue(0 in cut_set)
-		self.assertTrue(5 in cut_set)
 		self.assertTrue(6 in cut_set)
-		self.assertTrue(12 in cut_set)
 		self.assertTrue(14 in cut_set)
 
 		cut_set = zen.min_cut_set_(G,0,7,'unit')
