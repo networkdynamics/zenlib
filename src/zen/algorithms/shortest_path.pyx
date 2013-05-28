@@ -1327,14 +1327,12 @@ cpdef floyd_warshall_u_(Graph G,bool gen_predecessors,bint ignore_weights):
 	else:
 		return D			
 
-cpdef all_pairs_shortest_path(G,ignore_weights=False):
+cpdef all_pairs_shortest_path(G):
 	"""
 	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shortest_path`.
 		
 	**Args**:
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
-		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
-		  actual weight.
 	
 	**Returns**:
 		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
@@ -1342,36 +1340,32 @@ cpdef all_pairs_shortest_path(G,ignore_weights=False):
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = single_source_shortest_path(G,n,ignore_weights)
+		R[n] = single_source_shortest_path(G,n)
 		
 	return R
 	
-cpdef all_pairs_shortest_path_length(G,ignore_weights=False):
+cpdef all_pairs_shortest_path_length(G):
 	"""
 	Computes the shortest paths between all pairs of nodes using the algorithm descibed in :py:func:`single_source_shortest_path`.
 	
 	**Args**:
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
-		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
-		  actual weight.
 
 	**Returns**:
 		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = single_source_shortest_path_length(G,n,ignore_weights)
+		R[n] = single_source_shortest_path_length(G,n)
 	
 	return R
 	
-cpdef all_pairs_shortest_path_(G,bint ignore_weights=False):
+cpdef all_pairs_shortest_path_(G):
 	"""
 	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shortest_path`.
 		
 	**Args**:
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
-		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
-		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1390,7 +1384,7 @@ cpdef all_pairs_shortest_path_(G,bint ignore_weights=False):
 		
 		for nidx in range(UG.next_node_idx):
 			if UG.node_info[nidx].exists:
-				D,P = single_source_shortest_path_(G,nidx,ignore_weights)
+				D,P = single_source_shortest_path_(G,nidx)
 				distances[nidx,:] = D
 				predecessors[nidx,:] = P
 	elif type(G) == DiGraph:
@@ -1400,20 +1394,18 @@ cpdef all_pairs_shortest_path_(G,bint ignore_weights=False):
 
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
-				D,P = single_source_shortest_path_(G,nidx,ignore_weights)
+				D,P = single_source_shortest_path_(G,nidx)
 				distances[nidx,:] = D
 				predecessors[nidx,:] = P
 
 	return distances, predecessors
 	
-cpdef all_pairs_shortest_path_length_(G,bint ignore_weights=False):
+cpdef all_pairs_shortest_path_length_(G):
 	"""
 	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shorest_path`.
 		
 	**Args**:
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
-		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
-		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1430,7 +1422,7 @@ cpdef all_pairs_shortest_path_length_(G,bint ignore_weights=False):
 
 		for nidx in range(UG.next_node_idx):
 			if UG.node_info[nidx].exists:
-				D = single_source_shortest_path_length_(G,nidx,ignore_weights)
+				D = single_source_shortest_path_length_(G,nidx)
 				distances[nidx,:] = D
 	elif type(G) == DiGraph:
 		DG = <Graph> G
@@ -1438,7 +1430,7 @@ cpdef all_pairs_shortest_path_length_(G,bint ignore_weights=False):
 
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
-				D = single_source_shortest_path_length_(G,nidx,ignore_weights)
+				D = single_source_shortest_path_length_(G,nidx)
 				distances[nidx,:] = D
 
 	return distances
@@ -1458,7 +1450,7 @@ cpdef all_pairs_dijkstra_path(G,ignore_weights=False):
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = dijkstra_path(G,n,ignore_weights)
+		R[n] = dijkstra_path(G,n,ignore_weights=ignore_weights)
 		
 	return R
 	
