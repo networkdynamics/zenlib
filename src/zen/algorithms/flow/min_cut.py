@@ -14,6 +14,7 @@ are imported in the main ``zen`` module.
 __author__ = 'James McCorriston'
 
 import zen as z
+from zen.exceptions import *
 
 __all__ = ['min_cut','min_cut_','min_cut_set','min_cut_set_','UNIT_CAPACITY','WEIGHT_CAPACITY']
 
@@ -185,15 +186,15 @@ def min_cut_set_(G,sidx,tidx,capacity=UNIT_CAPACITY):
 	
 	try:
 		residual_capacities = ford_fulkerson(residual_capacities, s, t, capacity)
-	except:
-		return G.out_edges(s)
+	except ZenException:
+		return G.out_edges_(sidx)
 	
 	edge_set = []
 
 	#splits the graph into two subgraphs, 'A' and 'B'
 	H = G.copy()
 	for node in residual_capacities.nodes():
-		if z.algorithms.shortest_path.dijkstra_path(residual_capacities, s, node)[1] == None:
+		if z.algorithms.shortest_path.dijkstra_path(residual_capacities, s, node, ignore_weights=True)[1] == None:
 			#nodes not reachable from s
 			H.set_node_data(node, 'B')
 		else:
@@ -211,7 +212,6 @@ def min_cut_set_(G,sidx,tidx,capacity=UNIT_CAPACITY):
 
 #implementation of the Ford-Fulkerson algorithm
 def ford_fulkerson(G, s, t, capacity):
-	
 	path = get_path(G, s, t)
 	#while their is an augmenting path, augments flow by the minimum capacity in that path
 	while path != None:
@@ -272,8 +272,9 @@ def result_flow(G, H):
 
 #returns an array of edges in the form (u,v) representing the shortest path from s to t in G
 def get_path(G, s, t):
-	#uses Dijkstra's algorithm to find the shortest path
-	shortest_path = z.algorithms.shortest_path.dijkstra_path(G, s, t)[1]
+	#uses Dijkstra's algorithm to find the shortest path, ignoring weights so that infinite weight edges are considered
+	shortest_path = z.algorithms.shortest_path.dijkstra_path(G, s, t, ignore_weights=True)[1]
+
 	if shortest_path == None:
 		path = None
 	else:
