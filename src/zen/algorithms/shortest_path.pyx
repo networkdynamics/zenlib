@@ -51,21 +51,21 @@ Single-source shortest path functions return either a dictionary or 1D numpy arr
 
 .. autofunction:: single_source_shortest_path_length_(G,source,target=-1)
 
-.. autofunction:: dijkstra_path(G,source,target=None)
+.. autofunction:: dijkstra_path(G,source,target=None,ignore_weights=False)
 
-.. autofunction:: dijkstra_path_(G,source,target=-1)
+.. autofunction:: dijkstra_path_(G,source,target=-1,ignore_weights=False)
 
-.. autofunction:: dijkstra_path_length(G,source,target=None)
+.. autofunction:: dijkstra_path_length(G,source,target=None,ignore_weights=False)
 
-.. autofunction:: dijkstra_path_length_(G,source,target=-1)
+.. autofunction:: dijkstra_path_length_(G,source,target=-1,ignore_weights=False)
 
-.. autofunction:: bellman_ford_path(G,source)
+.. autofunction:: bellman_ford_path(G,source,ignore_weights=False)
 
-.. autofunction:: bellman_ford_path_(G,source)
+.. autofunction:: bellman_ford_path_(G,source,ignore_weights=False)
 
-.. autofunction:: bellman_ford_path_length(G,source)
+.. autofunction:: bellman_ford_path_length(G,source,ignore_weights=False)
 
-.. autofunction:: bellman_ford_path_length_(G,source)
+.. autofunction:: bellman_ford_path_length_(G,source,ignore_weights=False)
 
 All-pairs shortest path functions
 ---------------------------------
@@ -91,29 +91,29 @@ All-pairs shortest path functions return either a dictionary or 2D numpy arrays.
 	of indeterminiate entries, this can produce a small hit to performance and memory-efficiency since arrays must be created
 	that are larger than the number of nodes in the network.
 
-.. autofunction:: all_pairs_shortest_path(G)
+.. autofunction:: all_pairs_shortest_path(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_shortest_path_(G)
+.. autofunction:: all_pairs_shortest_path_(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_shortest_path_length(G)
+.. autofunction:: all_pairs_shortest_path_length(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_shortest_path_length_(G)
+.. autofunction:: all_pairs_shortest_path_length_(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_dijkstra_path(G)
+.. autofunction:: all_pairs_dijkstra_path(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_dijkstra_path_(G)
+.. autofunction:: all_pairs_dijkstra_path_(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_dijkstra_path_length(G)
+.. autofunction:: all_pairs_dijkstra_path_length(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_dijkstra_path_length_(G)
+.. autofunction:: all_pairs_dijkstra_path_length_(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_bellman_ford_path(G)
+.. autofunction:: all_pairs_bellman_ford_path(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_bellman_ford_path_(G)
+.. autofunction:: all_pairs_bellman_ford_path_(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_bellman_ford_path_length(G)
+.. autofunction:: all_pairs_bellman_ford_path_length(G,ignore_weights=False)
 
-.. autofunction:: all_pairs_bellman_ford_path_length_(G)
+.. autofunction:: all_pairs_bellman_ford_path_length_(G,ignore_weights=False)
 
 Converting from predecessors to paths
 -------------------------------------
@@ -237,7 +237,7 @@ cpdef single_source_shortest_path_length(G,source,target=None):
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node object of the source node.
 		* ``target [=None]``: the node object of the target node.
-	
+		
 	**Returns**:
 		The return value depends on the value of ``target``.
 			
@@ -302,6 +302,8 @@ cpdef single_source_shortest_path_length_(G,int source,int target=-1):
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node index of the source node.
 		* ``target [=None]``: the node index of the target node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		numpy ``ndarray``, ``D``.  ``D[i]`` is the distance of node with index ``i`` from the source.
@@ -311,7 +313,7 @@ cpdef single_source_shortest_path_length_(G,int source,int target=-1):
 	if type(G) == Graph:
 		return single_source_shortest_path_u_(<Graph> G,source,target,False)
 	else:
-		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)		
+		return single_source_shortest_path_d_(<DiGraph> G,source,target,False)
 		
 cpdef single_source_shortest_path_u_(Graph G,int source,int target,bint gen_predecessors):
 	
@@ -446,7 +448,7 @@ cpdef single_source_shortest_path_d_(DiGraph G,int source,int target,bint gen_pr
 	else:
 		return distance
 		
-cpdef dijkstra_path(G, source, target=None):
+cpdef dijkstra_path(G, source, target=None, ignore_weights=False):
 	"""
 	Computes the single source shortest path using the Dijkstra algorithm.
 
@@ -455,6 +457,8 @@ cpdef dijkstra_path(G, source, target=None):
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node object of the source node.
 		* ``target [=None]``: the node object of the target node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		The return value depends on the value of ``target``.
@@ -477,7 +481,7 @@ cpdef dijkstra_path(G, source, target=None):
 	
 	start_idx = G.node_idx(start)
 
-	distance, predecessor = dijkstra_path_(G, G.node_idx(start), end_idx)
+	distance, predecessor = dijkstra_path_(G, G.node_idx(start), end_idx, ignore_weights)
 
 	if end == None: # single source
 		# store in a dictionary
@@ -512,7 +516,7 @@ cpdef dijkstra_path(G, source, target=None):
 		else:
 			return distance[end_idx], [G.node_object(x) for x in path]
 			
-cpdef dijkstra_path_length(G, source, target=None):
+cpdef dijkstra_path_length(G, source, target=None, ignore_weights=False):
 	"""
 	Computes the single source shortest path lengths using Dijkstra's algorithm.
 
@@ -521,6 +525,8 @@ cpdef dijkstra_path_length(G, source, target=None):
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node object of the source node.
 		* ``target [=None]``: the node object of the target node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		The return value depends on the value of ``target``.
@@ -542,7 +548,7 @@ cpdef dijkstra_path_length(G, source, target=None):
 
 	start_idx = G.node_idx(start)
 
-	distance = dijkstra_path_length_(G, G.node_idx(start), end_idx)
+	distance = dijkstra_path_length_(G, G.node_idx(start), end_idx, ignore_weights)
 
 	if end == None: # single source
 		# store in a dictionary
@@ -559,8 +565,7 @@ cpdef dijkstra_path_length(G, source, target=None):
 		# return the distance value as well as the path as a list of node objects
 		return distance[end_idx]
 		
-	
-cpdef dijkstra_path_(G, int source, int target=-1):
+cpdef dijkstra_path_(G, int source, int target=-1, bint ignore_weights=False):
 	"""
 	Computes the single source shortest paths using Dijkstra's algorithm.
 
@@ -569,6 +574,8 @@ cpdef dijkstra_path_(G, int source, int target=-1):
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node index of the source node.
 		* ``target [=None]``: the node index of the target node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		numpy ``ndarray``, ``D`` and ``P``.  ``D[i]`` is the distance of node with index ``i`` from the source.  ``P[i]``
@@ -577,13 +584,13 @@ cpdef dijkstra_path_(G, int source, int target=-1):
 		the distance and predecessor arrays will be partially completed.
 	"""
 	if type(G) == DiGraph:
-		return dijkstra_d_(<DiGraph> G, source, target, True)
+		return dijkstra_d_(<DiGraph> G, source, target, True, ignore_weights)
 	elif type(G) == Graph:
-		return dijkstra_u_(<Graph> G, source, target, True)
+		return dijkstra_u_(<Graph> G, source, target, True, ignore_weights)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 		
-cpdef dijkstra_path_length_(G, int source, int target=-1):
+cpdef dijkstra_path_length_(G, int source, int target=-1, bint ignore_weights=False):
 	"""
 	Computes the single source shortest path lengths using Dijkstra's algorithm.
 
@@ -592,6 +599,8 @@ cpdef dijkstra_path_length_(G, int source, int target=-1):
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node index of the source node.
 		* ``target [=None]``: the node index of the target node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		numpy ``ndarray``, ``D``.  ``D[i]`` is the distance of node with index ``i`` from the source.
@@ -599,13 +608,13 @@ cpdef dijkstra_path_length_(G, int source, int target=-1):
 		the distance array will be partially completed.
 	"""
 	if type(G) == DiGraph:
-		return dijkstra_d_(<DiGraph> G, source, target, False)
+		return dijkstra_d_(<DiGraph> G, source, target, False, ignore_weights)
 	elif type(G) == Graph:
-		return dijkstra_u_(<Graph> G, source, target, False)
+		return dijkstra_u_(<Graph> G, source, target, False, ignore_weights)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
-cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bint gen_predecessors):
+cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bint gen_predecessors, bint ignore_weights):
 	"""
 	Dijkstra algorithm for directed graphs.
 	
@@ -649,7 +658,11 @@ cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bint gen_predecessors):
 		for i in xrange(G.node_info[node_idx].outdegree):
 			edge_idx = G.node_info[node_idx].outelist[i]
 			w = G.edge_info[edge_idx].tgt
-			vw_distance = dist + G.weight_(edge_idx)
+			
+			if ignore_weights:
+				vw_distance = dist + 1.
+			else:
+				vw_distance = dist + G.weight_(edge_idx)
 			if distance[w] == infinity or (vw_distance < distance[w]): #Relax
 				distance[w] = vw_distance
 				if gen_predecessors:
@@ -666,7 +679,7 @@ cdef dijkstra_d_(DiGraph G, int start_idx, int end_idx, bint gen_predecessors):
 def dijkstra_cmp(x,y):
 	return cmp(x.cost,y.cost)
 	
-cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bint gen_predecessors):
+cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bint gen_predecessors, bint ignore_weights):
 	"""
 	Dijkstra algorithm for undirected graphs.
 	
@@ -708,7 +721,12 @@ cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bint gen_predecessors):
 		for i in xrange(G.node_info[node_idx].degree):
 			edge_idx = G.node_info[node_idx].elist[i]
 			w = G.endpoint_(edge_idx, node_idx)
-			vw_distance =  dist + G.weight_(edge_idx)
+			
+			if ignore_weights:
+				vw_distance = dist + 1.
+			else:
+				vw_distance =  dist + G.weight_(edge_idx)
+				
 			if distance[w] == infinity or (vw_distance < distance[w]): #Relax
 				distance[w] = vw_distance
 				if gen_predecessors:
@@ -720,7 +738,7 @@ cdef dijkstra_u_(Graph G, int start_idx, int end_idx, bint gen_predecessors):
 	else:
 		return distance
 
-cpdef bellman_ford_path(G, source):
+cpdef bellman_ford_path(G, source, ignore_weights=False):
 	"""
 	Computes the single source shortest path using the Bellman-Ford algorithm.  
 
@@ -728,6 +746,8 @@ cpdef bellman_ford_path(G, source):
 	
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node object of the source node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		:py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``x``
@@ -737,7 +757,7 @@ cpdef bellman_ford_path(G, source):
 	
 	start_idx = G.node_idx(source)
 
-	distance, predecessor = bellman_ford_path_(G, start_idx)
+	distance, predecessor = bellman_ford_path_(G, start_idx, ignore_weights)
 
 	# store in a dictionary
 	result = {}
@@ -760,7 +780,7 @@ cpdef bellman_ford_path(G, source):
 
 	return result
 
-cpdef bellman_ford_path_length(G, source):
+cpdef bellman_ford_path_length(G, source, ignore_weights=False):
 	"""
 	Computes the single source shortest path lengths using the Bellman-Ford algorithm.
 	
@@ -768,6 +788,8 @@ cpdef bellman_ford_path_length(G, source):
 		
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node object of the source node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		:py:class:`dict`, ``D``, if ``target`` is ``None``. ``D[x]`` is the distance of node ``x`` from the source.
@@ -776,7 +798,7 @@ cpdef bellman_ford_path_length(G, source):
 	
 	start_idx = G.node_idx(source)
 
-	distance = bellman_ford_path_length_(G, start_idx)
+	distance = bellman_ford_path_length_(G, start_idx, ignore_weights)
 
 	# store in a dictionary
 	result = {}
@@ -790,7 +812,7 @@ cpdef bellman_ford_path_length(G, source):
 
 	return result
 
-cpdef bellman_ford_path_(G, int source):
+cpdef bellman_ford_path_(G,int source,bint ignore_weights=False):
 	"""
 	Computes the single source shortest paths using the Bellman-Ford algorithm.
 
@@ -798,19 +820,21 @@ cpdef bellman_ford_path_(G, int source):
 	
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node index of the source node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		numpy ``ndarray``, ``D`` and ``P``.  ``D[i]`` is the distance of node with index ``i`` from the source.  ``P[i]``
 		is the index of the immediate predecessor to node with index ``i`` on the path from the source node.
 	"""
 	if type(G) == DiGraph:
-		return bellman_ford_d_(<DiGraph> G, source, True)
+		return bellman_ford_d_(<DiGraph> G, source, True, ignore_weights)
 	elif type(G) == Graph:
-		return bellman_ford_u_(<Graph> G, source, True)
+		return bellman_ford_u_(<Graph> G, source, True, ignore_weights)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
-cpdef bellman_ford_path_length_(G, int source):
+cpdef bellman_ford_path_length_(G, int source, bint ignore_weights=False):
 	"""
 	Computes the single source shortest path lengths in an unweighted network by trading space for speed.  
 	
@@ -821,18 +845,20 @@ cpdef bellman_ford_path_length_(G, int source):
 		
 		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 		* ``source``: the node index of the source node.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		numpy ``ndarray``, ``D``.  ``D[i]`` is the distance of node with index ``i`` from the source.
 	"""
 	if type(G) == DiGraph:
-		return bellman_ford_d_(<DiGraph> G, source, False)
+		return bellman_ford_d_(<DiGraph> G, source, False, ignore_weights)
 	elif type(G) == Graph:
-		return bellman_ford_u_(<Graph> G, source, False)
+		return bellman_ford_u_(<Graph> G, source, False, ignore_weights)
 	else:
 		raise ZenException, 'Graph of type %s not supported' % str(type(G))
 
-cdef bellman_ford_d_(DiGraph G, int start_idx, bint gen_predecessors):
+cdef bellman_ford_d_(DiGraph G, int start_idx, bint gen_predecessors, bint ignore_weights):
 	"""
 	Bellman ford algorithm for directed graphs
 
@@ -865,7 +891,10 @@ cdef bellman_ford_d_(DiGraph G, int start_idx, bint gen_predecessors):
 				
 			u = G.edge_info[j].src
 			v = G.edge_info[j].tgt
-			w = G.edge_info[j].weight
+			if ignore_weights:
+				w = 1.
+			else:
+				w = G.edge_info[j].weight
 			
 			if distance[u] + w < distance[v]:
 				distance[v] = distance[u] + w
@@ -879,7 +908,10 @@ cdef bellman_ford_d_(DiGraph G, int start_idx, bint gen_predecessors):
 			
 		u = G.edge_info[j].src
 		v = G.edge_info[j].tgt
-		w = G.edge_info[j].weight
+		if ignore_weights:
+			w = 1.
+		else:
+			w = G.edge_info[j].weight
 		
 		if distance[u] + w < distance[v]:
 			raise ZenException, 'Graph contains a negative-weight cycle'
@@ -889,7 +921,7 @@ cdef bellman_ford_d_(DiGraph G, int start_idx, bint gen_predecessors):
 	else:
 		return distance
 
-cdef bellman_ford_u_(Graph G, int start_idx, bint gen_predecessors):
+cdef bellman_ford_u_(Graph G, int start_idx, bint gen_predecessors, bint ignore_weights):
 	"""
 	Bellman ford algorithm for undirected graphs
 
@@ -922,7 +954,10 @@ cdef bellman_ford_u_(Graph G, int start_idx, bint gen_predecessors):
 				
 			u = G.edge_info[j].u
 			v = G.edge_info[j].v
-			w = G.edge_info[j].weight
+			if ignore_weights:
+				w = 1.
+			else:
+				w = G.edge_info[j].weight
 			
 			if distance[u] + w < distance[v]:
 				distance[v] = distance[u] + w
@@ -940,7 +975,10 @@ cdef bellman_ford_u_(Graph G, int start_idx, bint gen_predecessors):
 			
 		u = G.edge_info[j].u
 		v = G.edge_info[j].v
-		w = G.edge_info[j].weight
+		if ignore_weights:
+			w = 1.
+		else:
+			w = G.edge_info[j].weight
 		
 		if distance[u] + w < distance[v] or distance[v] + w < distance[u]:
 			raise ZenException, 'Graph contains a negative-weight cycle'
@@ -1071,12 +1109,14 @@ cpdef flag_unreachable(np.ndarray A):
 		if A[i] == -1:
 			A[i] = -2 # -2 means unreachable 
 
-cpdef floyd_warshall_path(G):
+cpdef floyd_warshall_path(G,ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
@@ -1085,7 +1125,7 @@ cpdef floyd_warshall_path(G):
 	cdef int i,j
 
 	# compute the result
-	D,P = floyd_warshall_path_(G)
+	D,P = floyd_warshall_path_(G,ignore_weights)
 
 	# store it in a dictionary
 	result = {}
@@ -1101,12 +1141,14 @@ cpdef floyd_warshall_path(G):
 
 	return result
 
-cpdef floyd_warshall_path_length(G):
+cpdef floyd_warshall_path_length(G,ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 	
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
@@ -1114,7 +1156,7 @@ cpdef floyd_warshall_path_length(G):
 	cdef int i,j
 
 	# compute the result
-	D = floyd_warshall_path_length_(G)
+	D = floyd_warshall_path_length_(G,ignore_weights)
 
 	# store it in a dictionary
 	result = {}
@@ -1130,12 +1172,14 @@ cpdef floyd_warshall_path_length(G):
 
 	return result
 
-cpdef floyd_warshall_path_(G):
+cpdef floyd_warshall_path_(G,bint ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1143,29 +1187,31 @@ cpdef floyd_warshall_path_(G):
 		matrix where ``P[i,j]`` is the node preceeding ``j on a shortest path from ``i`` to ``j``.
 	"""
 	if type(G) == DiGraph:
-		return floyd_warshall_d_(<DiGraph> G,True)
+		return floyd_warshall_d_(<DiGraph> G,True,ignore_weights)
 	elif type(G) == Graph:
-		return floyd_warshall_u_(<Graph> G,True)
+		return floyd_warshall_u_(<Graph> G,True,ignore_weights)
 	
-cpdef floyd_warshall_path_length_(G):
+cpdef floyd_warshall_path_length_(G,bint ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
 		length of the shortest path from node with index i to the node with index j.
 	"""
 	if type(G) == DiGraph:
-		return floyd_warshall_d_(<DiGraph> G,False)
+		return floyd_warshall_d_(<DiGraph> G,False,ignore_weights)
 	elif type(G) == Graph:
-		return floyd_warshall_u_(<Graph> G,False)
+		return floyd_warshall_u_(<Graph> G,False,ignore_weights)
 	else:
 		raise Exception, 'Graphs of type %s not supported' % str(type(G))
 
-cpdef floyd_warshall_d_(DiGraph G,bool gen_predecessors):
+cpdef floyd_warshall_d_(DiGraph G,bool gen_predecessors,bint ignore_weights):
 	"""
 	Floyd-Warshall algorithm for directed graphs.
 	
@@ -1196,7 +1242,11 @@ cpdef floyd_warshall_d_(DiGraph G,bool gen_predecessors):
 		D[ni,ni] = 0
 		for j in range(G.node_info[i].outdegree):
 			nj = G.edge_info[G.node_info[i].outelist[j]].tgt
-			D[ni,nj] = 1
+			if ignore_weights:
+				D[ni,nj] = 1
+			else:
+				D[ni,nj] = G.edge_info[G.node_info[i].outelist[j]].weight
+				
 			if gen_predecessors:
 				P[ni,nj] = ni
 	
@@ -1218,7 +1268,7 @@ cpdef floyd_warshall_d_(DiGraph G,bool gen_predecessors):
 	else:
 		return D
 
-cpdef floyd_warshall_u_(Graph G,bool gen_predecessors):
+cpdef floyd_warshall_u_(Graph G,bool gen_predecessors,bint ignore_weights):
 	"""
 	Floyd-Warshall algorithm for directed graphs.
 
@@ -1251,7 +1301,11 @@ cpdef floyd_warshall_u_(Graph G,bool gen_predecessors):
 			nj = G.edge_info[G.node_info[i].elist[j]].u
 			if nj == ni:
 				nj = G.edge_info[G.node_info[i].elist[j]].v
-			D[ni,nj] = 1
+				
+			if ignore_weights:
+				D[ni,nj] = 1
+			else:
+				D[ni,nj] = G.edge_info[G.node_info[i].elist[j]].weight
 			if gen_predecessors:
 				P[ni,nj] = ni
 
@@ -1278,7 +1332,7 @@ cpdef all_pairs_shortest_path(G):
 	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shortest_path`.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 	
 	**Returns**:
 		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
@@ -1295,7 +1349,7 @@ cpdef all_pairs_shortest_path_length(G):
 	Computes the shortest paths between all pairs of nodes using the algorithm descibed in :py:func:`single_source_shortest_path`.
 	
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 
 	**Returns**:
 		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
@@ -1311,7 +1365,7 @@ cpdef all_pairs_shortest_path_(G):
 	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shortest_path`.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1351,7 +1405,7 @@ cpdef all_pairs_shortest_path_length_(G):
 	Computes the shortest paths between all pairs of nodes using the algorithm described in :py:func:`single_source_shorest_path`.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1381,12 +1435,14 @@ cpdef all_pairs_shortest_path_length_(G):
 
 	return distances
 
-cpdef all_pairs_dijkstra_path(G):
+cpdef all_pairs_dijkstra_path(G,ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using Dijkstra's algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
@@ -1394,16 +1450,18 @@ cpdef all_pairs_dijkstra_path(G):
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = dijkstra_path(G,n)
+		R[n] = dijkstra_path(G,n,ignore_weights=ignore_weights)
 		
 	return R
 	
-cpdef all_pairs_dijkstra_path_(G):
+cpdef all_pairs_dijkstra_path_(G,bint ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using Dijkstra's algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1422,7 +1480,7 @@ cpdef all_pairs_dijkstra_path_(G):
 		
 		for nidx in range(UG.next_node_idx):
 			if UG.node_info[nidx].exists:
-				D,P = dijkstra_path_(G,nidx)
+				D,P = dijkstra_path_(G,nidx,ignore_weights=ignore_weights)
 				distances[nidx,:] = D
 				predecessors[nidx,:] = P
 	elif type(G) == DiGraph:
@@ -1432,34 +1490,38 @@ cpdef all_pairs_dijkstra_path_(G):
 
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
-				D,P = dijkstra_path_(G,nidx)
+				D,P = dijkstra_path_(G,nidx,ignore_weights=ignore_weights)
 				distances[nidx,:] = D
 				predecessors[nidx,:] = P
 
 	return distances, predecessors
 
-cpdef all_pairs_dijkstra_path_length(G):
+cpdef all_pairs_dijkstra_path_length(G,ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 	
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = dijkstra_path_length(G,n)
+		R[n] = dijkstra_path_length(G,n,ignore_weights=ignore_weights)
 	
 	return R
 
-cpdef all_pairs_dijkstra_path_length_(G):
+cpdef all_pairs_dijkstra_path_length_(G,bint ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1476,7 +1538,7 @@ cpdef all_pairs_dijkstra_path_length_(G):
 
 		for nidx in range(UG.next_node_idx):
 			if UG.node_info[nidx].exists:
-				D = dijkstra_path_length_(G,nidx)
+				D = dijkstra_path_length_(G,nidx,ignore_weights=ignore_weights)
 				distances[nidx,:] = D
 	elif type(G) == DiGraph:
 		DG = <Graph> G
@@ -1484,17 +1546,19 @@ cpdef all_pairs_dijkstra_path_length_(G):
 
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
-				D = dijkstra_path_length_(G,nidx)
+				D = dijkstra_path_length_(G,nidx,ignore_weights=ignore_weights)
 				distances[nidx,:] = D
 
 	return distances
 	
-cpdef all_pairs_bellman_ford_path(G):
+cpdef all_pairs_bellman_ford_path(G,ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Bellman-Ford algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		* :py:class:`dict`, ``R``. ``R[x][y]`` is a tuple ``(d,p)`` where ``d`` is the distance of node ``y``
@@ -1502,16 +1566,18 @@ cpdef all_pairs_bellman_ford_path(G):
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = bellman_ford_path(G,n)
+		R[n] = bellman_ford_path(G,n,ignore_weights)
 
 	return R
 
-cpdef all_pairs_bellman_ford_path_(G):
+cpdef all_pairs_bellman_ford_path_(G,bint ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Bellman-Ford algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D`` and ``P``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1530,7 +1596,7 @@ cpdef all_pairs_bellman_ford_path_(G):
 
 		for nidx in range(UG.next_node_idx):
 			if UG.node_info[nidx].exists:
-				D,P = bellman_ford_path_(G,nidx)
+				D,P = bellman_ford_path_(G,nidx,ignore_weights)
 				distances[nidx,:] = D
 				predecessors[nidx,:] = P
 	elif type(G) == DiGraph:
@@ -1540,34 +1606,38 @@ cpdef all_pairs_bellman_ford_path_(G):
 
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
-				D,P = bellman_ford_path_(G,nidx)
+				D,P = bellman_ford_path_(G,nidx,ignore_weights)
 				distances[nidx,:] = D
 				predecessors[nidx,:] = P
 
 	return distances, predecessors
 
-cpdef all_pairs_bellman_ford_path_length(G):
+cpdef all_pairs_bellman_ford_path_length(G,ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 	
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 
 	**Returns**:
 		* :py:class:`dict`, ``D``. ``D[x][y]`` is the distance of node ``y`` from node ``x``.
 	"""
 	R = dict()
 	for n in G.nodes_iter():
-		R[n] = bellman_ford_path_length(G,n)
+		R[n] = bellman_ford_path_length(G,n,ignore_weights)
 
 	return R
 
-cpdef all_pairs_bellman_ford_path_length_(G):
+cpdef all_pairs_bellman_ford_path_length_(G,bint ignore_weights=False):
 	"""
 	Computes the shortest paths between all pairs of nodes using the Floyd-Warshall algorithm.
 		
 	**Args**:
-		``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``G`` (:py:class:`zen.Graph` and :py:class:`zen.DiGraph`): the graph to compute the shortest path on.
+		* ``ignore_weights [=False]``: when ``True``, unit weight will be used for each edge rather than the edge's
+		  actual weight.
 	
 	**Returns**:
 		2D ``numpy.ndarray``, ``D``. ``D`` is the distance matrix where ``D[i,j]`` is the 
@@ -1584,7 +1654,7 @@ cpdef all_pairs_bellman_ford_path_length_(G):
 
 		for nidx in range(UG.next_node_idx):
 			if UG.node_info[nidx].exists:
-				D = bellman_ford_path_length_(G,nidx)
+				D = bellman_ford_path_length_(G,nidx,ignore_weights)
 				distances[nidx,:] = D
 	elif type(G) == DiGraph:
 		DG = <Graph> G
@@ -1592,7 +1662,7 @@ cpdef all_pairs_bellman_ford_path_length_(G):
 
 		for nidx in range(DG.next_node_idx):
 			if DG.node_info[nidx].exists:
-				D = bellman_ford_path_length_(G,nidx)
+				D = bellman_ford_path_length_(G,nidx,ignore_weights)
 				distances[nidx,:] = D
 
 	return distances

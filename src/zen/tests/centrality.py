@@ -126,8 +126,8 @@ class TestBetweennessCentrality(unittest.TestCase):
 				G.set_weight_(eidx,w)
 				Gnx.add_edge(n1,n2,weight=w)
 		
-		R,t = timer(betweenness_centrality_,[G,True,True])
-		Rnx,tnx = timer(networkx.betweenness_centrality,[Gnx,True,True]) #networkx.betweenness_centrality(Gnx,True,True)
+		R = betweenness_centrality_(G,True,True)
+		Rnx = networkx.betweenness_centrality(Gnx,normalized=True,weight='weight') #networkx.betweenness_centrality(Gnx,True,True)
 		
 		#print 'NX:',tnx,'ZN:',t
 		
@@ -165,8 +165,8 @@ class TestBetweennessCentrality(unittest.TestCase):
 				G.set_weight_(eidx,w)
 				Gnx.add_edge(n1,n2,weight=w)
 
-		R,t = timer(betweenness_centrality_,[G,True,False])
-		Rnx,tnx = timer(networkx.betweenness_centrality,[Gnx,True,False]) #networkx.betweenness_centrality(Gnx,True,True)
+		R = betweenness_centrality_(G,True,False)
+		Rnx = networkx.betweenness_centrality(Gnx,normalized=True,weight=None) #networkx.betweenness_centrality(Gnx,True,True)
 
 		#print 'NX:',tnx,'ZN:',t
 
@@ -204,8 +204,8 @@ class TestBetweennessCentrality(unittest.TestCase):
 				G.set_weight_(eidx,w)
 				Gnx.add_edge(n1,n2,weight=w)
 		
-		R,t = timer(betweenness_centrality_,[G,True,True])
-		Rnx,tnx = timer(networkx.betweenness_centrality,[Gnx,True,True]) #networkx.betweenness_centrality(Gnx,True,True)
+		R = betweenness_centrality_(G,True,True)
+		Rnx = networkx.betweenness_centrality(Gnx,normalized=True,weight='weight') #networkx.betweenness_centrality(Gnx,True,True)
 		
 		#print 'NX:',tnx,'ZN:',t
 		
@@ -243,8 +243,8 @@ class TestBetweennessCentrality(unittest.TestCase):
 				G.set_weight_(eidx,w)
 				Gnx.add_edge(n1,n2,weight=w)
 
-		R,t = timer(betweenness_centrality_,[G,True,False])
-		Rnx,tnx = timer(networkx.betweenness_centrality,[Gnx,True,False]) #networkx.betweenness_centrality(Gnx,True,True)
+		R = betweenness_centrality_(G,True,False)
+		Rnx = networkx.betweenness_centrality(Gnx,normalized=True,weight=None) #networkx.betweenness_centrality(Gnx,True,True)
 
 		#print 'NX:',tnx,'ZN:',t
 
