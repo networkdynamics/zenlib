@@ -56,7 +56,7 @@ class DiGraphReverseTestCase(unittest.TestCase):
 		G = DiGraph()
 		G.add_edge(1,2)
 		G.add_edge(2,3)
-		G.add_node(3,4)
+		G.add_edge(3,4)
 		G.rm_node(3)
 
 		G2 = G.reverse()
@@ -215,6 +215,16 @@ class DiGraphPickleTestCase(unittest.TestCase):
 
 class DiGraphTestCase(unittest.TestCase):
 
+	def test_add_bad_nobjs(self):
+		G = DiGraph()
+		G.add_node("x")
+		
+		try:
+			G.add_node("x")
+			self.fail('adding a second node with the same node object should have raised an exception')
+		except ZenException:
+			pass
+			
 	def test_out_edges_no_data(self):
 		G = DiGraph()
 		G.add_edge(1,2,data=None)
@@ -928,7 +938,7 @@ class DiGraphTestCase(unittest.TestCase):
 			pass
 
 		n1 = G.add_node()
-		n2 = G.add_node(3)
+		n2 = G.add_node()
 		G.add_edge_(n1,n2)
 
 		success = True

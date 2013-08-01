@@ -993,6 +993,9 @@ cdef class DiGraph:
 		self.num_changes += 1
 
 		if nobj is not None:
+			if nobj in self.node_idx_lookup:
+				raise ZenException, 'Node object "%s" is already in use' % str(nobj)
+				
 			self.node_idx_lookup[nobj] = node_idx
 			self.node_obj_lookup[node_idx] = nobj
 
