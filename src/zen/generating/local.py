@@ -58,17 +58,19 @@ def local_attachment(n, m, r, **kwargs):
 		G = DiGraph()
 	
 	# populate with nodes
-	for i in range(m):
+	for i in range(m+1):
 		G.add_node(i)
 		
-	for i in range(m):
-		for j in range(i):
-			G.add_edge(j,i)
+	# according to Jackson's paper, all initial nodes have m neighbors.
+	for i in range(m+1):
+		for j in range(m+1):
+			if j != i:
+				G.add_edge(j,i)
 			
 	######
 	# Build the rest of the graph
-	node_list = list(range(m))
-	for i in range(m,n):
+	node_list = list(range(m+1))
+	for i in range(m+1,n):
 		G.add_node(i)
 		
 		# pick random neighbors (the parents)
