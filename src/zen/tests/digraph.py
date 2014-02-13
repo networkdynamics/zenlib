@@ -34,6 +34,35 @@ class DiGraphCopyTestCase(unittest.TestCase):
 
 		G.validate()
 		G2.validate()
+		
+	def test_deven(self):
+		"""
+		This test came from an attempt to perform percolation on a graph which had been copied.
+		The key problem was the copying.  It was determined that the bug was related to the add_node_x
+		and add_edge_x functions not properly updating the node_capacity and edge_capacity variables
+		correctly (to account for the arbitrary ordering of edge/node insertion).
+		"""
+		from zen.generating import erdos_renyi,barabasi_albert,local_attachment
+		import numpy as np
+		#import sys
+
+		k=2
+		for N in xrange(190,200):
+			#print  'N = ', N
+			for Gf,lbl in [ ( lambda: erdos_renyi(N, float(k)/N, directed=True), 'ER'),
+				( lambda: barabasi_albert(N,k,directed=True), 'BA'),
+				( lambda: local_attachment(N,k,max(int(.25*k),1)), 'LA, r=.25'  ), 
+				( lambda: local_attachment(N,k,max(int(.5*k),1)), 'LA, r=.5'), 
+				( lambda: local_attachment(N,k,max(int(.75*k),1)), 'LA, r=.75') ]: 
+
+				#print lbl
+				#sys.stdout.flush()
+				for i in xrange(10):
+					G = Gf()
+					while len(G) > 0:
+						G.rm_node_(G.nodes_()[np.random.randint(len(G))])
+						Gg = G.copy()
+						Gg.validate()
 
 class DiGraphReverseTestCase(unittest.TestCase):
 

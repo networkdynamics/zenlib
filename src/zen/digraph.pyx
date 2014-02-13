@@ -1004,7 +1004,7 @@ cdef class DiGraph:
 
 		# grow the node_info array as necessary
 		cdef int new_node_capacity
-		if node_idx >= self.node_capacity:
+		while node_idx >= self.node_capacity:
 			new_node_capacity = <int> ceil( float(self.node_capacity) * self.node_grow_factor)
 			if node_idx >= new_node_capacity:
 				new_node_capacity = node_idx + 1
@@ -1559,7 +1559,7 @@ cdef class DiGraph:
 
 		# grow the info array
 		cdef int new_edge_capacity
-		if eidx >= self.edge_capacity:
+		while eidx >= self.edge_capacity:
 			new_edge_capacity = <int> ceil( <float>self.edge_capacity * self.edge_grow_factor)
 			self.edge_info = <EdgeInfo*> stdlib.realloc( self.edge_info, sizeof_EdgeInfo * new_edge_capacity)
 			for i in range(self.edge_capacity,new_edge_capacity):
