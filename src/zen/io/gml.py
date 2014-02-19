@@ -19,6 +19,7 @@ from zen.bipartite import BipartiteGraph
 import os
 import cgi
 import re
+import codecs
 
 __all__ = ['read','write']
 
@@ -131,12 +132,16 @@ def write(G,filename, **kwargs):
 	
 def format_zen_data(data, keyname, tab_depth=0):
 	"""
-	Reformats supplied data to use gml.  Enforces restrictions on the types of data that can be written to gml.
+	Reformats supplied data to use gml.  Enforces restrictions on the types of 
+	data that can be written to gml.
 	
 	**Args**
-		* data (bool | int | long | float | str | dict | list): object to be written in gml
-		* key (str): key to be used in gml.  Needed here because in gml lists are made by repeating the key in front of each value.
-		* tab_depth (int): number of tab characters to add to the beginning of each line for nice formatting.
+		* data (bool | int | long | float | str | dict | list): object to be 
+			written in gml
+		* key (str): key to be used in gml.  Needed here because in gml lists 
+			are made by repeating the key in front of each value.
+		* tab_depth (int): number of tab characters to add to the beginning 
+			of each line for nice formatting.
 
 	**Returns**
 		* formatted_data (str): gml representation of data
@@ -145,43 +150,54 @@ def format_zen_data(data, keyname, tab_depth=0):
 	formatted_data = ''
 	tabs = '\t' * tab_depth
 	if re.search('[^a-zA-Z0-9]', keyname):
-		raise ZenException('gml supports only characters from [a-zA-Z0-9] in keys')
-	
-	if type(data) == bool: # booleans are recorded as strings.  They have to be detected on read
+		raise ZenException(
+			'gml supports only characters from [a-zA-Z0-9] in keys')
+
+	# booleans are recorded as strings.  They have to be detected on read
+	if isinstance(data, bool): 
 		formatted_data += tabs + keyname + ' "' + str(data) + '"\n'
-	
-	elif type(data) == int or type(data) == long:		
-		if data > 2147483647 or data < -2147483648:	# gml specifies integers larger than 32 bit signed must be strings
+
+	elif isinstance(data, (int, long)):
+
+		# gml specifies integers larger than 32 bit signed must be strings
+		if data > 2147483647 or data < -2147483648:	
 			formatted_data += tabs + keyname + ' "' + str(data) + '"\n'
+
 		else:
 			formatted_data += tabs + keyname + ' ' + str(data) + '\n'
 
-	elif type(data) == float:
+	elif isinstance(data, float):
 		formatted_data += tabs + keyname + ' ' + str(data) + '\n'
-		
-	elif type(data) == str:
-		data = cgi.escape(data, quote=True)		# escapes xml special characters and quotes
-		data = data.decode('utf-8').encode('iso_8859_1', 'xmlcharrefreplace')		# escapes non-ISO-8859-1 chars
-		formatted_data += tabs + keyname + ' "' + data.decode('utf-8').encode('iso_8859_1', 'xmlcharrefreplace') + '"\n'
 
-	elif type(data) == list:		# this may seem odd, because gml uses repeated keys to indicate a list
+	elif isinstance(data, basestring):
+		# escapes xml special characters and quotes
+		data = cgi.escape(data, quote=True)		
+
+		# escapes non-ISO-8859-1 chars
+		formatted_data += (tabs + keyname + ' "' + data + '"\n').encode(
+			'utf-8')
+
+	# this may seem odd, because gml uses repeated keys to indicate a list
+	elif isinstance(data, list):		
 		for val in data:
 			formatted_data += format_zen_data(val, keyname, tab_depth)
-	
-	elif type(data) == dict:
+
+	elif isinstance(data, dict):
 		formatted_data += tabs + keyname + ' [\n'
 		for key, val in data.items():
 			formatted_data += format_zen_data(val, key, tab_depth + 1)
 		formatted_data += tabs + ']\n'
-	
+
 	else:
-		raise ZenException('gml.write() supports objects: bool, str, Numeric (not complex), None, and dicts or lists containing only such types (nesting allowed)')
-	
+		raise ZenException('gml.write() supports objects: bool, str, Numeric '\
+			'(not complex), None, and dicts or lists containing only such '\
+			'types (nesting allowed).  Found: %s.' % str(type(data)) )
+
 	return formatted_data
-	
+
+
 def decode_xml_entities(s):
-	# D: I read through encoding info and couldn't find the functions to undo the substitution of xml entities
-	# so I just wrote it.  It took me a lot less time than I spent searching... go figure
+
 	s_decode = u''
 	
 	i = 0
@@ -225,10 +241,11 @@ def add_token_metadata(token,in_str,lineno):
 				token = int(token)
 				return (token, INT_TOK, lineno)
 			except ValueError:
-				token = float(token)
-				return (token, FLOAT_TOK, lineno)
-			except ValueError:
-				return (token, STR_TOK, lineno)
+				try: 
+					token = float(token)
+					return (token, FLOAT_TOK, lineno)
+				except ValueError:
+					return (token, STR_TOK, lineno)
 		
 		elif token == "True":		# treat as boolean
 			token = True
@@ -258,7 +275,7 @@ def tokenize(fh):
 	tokens = []
 	
 	for lineno,line in enumerate(fh):
-		line = line.strip()
+		line = line.decode('utf-8').strip()
 		
 		token = None
 		in_str = False
@@ -323,11 +340,16 @@ def parse_value(tokens,i):
 	
 	if ttok == INT_TOK or ttok == FLOAT_TOK or ttok == BOOL_TOK:
 		return i+1,val
-	elif ttok == STR_TOK: # restore characters escaped by xmlcharrefreplace (need to use a unicode, UTF-8 string)
+
+	# restore characters escaped by xmlcharrefreplace 
+	# (need to use a unicode, UTF-8 string)
+	elif ttok == STR_TOK: 
 		val = decode_xml_entities(val)
 		return i+1,val
+
 	elif ttok == SLIST_TOK:
 		return parse_list(tokens,i+1)
+
 	else:
 		raise ZenException,'Line %d: token %s was unexpected' % (lineno,val)
 		
