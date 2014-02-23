@@ -153,6 +153,10 @@ class Tokenizer(object):
 				'%s.' 
 				% (repr(self.current_token)))
 
+		elif self.expected_token == 'val':
+			raise ZenException('Unexpected end of file while expecting val '\
+				'token.')
+
 		return self.tokens
 
 
