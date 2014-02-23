@@ -35,10 +35,10 @@ import pdb
 
 __all__ = ['read','write']
 
-VALUE_TOK = t.VALUE_TOK
-KEY_TOK = t.KEY_TOK
-SLIST_TOK = t.SLIST_TOK
-ELIST_TOK = t.ELIST_TOK
+#VALUE_TOK = t.VALUE_TOK
+#KEY_TOK = t.KEY_TOK
+#SLIST_TOK = t.SLIST_TOK
+#ELIST_TOK = t.ELIST_TOK
 
 DIGITS = tuple(['%d' % x for x in range(10)]) + ('+','-')
 DIGITS_AND_QUOTES = DIGITS + ('"',)
@@ -47,7 +47,7 @@ DIGITS_AND_QUOTES = DIGITS + ('"',)
 # TODO add Creator attribute
 # TODO handle > double precision floats
 # TODO add Encoder
-def write(G,filename, **kwargs):
+def write(G, filename, **kwargs):
 	"""
 	Writes graph to file using Graph Modeling Language (gml).  Node / Edge / 
 	Graph objects, if not None, are stored in the `name` attribute, and are 
@@ -95,11 +95,14 @@ def write(G,filename, **kwargs):
 	fh = open(filename, 'w')
 	fh.write('# This is a graph object in gml file format\n')
 	fh.write('# produced by the zen graph library\n\n')
-	fh.write('graph [\n')
 
 	# Describe the encoding method used to generate the file. 
-	fh.write('\tZenCodec "%s"\n' % enc.__name__)
-	fh.write('\tZenStringEncoder "%s"\n' % enc.encode_str.__name__)
+	fh.write('ZenCodec "%s"\n' % enc.__name__)
+	fh.write('ZenStringEncoder "%s"\n\n' % enc.encode_str.__name__)
+
+	# Start writing the graph
+	fh.write('graph [\n')
+
 
 	if G.is_directed():
 		fh.write('\tdirected 1\n')
@@ -222,143 +225,246 @@ def format_zen_data(keyname, data, tab_depth, encoder, strict=True):
 
 			
 		
-def add_token_metadata(token,in_str,lineno):
-
-	if in_str:
-
-		if re.match("[-+0-9.]", token[:1]): 	# looks like a number, try it
-			try:
-				token = int(token)
-				return (token, INT_TOK, lineno)
-			except ValueError:
-				try: 
-					token = float(token)
-					return (token, FLOAT_TOK, lineno)
-				except ValueError:
-					return (token, STR_TOK, lineno)
-
-		elif token == "True":		# treat as boolean
-			token = True
-			return (token, BOOL_TOK, lineno)
-
-		elif token == "False":
-			token = False
-			return (token, BOOL_TOK, lineno)
-
-		else:	
-			return (token,STR_TOK,lineno)
-
-	if token == SLIST_TOK:
-		return (token,SLIST_TOK,lineno)
-
-	elif token == ELIST_TOK:
-		return (token,ELIST_TOK,lineno)
-
-	# TEST: I don't think this will handle leading '+' or '-'...
-	if token.isdigit(): 
-		return (int(token),INT_TOK,lineno)
-
-	else:
-		try: # see if it's a float
-			return (float(token),FLOAT_TOK,lineno)
-		except ValueError: # Keyname tokens are unquoted strings
-			return (token,ID_TOK,lineno)
-
-
-
-def parse_key_value_pair(tokens, i, codec):
-
-	key, key_token, key_line_no = tokens[i]
-
-	if key_token != ID_TOK:
-		raise ZenException('Line %d: Key must be an identifier, found %s' 
-			% (key_line_no, key))
-
-	if (i+1) >= len(tokens):
-		raise ZenException('Line %d: Key %s has no value' % (key_line_no, key))
-
-	i,val = parse_value(tokens,i+1, codec)
-
-	return i,key,val
-
-
-def parse_value(tokens,i, codec):
-
-	val, token_type, lineno = tokens[i]
-
-	if token_type == VALUE_TOK:
-		return i+1, codec.decode(val)
-
-	elif token_type == SLIST_TOK:
-		return parse_list(tokens,i+1, codec)
-
-	else:
-		pdb.set_trace()
-		raise ZenException('Line %d: token %s was unexpected' % (lineno,val))
-
-
-def parse_list(tokens, i, codec):
-	start_i = i
-
-	lvals = dict()
-
-	while i < len(tokens) and tokens[i][1] != ELIST_TOK:
-		i,key,value = parse_key_value_pair(tokens,i, codec)
-
-		if key in lvals: # if the same key is used over and over again, it's indicating a list of values
-			curr_val = lvals[key]
-			if type(curr_val) == list:
-				curr_val.append(value)
-			else:
-				lvals[key] = [curr_val,value]
-		else:
-			lvals[key] = value
-
-	if i == len(tokens):
-		raise ZenException, 'Line %d: List is not closed' % tokens[start_i][2]
-
-	return i+1,lvals
-
-
-#def parse_graph_data(tokens, i, codec):
+#def add_token_metadata(token,in_str,lineno):
 #
+#	if in_str:
+#
+#		if re.match("[-+0-9.]", token[:1]): 	# looks like a number, try it
+#			try:
+#				token = int(token)
+#				return (token, INT_TOK, lineno)
+#			except ValueError:
+#				try: 
+#					token = float(token)
+#					return (token, FLOAT_TOK, lineno)
+#				except ValueError:
+#					return (token, STR_TOK, lineno)
+#
+#		elif token == "True":		# treat as boolean
+#			token = True
+#			return (token, BOOL_TOK, lineno)
+#
+#		elif token == "False":
+#			token = False
+#			return (token, BOOL_TOK, lineno)
+#
+#		else:	
+#			return (token,STR_TOK,lineno)
+#
+#	if token == SLIST_TOK:
+#		return (token,SLIST_TOK,lineno)
+#
+#	elif token == ELIST_TOK:
+#		return (token,ELIST_TOK,lineno)
+#
+#	# TEST: I don't think this will handle leading '+' or '-'...
+#	if token.isdigit(): 
+#		return (int(token),INT_TOK,lineno)
+#
+#	else:
+#		try: # see if it's a float
+#			return (float(token),FLOAT_TOK,lineno)
+#		except ValueError: # Keyname tokens are unquoted strings
+#			return (token,ID_TOK,lineno)
+#
+#
+#
+#def parse_key_value_pair(tokens, i, codec):
+#
+#	key, key_token, key_line_no = tokens[i]
+#
+#	if key_token != ID_TOK:
+#		raise ZenException('Line %d: Key must be an identifier, found %s' 
+#			% (key_line_no, key))
+#
+#	if (i+1) >= len(tokens):
+#		raise ZenException('Line %d: Key %s has no value' % (key_line_no, key))
+#
+#	i,val = parse_value(tokens,i+1, codec)
+#
+#	return i,key,val
+#
+#
+#def parse_value(tokens,i, codec):
+#
+#	val, token_type, lineno = tokens[i]
+#
+#	if token_type == VALUE_TOK:
+#		return i+1, codec.decode(val)
+#
+#	elif token_type == SLIST_TOK:
+#		return parse_list(tokens,i+1, codec)
+#
+#	else:
+#		pdb.set_trace()
+#		raise ZenException('Line %d: token %s was unexpected' % (lineno,val))
+#
+#
+#def parse_list(tokens, i, codec):
 #	start_i = i
-#	i,key,val = parse_key_value_pair(tokens,i, codec)
 #
-#	if key != 'graph':
-#		raise ZenException('Line %d: Expected a graph block, found %s' 
-#			% (tokens[start_i][2],key))
+#	lvals = dict()
 #
-#	return i,val
+#	while i < len(tokens) and tokens[i][1] != ELIST_TOK:
+#		i,key,value = parse_key_value_pair(tokens,i, codec)
+#
+#		if key in lvals: # if the same key is used over and over again, it's indicating a list of values
+#			curr_val = lvals[key]
+#			if type(curr_val) == list:
+#				curr_val.append(value)
+#			else:
+#				lvals[key] = [curr_val,value]
+#		else:
+#			lvals[key] = value
+#
+#	if i == len(tokens):
+#		raise ZenException, 'Line %d: List is not closed' % tokens[start_i][2]
+#
+#	return i+1,lvals
+#
+#
+##def parse_graph_data(tokens, i, codec):
+##
+##	start_i = i
+##	i,key,val = parse_key_value_pair(tokens,i, codec)
+##
+##	if key != 'graph':
+##		raise ZenException('Line %d: Expected a graph block, found %s' 
+##			% (tokens[start_i][2],key))
+##
+##	return i,val
+#
+#
 
 
-def build_graph(graph_data,weight_fxn):
+def make_tree(fname, **kwargs):
+	# resolve the codec.  The user can specify the codec in various ways.
+	codec = resolve_codec(kwargs)
 
-	is_directed = False
-	if 'directed' in graph_data:
-		is_directed = graph_data['directed'] == 1
+	# read the file 
+	fh = open(fname,'r')
+	gml_str = fh.read()
+	fh.close()
 
-	# TODO detect if graphs are bipartite and support that
-	G = None
+	# tokenize the gml string
+	tok = GMLTokenizer()
+	tokens = tok.tokenize(gml_str)
+
+	# interpret the gml document into an internal datastructure
+	interpreter = GMLInterpreter(codec, tok)
+	gml_tree = interpreter.interpret(tokens)
+
+	return gml_tree
+
+
+def read(fname,**kwargs):
+	"""
+	Read GML-formatted network data stored in file named ``fname``.
+	
+	The node's ``id`` attribute is used to specify the node index.  The node's 
+	``name`` attribute is preferably used as the node object.  
+
+	However, if the ``name`` attribute is missing and the ``label`` is present,
+	then the node's ``label`` attribute will be used as the node object.  If 
+	both are missing, then the node id will be used as the node object.
+	
+	.. note::	
+		Currently graph attributes are not supported by the reader.  If 
+		encountered, they will simply be skipped over and not added to the
+		final graph. This is simply because graph objects don't support 
+		arbitrary data yet.
+	
+	**KwArgs**:
+	
+		* ``weight_fxn [=None]``: derive weight assignments from edge data.  If
+			specified, this function is called with one parameter: the full 
+			set of attributes that were specified for the edge.
+	"""
+	
+	# extract keyword arguments
+	weight_fxn = kwargs.pop('weight_fxn',None)
+
+	# parse the gml into a python dict structure
+	gml_tree = make_tree(fname, **kwargs)
+
+	if 'graph' in gml_tree:
+
+		graph_tree = gml_tree['graph']
+
+		if(isinstance(gml_tree, list)):
+			graph_tree = gml_tree[0]
+			print 'Warning: multiple graphs stored in this file.  Use '\
+				'gml.read_all(fname, [...]) to get list of all graphs'
+	
+		return build_graph(graph_tree, weight_fxn)
+
+	else:
+		return None
+
+def read_all(fname, **kwargs):
+
+	# extract keyword arguments
+	weight_fxn = kwargs.pop('weight_fxn',None)
+
+	# parse the gml into a python dict structure
+	gml_tree = make_tree(fname, **kwargs)
+
+	if 'graph' in gml_tree:
+
+		graph_tree = gml_tree['graph']
+
+		if not isinstance(graph_tree, list):
+			graph_tree = [ gml_tree['graph'] ]
+
+			graph_tree = gml_tree[0]
+			print 'Warning: multiple graphs stored in this file.  Use '\
+				'gml.read_all(fname, [...]) to get list of all graphs'
+	
+		return build_graph(graph_tree, weight_fxn)
+
+	else:
+		return None
+
+
+
+def build_graph(graph_tree, weight_fxn):
+
+	# TODO: Load graph attributes
+	# TODO: support Bipartite Graphs
+
+	# Is the graph directed?
+	is_directed = bool('directed' in graph_tree and graph_tree['directed'])
 	if is_directed:
 		G = DiGraph()
+
 	else:
 		G = Graph()
 
-	# TODO: Load graph attributes
 
-	# add nodes
-	if 'node' in graph_data:
-		nodes = graph_data['node']
-		if type(nodes) != list:
-			raise ZenException, 'The node attribute of a graph must be a list'
+	# Build the nodes
+	if 'node' in graph_tree:
 
+		# get the list of nodes
+		nodes = graph_tree['node']
+
+		# ensure the node-list is a list (needed if there's only one node)
+		if not isinstance(nodes, list):
+			nodes = [ nodes ]
+
+		# Build each node and add to the graph
 		for node in nodes:	
-			# node must have an 'id'
-			if 'id' not in node:
-				raise ZenException('Node is missing the id attribute (node = %s)' 
-					% str(node))
 
+			# Node must have an 'id'
+			if 'id' not in node:
+				raise ZenException(
+					'Node is missing the id attribute (node = %s)' % str(node))
+
+			# Node id must be a positive integer
+			elif not isinstance(node['id'], int) or node['id'] < 0:
+				raise ZenException('Node id attribute must be a positive '\
+					'integer (node = %s)' % str(node))
+
+			# Got a valid node id
 			node_idx = node['id']
 
 			# collect and verify all the node properties
@@ -366,26 +472,15 @@ def build_graph(graph_data,weight_fxn):
 			node_data = {}
 			node_obj = None
 			zen_data = None
-			for key, val in node.items():
-				if key == 'id':
-					node_idx = val
-					if type(val) != int or val < 0:
-						raise ZenException('Node id attribute must be a positive '\
-							'integer (node = %s)' % str(node))
 
-				elif key == 'name':
+			for key, val in node.items():
+
+				if key == 'name':
 					node_obj = val
-					if type(val) != str: # enforce types on standard attributes
-						raise ZenException('Node name attribute must be a string '\
-							'(node = %s)' % str(node))
 
 				# give preference to 'name' as source of node_obj
-				elif key == 'label':
-					if node_obj is None: 	
-						node_obj = val
-					if type(val) != str:
-						raise ZenException('Node label attribute must be a string'\
-						   ' (node = %s)' % str(node))
+				elif key == 'label' and node_obj is None: 	
+					node_obj = val
 
 				elif key == 'zenData':
 					zen_data = val
@@ -412,11 +507,14 @@ def build_graph(graph_data,weight_fxn):
 				G.add_node_x(node_idx, G.edge_list_capacity, node_obj, node_data)
 
 	# add edges
-	if 'edge' in graph_data:
-		edges = graph_data['edge']
-		if type(edges) != list:
-			raise ZenException, 'The edge attibute of a graph must be a list'
+	if 'edge' in graph_tree:
 
+		# ensure edge list is a list (needed if there is only one edge)
+		edges = graph_tree['edge']
+		if not isinstance(edges, list):
+			edges = [ edges ]
+
+		# iterate over the edges, add each one to the graph
 		for edge in edges:
 
 			# make sure source and target are specified
@@ -436,11 +534,12 @@ def build_graph(graph_data,weight_fxn):
 			edge_data = {}
 
 			for key, val in edge.items():
+
 				if key == 'id':
 					edge_idx = val
 					if type(val) != int:
-						raise ZenException('Edge id attribute must be a positive '\
-							'integer (edge = %s)' % str(edge))
+						raise ZenException('Edge id attribute must be a '\
+							'positive integer (edge = %s)' % str(edge))
 
 				elif key == 'source':
 					source = val
@@ -485,75 +584,6 @@ def build_graph(graph_data,weight_fxn):
 				G.add_edge_(source,target,edge_data,weight)
 
 	return G
-
-
-def read(fname,**kwargs):
-	"""
-	Read GML-formatted network data stored in file named ``fname``.
-	
-	The node's ``id`` attribute is used to specify the node index.  The node's 
-	``name`` attribute is preferably used as the node object.  
-
-	However, if the ``name`` attribute is missing and the ``label`` is present,
-	then the node's ``label`` attribute will be used as the node object.  If 
-	both are missing, then the node id will be used as the node object.
-	
-	.. note::	
-		Currently graph attributes are not supported by the reader.  If 
-		encountered, they will simply be skipped over and not added to the
-		final graph. This is simply because graph objects don't support 
-		arbitrary data yet.
-	
-	**KwArgs**:
-	
-		* ``weight_fxn [=None]``: derive weight assignments from edge data.  If
-			specified, this function is called with one parameter: the full 
-			set of attributes that were specified for the edge.
-	"""
-
-	# resolve the codec.  The user can specify the codec in various ways.
-	codec = resolve_codec(kwargs)
-
-	# extract keyword arguments
-	weight_fxn = kwargs.pop('weight_fxn',None)
-
-	# read the file 
-	fh = open(fname,'r')
-	gml_str = fh.read()
-	fh.close()
-
-	# tokenize the gml string
-	tok = GMLTokenizer()
-	tokens = tok.tokenize(gml_str)
-
-	# build the graph from list of tokens
-	interpreter = GMLInterpreter(codec, tok)
-	return intepreter.interpet(tokens)
-
-
-	i = 0;
-	while i < len(tokens):
-		# parse top-level key value pairs
-		i,key,val = parse_key_value_pair(tokens,i, codec)
-
-		if key == 'graph':
-			if type(val) != dict:
-				raise ZenException, 'graph attribute must be a list'
-			return build_graph(val,weight_fxn)
-	
-		#TODO: what is this versioning for?
-		elif key == 'Version':
-			if type(val) != int:
-				raise ZenException, 'Version attribute must be an integer'
-
-		#TODO: where is Creator used?
-		elif key == 'Creator':
-			if type(val) != str:
-				raise ZenException, 'Creator attribute must be a string'
-
-	# if we make it here, no graph was loaded
-	return None
-
 	
 def resolve_write_mode(kwargs):
 

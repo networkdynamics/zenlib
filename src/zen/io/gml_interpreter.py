@@ -1,3 +1,18 @@
+'''
+	GMLInterpreter maps a list of gml tokens into an in-memory representation 
+	using python dicts and lists.  This enforces the grammar of GML and 
+	thows a ZenException on grammar violations.  It needs to receive a token
+	list from a tokenizer, and expects that the tokens themselves have been
+	validated (e.g. strings are properly closed, gml key names are strictly
+	alphabetic.
+
+	Such token-validation, however, could been disabled in the tokenizer.
+
+	The GMLInterpreter constructor takes a tokenizer (the one which produced 
+	the list of tokens), and a GMLCodec.  The tokenizer is taken in order to 
+	verify that it defines token-types that the GMLInterpreter expects
+'''
+
 from zen.exceptions import *
 from zen.graph import Graph
 from zen.digraph import DiGraph
@@ -5,10 +20,13 @@ from zen.bipartite import BipartiteGraph
 import pdb
 
 
-class GMLInterpreter(object)
-	def __init__(self, gml_codec, tokenizer):
-		self.gml_codec = gml_codec
+class GMLInterpreter(object):
 
+	def __init__(self, gml_codec, tokenizer):
+		self.codec = gml_codec
+
+		# ensure that the tokenizer defines the token-types that the 
+		# GMLInterpreter expects:
 		try:
 			self.VAL_TOK = tokenizer.VAL_TOK
 			self.KEY_TOK = tokenizer.KEY_TOK
@@ -21,18 +39,18 @@ class GMLInterpreter(object)
 
 
 	def restart(self):
-		self.interpretation = {}
-		self.ptr = 0
+		self.ptr = 0				# pointer to tokens
 
 
-	def evaluate_list(tokens, depth):
+	def evaluate_list(self, tokens, depth):
 
 		interpretation = {}
-		while self.ptr + 1 < tokens:
+		while self.ptr  < len(tokens):
 
+			# Validate the next token's type
 			token_type = tokens[self.ptr][1]
 
-			# the next token should be a key token 
+			# Usually, the next token should be a key token 
 			if token_type == self.KEY_TOK:
 				pass
 
@@ -72,6 +90,11 @@ class GMLInterpreter(object)
 			else:
 				new_key = tokens[self.ptr][0]
 
+				# verify that there is another token for the value
+				if self.ptr + 1 >= len(tokens):
+					raise ZenException('Unexpected end of file after '\
+						'dangling token %s' % repr(tokens[-1][0]))
+
 				# if the next token is a start-list token, recursively 
 				# interpret that list. (GML lists are like python dicts)
 				if tokens[self.ptr + 1][1] == self.SLIST_TOK:
@@ -88,7 +111,7 @@ class GMLInterpreter(object)
 							'%s on line %d' % (tokens[self.ptr + 1][0], 
 							tokens[self.ptr + 1][2]))
 
-					new_val = self.codec.decode(tokens[self.ptr + 1])
+					new_val = self.codec.decode(tokens[self.ptr + 1][0])
 					self.ptr += 2
 
 				# Check if this key has occured before, if so, this represents

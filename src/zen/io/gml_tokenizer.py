@@ -4,12 +4,13 @@ import re
 import codecs
 import pdb
 
-KEY_TOK = 0
-VAL_TOK = 1
-SLIST_TOK = 2
-ELIST_TOK = 3
 
 class GMLTokenizer(object):
+
+	KEY_TOK = 0
+	VAL_TOK = 1
+	SLIST_TOK = 2
+	ELIST_TOK = 3
 
 	def __init__(self):
 
@@ -184,7 +185,7 @@ class GMLTokenizer(object):
 			self.current_token += char
 
 			# immediately store ond close the ELIST_TOK
-			self.tokens.append((self.current_token, ELIST_TOK, line_num))
+			self.tokens.append((self.current_token, self.ELIST_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			return
 
@@ -225,7 +226,7 @@ class GMLTokenizer(object):
 			self.current_token += char
 
 			# immediately stores and closes SLIST_TOK
-			self.tokens.append((self.current_token, SLIST_TOK, line_num))
+			self.tokens.append((self.current_token, self.SLIST_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			return
 
@@ -257,7 +258,7 @@ class GMLTokenizer(object):
 		if char.isspace():
 
 			# store and close the current token
-			self.tokens.append((self.current_token, KEY_TOK, line_num))
+			self.tokens.append((self.current_token, self.KEY_TOK, line_num))
 
 			self._end_current_token_then_expect('val')
 			return
@@ -265,7 +266,7 @@ class GMLTokenizer(object):
 		elif char == '#':
 
 			# store and close current token, and break out of current line
-			self.tokens.append((self.current_token, KEY_TOK, line_num))
+			self.tokens.append((self.current_token, self.KEY_TOK, line_num))
 			self._end_current_token_then_expect('val')
 			self.do_break = True
 			return
@@ -288,7 +289,7 @@ class GMLTokenizer(object):
 
 			# store and close the current token
 			self.current_token += char
-			self.tokens.append((self.current_token, VAL_TOK, line_num))
+			self.tokens.append((self.current_token, self.VAL_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			return
 
@@ -304,14 +305,14 @@ class GMLTokenizer(object):
 		if char.isspace():
 
 			# store and close the current token
-			self.tokens.append((self.current_token, VAL_TOK, line_num))
+			self.tokens.append((self.current_token, self.VAL_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			return
 
 		if char == '#':
 
 			# store and close the current token, break to the next line
-			self.tokens.append((self.current_token, VAL_TOK, line_num))
+			self.tokens.append((self.current_token, self.VAL_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			self.do_break = True
 			return
@@ -333,14 +334,14 @@ class GMLTokenizer(object):
 		if char.isspace():
 
 			# store and close the current token
-			self.tokens.append((self.current_token, VAL_TOK, line_num))
+			self.tokens.append((self.current_token, self.VAL_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			return
 
 		if char == '#':
 
 			# store and close the current token, break to the next line
-			self.tokens.append((self.current_token, VAL_TOK, line_num))
+			self.tokens.append((self.current_token, self.VAL_TOK, line_num))
 			self._end_current_token_then_expect('key')
 			self.do_break = True
 			return

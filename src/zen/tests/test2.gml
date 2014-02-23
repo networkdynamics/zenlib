@@ -5,17 +5,17 @@ graph [
 	node [
 		id 1
 		label "N1" 
-		sample1 42
+		sampleOne 42
 	]
 	node [
 		id 2
 		label "N2" 
-		sample2 42.1
+		sampleTwo 42.1
 	]
 	node [
 		id 3
 		label "N3" 
-		sample3 "HELLO WORLD"
+		sampleThree "HELLO WORLD"
 	]
 	
 	edge [
