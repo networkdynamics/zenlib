@@ -35,11 +35,6 @@ import pdb
 
 __all__ = ['read','write']
 
-#VALUE_TOK = t.VALUE_TOK
-#KEY_TOK = t.KEY_TOK
-#SLIST_TOK = t.SLIST_TOK
-#ELIST_TOK = t.ELIST_TOK
-
 DIGITS = tuple(['%d' % x for x in range(10)]) + ('+','-')
 DIGITS_AND_QUOTES = DIGITS + ('"',)
 
@@ -110,16 +105,21 @@ def write(G, filename, **kwargs):
 	else:
 		fh.write('\tdirected 0\n')
 
-	if type(G) == BipartiteGraph:
+	if isinstance(G, BipartiteGraph):
+		is_bipartite = True
 		fh.write('\tbipartite 1\n')
 
 	else:
+		is_bipartite = False
 		fh.write('\tbipartite 0\n')		
 
 	# iterate over nodes, writing them to the new gml file
 	for nidx, nobj, ndata in G.nodes_iter_(obj=True, data=True):
 		fh.write('\tnode [\n')
 		fh.write('\t\tid ' + str(nidx) + '\n')
+
+		if is_bipartite:
+			fh.write(format_zen_data('isInU', G.is_in_U_(nidx), 2, enc))
 
 		if nobj != None:
 			fh.write(format_zen_data('name', nobj, 2, enc))
@@ -432,9 +432,14 @@ def build_graph(graph_tree, weight_fxn):
 	# TODO: Load graph attributes
 	# TODO: support Bipartite Graphs
 
-	# Is the graph directed?
+	# What kind of graph is being built?
+	is_bipartite = bool('bipartite' in graph_tree and graph_tree['bipartite'])
 	is_directed = bool('directed' in graph_tree and graph_tree['directed'])
-	if is_directed:
+
+	if is_bipartite:
+		G = BipartiteGraph()
+
+	elif is_directed:
 		G = DiGraph()
 
 	else:
@@ -466,6 +471,10 @@ def build_graph(graph_tree, weight_fxn):
 
 			# Got a valid node id
 			node_idx = node['id']
+
+			# For bipartite graphs determine which node set this belongs to 
+			if is_bipartite:
+				is_in_U = node['isInU']
 
 			# collect and verify all the node properties
 			standard_keys = set(['id', 'name', 'zenData'])
@@ -500,11 +509,19 @@ def build_graph(graph_tree, weight_fxn):
 			elif len(node_data) == 0:
 				node_data = None
 
-			if is_directed:
+
+			# For bipartite graph, this insertion method does not guarantee 
+			# that indices will be unchanged after a read-write cycle
+			if is_bipartite:
+				G.add_node_by_class(is_in_U, node_obj, node_data)
+
+			elif is_directed:
 				G.add_node_x(node_idx, G.edge_list_capacity,
 					G.edge_list_capacity, node_obj,node_data)
+
 			else:
-				G.add_node_x(node_idx, G.edge_list_capacity, node_obj, node_data)
+				G.add_node_x(node_idx, G.edge_list_capacity, node_obj, 
+					node_data)
 
 	# add edges
 	if 'edge' in graph_tree:

@@ -6,11 +6,12 @@ import tempfile
 
 class GMLTokenizerCase(unittest.TestCase):
 		
+	tok = gml_tokenizer.GMLTokenizer()
+
 	def test_basic_correct(self):
 		gml_string = 'keyOne "one" keyTwo 2'
-		tok = Tokenizer.Tokenizer()
 
-		got_tokens = tok.tokenize(gml_string)
+		got_tokens = self.tok.tokenize(gml_string)
 		expected_tokens = [('keyOne', 0, 0), ('"one"', 1, 0), ('keyTwo', 0, 0), ('2', 1, 0)]
 
 		self.assertEqual(got_tokens, expected_tokens)
@@ -28,9 +29,7 @@ class GMLTokenizerCase(unittest.TestCase):
 			keyTwo "two"
 		'''
 
-		tok = Tokenizer.Tokenizer()
-
-		got_tokens = tok.tokenize(gml_string)
+		got_tokens = self.tok.tokenize(gml_string)
 		expected_tokens = [
 			('keyOne', 0, 1), ('[', 2, 1), 
 				('subKeyOne', 0, 2), ('"one"', 1, 2), 
@@ -54,9 +53,7 @@ class GMLTokenizerCase(unittest.TestCase):
 			#comment
 		'''
 
-		tok = Tokenizer.Tokenizer()
-
-		got_tokens = tok.tokenize(gml_string)
+		got_tokens = self.tok.tokenize(gml_string)
 		expected_tokens = [
 			('keyOne', 0, 2), ('"#one"', 1, 3), 
 			('keyTwo', 0, 4), ('2', 1, 5)
@@ -71,9 +68,7 @@ class GMLTokenizerCase(unittest.TestCase):
 			keyTwo "two"
 		'''
 
-		tok = Tokenizer.Tokenizer()
-
-		got_tokens = tok.tokenize(gml_string)
+		got_tokens = self.tok.tokenize(gml_string)
 		expected_tokens =  [
 			('keyOne', 0, 1), ('[', 2, 1), 
 			(']', 3, 2), ('keyTwo', 0, 3), ('"two"', 1, 3)
@@ -84,19 +79,16 @@ class GMLTokenizerCase(unittest.TestCase):
 
 	def test_incorrect_eof_in_string(self):
 		gml_string = 'keyOne "one'
-		tok = Tokenizer.Tokenizer()
-		self.assertRaises(ZenException, tok.tokenize, gml_string)
+		self.assertRaises(ZenException, self.tok.tokenize, gml_string)
 		
 
 	def test_incorrect_string_as_key(self):
 		gml_string = 'keyOne "one" "keyTwo" 2'
-		tok = Tokenizer.Tokenizer()
-		self.assertRaises(ZenException, tok.tokenize, gml_string)
+		self.assertRaises(ZenException, self.tok.tokenize, gml_string)
 
 	def test_incorrect_eof_when_expecting_value(self):
 		gml_string = 'keyOne "one" keyTwo'
-		tok = Tokenizer.Tokenizer()
-		self.assertRaises(ZenException, tok.tokenize, gml_string)
+		self.assertRaises(ZenException, self.tok.tokenize, gml_string)
 
 
 	def test_incorrect_eolist_when_expecting_value(self):
@@ -107,8 +99,7 @@ class GMLTokenizerCase(unittest.TestCase):
 			]
 			keyTwo "two"
 		'''
-		tok = Tokenizer.Tokenizer()
-		self.assertRaises(ZenException, tok.tokenize, gml_string)
+		self.assertRaises(ZenException, self.tok.tokenize, gml_string)
 
 	
 
