@@ -9,8 +9,7 @@ VAL_TOK = 1
 SLIST_TOK = 2
 ELIST_TOK = 3
 
-class Tokenizer(object):
-
+class GMLTokenizer(object):
 
 	def __init__(self):
 
@@ -34,6 +33,7 @@ class Tokenizer(object):
 		self.in_quotes = False
 		self.after_decimal = False
 		self.do_break = False
+
 
 	def restart(self):
 		# token accumulater
@@ -356,10 +356,6 @@ class Tokenizer(object):
 				'while processing numeric value token (line %d, col %d)'
 				% (repr(char), line_num, col_num))
 	
-
-
-					
-
 
 def split_but_keep_delimiter(string, delimiter):
 	return [substring + delimiter for substring in string.split(delimiter)]

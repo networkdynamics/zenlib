@@ -25,28 +25,24 @@ from zen.graph import Graph
 from zen.digraph import DiGraph
 from zen.bipartite import BipartiteGraph
 from gml_codec import BasicGMLCodec, ZenGMLCodec
+from gml_interpreter import GMLInterpreter
+from gml_tokenizer import GMLTokenizer
 import os
 import cgi
 import re
 import codecs
 import pdb
-import Tokenizer as t
 
 __all__ = ['read','write']
 
-VALUE_TOK = 'VALUE'
-STR_TOK = 'STRING'
-INT_TOK = 'INT'
-FLOAT_TOK = 'FLOAT'
-BOOL_TOK = 'BOOL'
-ID_TOK = 'ID'
-SLIST_TOK = '['
-ELIST_TOK = ']'
+VALUE_TOK = t.VALUE_TOK
+KEY_TOK = t.KEY_TOK
+SLIST_TOK = t.SLIST_TOK
+ELIST_TOK = t.ELIST_TOK
 
 DIGITS = tuple(['%d' % x for x in range(10)]) + ('+','-')
 DIGITS_AND_QUOTES = DIGITS + ('"',)
 
-tok = t.Tokenizer()
 
 # TODO add Creator attribute
 # TODO handle > double precision floats
@@ -498,32 +494,42 @@ def read(fname,**kwargs):
 	The node's ``id`` attribute is used to specify the node index.  The node's 
 	``name`` attribute is preferably used as the node object.  
 
-	However, if the ``name`` attribute is missing and the ``label`` is present, 
-	then the node's ``label`` attribute will be used as the node object.  If both 
-	are missing, then the node id will be used as the node object.
+	However, if the ``name`` attribute is missing and the ``label`` is present,
+	then the node's ``label`` attribute will be used as the node object.  If 
+	both are missing, then the node id will be used as the node object.
 	
 	.. note::	
 		Currently graph attributes are not supported by the reader.  If 
 		encountered, they will simply be skipped over and not added to the
-		final graph. This is simply because graph objects don't support arbitrary 
-		data yet.
+		final graph. This is simply because graph objects don't support 
+		arbitrary data yet.
 	
 	**KwArgs**:
 	
-		* ``weight_fxn [=None]``: derive weight assignments from edge data.  If 
-			specified, this function is called with one parameter: the full set of 
-			attributes that were specified for the edge.
+		* ``weight_fxn [=None]``: derive weight assignments from edge data.  If
+			specified, this function is called with one parameter: the full 
+			set of attributes that were specified for the edge.
 	"""
-	
+
+	# resolve the codec.  The user can specify the codec in various ways.
 	codec = resolve_codec(kwargs)
 
 	# extract keyword arguments
 	weight_fxn = kwargs.pop('weight_fxn',None)
 
-	# tokenize the data
+	# read the file 
 	fh = open(fname,'r')
-	tokens = tok.tokenize(fh)
+	gml_str = fh.read()
 	fh.close()
+
+	# tokenize the gml string
+	tok = GMLTokenizer()
+	tokens = tok.tokenize(gml_str)
+
+	# build the graph from list of tokens
+	interpreter = GMLInterpreter(codec, tok)
+	return intepreter.interpet(tokens)
+
 
 	i = 0;
 	while i < len(tokens):
