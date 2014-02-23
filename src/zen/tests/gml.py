@@ -106,5 +106,43 @@ class GMLReadTestCase(unittest.TestCase):
 		self.assertEqual(len(G), len(H))
 
 
+	def test_tuple_node_objects(self):
+		G = Graph()
+
+		G.add_node((1,2))
+		G.add_node((2,3))
+		G.add_edge((1,2),(2,3))
+
+		gml.write(G, 'test5.gml')
+		H = gml.read('test5.gml')
+
+		for nobj in G.nodes():
+			self.assertEqual(H.node_idx(nobj), G.node_idx(nobj))
+
+		for nobj1, nobj2 in G.edges():
+			self.assertEqual(H.edge_idx(nobj1, nobj2), 
+				G.edge_idx(nobj1, nobj2))
+
+		self.assertEqual(G.size(), H.size())
+		self.assertEqual(len(G), len(H))
+
+
+	def test_no_node_data(self):
+		G = Graph()
+		G.add_node()
+		G.add_node()
+		G.add_edge_(0,1)
+
+		gml.write(G, 'test5.gml')
+		H = gml.read('test5.gml')
+
+		for edge_idx in G.edges_():
+			node_idx1, node_idx2 = H.endpoints_(edge_idx)
+			H.has_edge_(node_idx1, node_idx2)
+
+		self.assertEqual(G.size(), H.size())
+		self.assertEqual(len(G), len(H))
+
+
 if __name__ == '__main__':
 	unittest.main()

@@ -1,5 +1,6 @@
 from zen.exceptions import ZenException 
 from numbers import Number
+from collections import Hashable, Iterable
 import re
 import htmlentitydefs
 
@@ -121,6 +122,7 @@ class BasicGMLCodec(Encoder, Decoder):
 
 		# otherwise its a normal string.  Unescape any xml entities
 		return unescape(unquoted)
+
 
 
 

@@ -27,6 +27,7 @@ from zen.bipartite import BipartiteGraph
 from gml_codec import BasicGMLCodec, ZenGMLCodec
 from gml_interpreter import GMLInterpreter
 from gml_tokenizer import GMLTokenizer
+from collections import Iterable, Hashable
 import os
 import cgi
 import re
@@ -173,6 +174,7 @@ def format_zen_data(keyname, data, tab_depth, encoder, strict=True):
 	**Returns**
 		* formatted_data (str): gml representation of data
 	"""
+
 	
 	# Validation: key names must be strictly alphanumeric
 	if re.search('[^a-zA-Z0-9]', keyname) and strict:
@@ -182,7 +184,7 @@ def format_zen_data(keyname, data, tab_depth, encoder, strict=True):
 	formatted_data = ''
 	tabs = '\t' * tab_depth
 
-	if not isinstance(data, (list, dict)):
+	if not isinstance(data, (dict, list, tuple)):
 
 		encoded_data = encoder.encode(data)
 
@@ -205,136 +207,23 @@ def format_zen_data(keyname, data, tab_depth, encoder, strict=True):
 
 		# The encoded data is legal for gml. Append extras.
 		formatted_data = tabs + keyname + ' ' + encoded_data + '\n'
-		
-	# Recursive call for lists.  GML represents lists by repeating the
-	# key with different values
-	elif isinstance(data, list):		
-		for val in data:
-			formatted_data += format_zen_data(keyname, val, tab_depth, encoder)
 
 	# Recursive call for dicts
-	else:
-		assert(isinstance(data, dict))
+	elif isinstance(data, dict):
 		formatted_data += tabs + keyname + ' [\n'
 		for key, val in data.items():
 			formatted_data += format_zen_data(key, val, tab_depth + 1, encoder)
 		formatted_data += tabs + ']\n'
 
+	# Recursive call for lists.  GML represents lists by repeating the
+	# key with different values
+	else:
+		assert(isinstance(data, (list, tuple)))
+		for val in data:
+			formatted_data += format_zen_data(keyname, val, tab_depth, encoder)
+
+
 	return formatted_data
-
-
-			
-		
-#def add_token_metadata(token,in_str,lineno):
-#
-#	if in_str:
-#
-#		if re.match("[-+0-9.]", token[:1]): 	# looks like a number, try it
-#			try:
-#				token = int(token)
-#				return (token, INT_TOK, lineno)
-#			except ValueError:
-#				try: 
-#					token = float(token)
-#					return (token, FLOAT_TOK, lineno)
-#				except ValueError:
-#					return (token, STR_TOK, lineno)
-#
-#		elif token == "True":		# treat as boolean
-#			token = True
-#			return (token, BOOL_TOK, lineno)
-#
-#		elif token == "False":
-#			token = False
-#			return (token, BOOL_TOK, lineno)
-#
-#		else:	
-#			return (token,STR_TOK,lineno)
-#
-#	if token == SLIST_TOK:
-#		return (token,SLIST_TOK,lineno)
-#
-#	elif token == ELIST_TOK:
-#		return (token,ELIST_TOK,lineno)
-#
-#	# TEST: I don't think this will handle leading '+' or '-'...
-#	if token.isdigit(): 
-#		return (int(token),INT_TOK,lineno)
-#
-#	else:
-#		try: # see if it's a float
-#			return (float(token),FLOAT_TOK,lineno)
-#		except ValueError: # Keyname tokens are unquoted strings
-#			return (token,ID_TOK,lineno)
-#
-#
-#
-#def parse_key_value_pair(tokens, i, codec):
-#
-#	key, key_token, key_line_no = tokens[i]
-#
-#	if key_token != ID_TOK:
-#		raise ZenException('Line %d: Key must be an identifier, found %s' 
-#			% (key_line_no, key))
-#
-#	if (i+1) >= len(tokens):
-#		raise ZenException('Line %d: Key %s has no value' % (key_line_no, key))
-#
-#	i,val = parse_value(tokens,i+1, codec)
-#
-#	return i,key,val
-#
-#
-#def parse_value(tokens,i, codec):
-#
-#	val, token_type, lineno = tokens[i]
-#
-#	if token_type == VALUE_TOK:
-#		return i+1, codec.decode(val)
-#
-#	elif token_type == SLIST_TOK:
-#		return parse_list(tokens,i+1, codec)
-#
-#	else:
-#		pdb.set_trace()
-#		raise ZenException('Line %d: token %s was unexpected' % (lineno,val))
-#
-#
-#def parse_list(tokens, i, codec):
-#	start_i = i
-#
-#	lvals = dict()
-#
-#	while i < len(tokens) and tokens[i][1] != ELIST_TOK:
-#		i,key,value = parse_key_value_pair(tokens,i, codec)
-#
-#		if key in lvals: # if the same key is used over and over again, it's indicating a list of values
-#			curr_val = lvals[key]
-#			if type(curr_val) == list:
-#				curr_val.append(value)
-#			else:
-#				lvals[key] = [curr_val,value]
-#		else:
-#			lvals[key] = value
-#
-#	if i == len(tokens):
-#		raise ZenException, 'Line %d: List is not closed' % tokens[start_i][2]
-#
-#	return i+1,lvals
-#
-#
-##def parse_graph_data(tokens, i, codec):
-##
-##	start_i = i
-##	i,key,val = parse_key_value_pair(tokens,i, codec)
-##
-##	if key != 'graph':
-##		raise ZenException('Line %d: Expected a graph block, found %s' 
-##			% (tokens[start_i][2],key))
-##
-##	return i,val
-#
-#
 
 
 def make_tree(fname, **kwargs):
@@ -401,6 +290,7 @@ def read(fname,**kwargs):
 	else:
 		return None
 
+
 def read_all(fname, **kwargs):
 
 	# extract keyword arguments
@@ -459,15 +349,17 @@ def build_graph(graph_tree, weight_fxn):
 		# Build each node and add to the graph
 		for node in nodes:	
 
-			# Node must have an 'id'
+			# Does the node have an id?
+			has_id = True
+			has_valid_id = True
 			if 'id' not in node:
-				raise ZenException(
-					'Node is missing the id attribute (node = %s)' % str(node))
+				has_id = False
+				has_valid_id = False
 
-			# Node id must be a positive integer
+			# We can only use positive integer node ids as graph idx
+			# If that's not the case, treat it like any other attribute
 			elif not isinstance(node['id'], int) or node['id'] < 0:
-				raise ZenException('Node id attribute must be a positive '\
-					'integer (node = %s)' % str(node))
+				has_valid_id = False
 
 			# Got a valid node id
 			node_idx = node['id']
@@ -498,7 +390,6 @@ def build_graph(graph_tree, weight_fxn):
 				else:	
 					node_data[key] = val 	
 
-			# if zenData is only other attribute aside from those handled above 
 			# _set_ to node_data else _append_
 			if zen_data is not None:
 				if len(node_data) == 0:
@@ -509,19 +400,38 @@ def build_graph(graph_tree, weight_fxn):
 			elif len(node_data) == 0:
 				node_data = None
 
+			# make sure that the node object is hashable otherwise put it
+			if not isinstance(node_obj, basestring) and node_obj is not None:
+
+				if not isinstance(node_obj, Hashable):\
+
+					if not isinstance(node_obj, Iterable):
+						node_obj = None
+
+					else:
+						node_obj = tuple(node_obj)
+
 
 			# For bipartite graph, this insertion method does not guarantee 
 			# that indices will be unchanged after a read-write cycle
 			if is_bipartite:
 				G.add_node_by_class(is_in_U, node_obj, node_data)
 
-			elif is_directed:
-				G.add_node_x(node_idx, G.edge_list_capacity,
-					G.edge_list_capacity, node_obj,node_data)
+			elif has_id and has_valid_id:
+				if is_directed:
+					G.add_node_x(node_idx, G.edge_list_capacity,
+						G.edge_list_capacity, node_obj,node_data)
+
+				else:
+					G.add_node_x(node_idx, G.edge_list_capacity, node_obj, 
+						node_data)
 
 			else:
-				G.add_node_x(node_idx, G.edge_list_capacity, node_obj, 
-					node_data)
+				if G.is_directed:
+					G.add_node(nobj=node_obj, data=node_data)
+
+				else:
+					G.add_node(nobj=node_obj, data=node_data)
 
 	# add edges
 	if 'edge' in graph_tree:
