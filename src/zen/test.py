@@ -6,10 +6,13 @@ import unittest
 from tests.graph import *
 from tests.digraph import *
 from tests.hypergraph import *
+from tests.bipartite import *
 
 # generating functions
 from tests.generating_er import *
 from tests.generating_ba import *
+from tests.generating_duplication import *
+from tests.generating_local import *
 
 # io
 from tests.edgelist import *
@@ -17,7 +20,7 @@ from tests.memlist import *
 from tests.rdot import *
 from tests.scn import *
 from tests.bel import *
-from tests.gml import *
+#from tests.gml import *
 
 # analysis & properties
 from tests.properties import *
@@ -31,6 +34,9 @@ from tests.floyd_warshall import *
 from tests.bellman_ford import *
 from tests.dijkstra import *
 from tests.unweighted_sssp import *
+
+# flow algorithms
+from tests.flow import *
 
 # matching algorithms
 from tests.max_matching import *

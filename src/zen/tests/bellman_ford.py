@@ -4,7 +4,53 @@ import networkx
 import random
 
 class AllPairsBellmanFordPathLength_TestCase(unittest.TestCase):
-	
+
+	def test_apdp_undirected_ignore_weights(self):
+		G = Graph()
+		
+		G.add_edge(1,2,weight=4)
+		G.add_edge(2,3,weight=1)
+		G.add_edge(1,4,weight=2)
+		G.add_edge(4,5,weight=1)
+		G.add_edge(5,3,weight=1)
+
+		D = all_pairs_bellman_ford_path_length_(G,ignore_weights=True)
+		
+		self.assertEqual(D[0,2],2)
+			
+	def test_apdp_undirected_w_weights(self):
+		G = Graph()
+		
+		G.add_edge(1,2,weight=4)
+		G.add_edge(2,3,weight=1)
+		G.add_edge(1,4,weight=2)
+		G.add_edge(4,5,weight=1)
+		G.add_edge(5,3,weight=1)
+
+		D = all_pairs_bellman_ford_path_length_(G)
+		
+		self.assertEqual(D[0,2],4)
+		self.assertEqual(D[0,1],4)
+		self.assertEqual(D[1,2],1)
+		self.assertEqual(D[1,3],3)
+		
+	def test_apdp_undirected(self):
+		G = Graph()
+		
+		G.add_edge(1,2)
+		G.add_edge(2,3)
+		G.add_edge(2,4)
+
+		D = all_pairs_bellman_ford_path_length_(G)
+		
+		self.assertEqual(D[0,0],0)
+		self.assertEqual(D[0,1],1)
+		self.assertEqual(D[0,2],2)
+		self.assertEqual(D[0,3],2)
+		self.assertEqual(D[1,2],1)
+		self.assertEqual(D[1,3],1)
+		self.assertEqual(D[2,3],2)
+		
 	def test_apdp_undirected(self):
 		G = Graph()
 		

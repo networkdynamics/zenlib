@@ -170,6 +170,26 @@ Edges
 
 .. automethod:: zen.DiGraph.out_edges_(nidx[,data=False,weight=False])
 
+Graph Event Listeners
+---------------------
+
+Instances of a graph can notify one or more listeners of changes to it.  Listeners should support the following methods:
+
+	* ``node_added(nidx,nobj,data)``
+	* ``node_removed(nidx,nobj)``
+	* ``edge_added(eidx,uidx,vidx,data,weight)``
+	* ``edge_removed(eidx,uidx,vidx)``
+	
+Other event notifications are possible (changes to data, etc...).  These will be supported in future versions.
+
+It is noteworthy that adding listeners imposes a serious speed limitation on graph building functions.  If no listeners
+are present in the graph, then node/edge addition/removal proceed as fast as possible.  Notifying listeners requires 
+these functions to follow non-optimal code paths.
+
+.. automethod:: zen.DiGraph.add_listener(listener)
+
+.. automethod:: zen.DiGraph.rm_listener(listener)
+
 Iterating over the graph
 ------------------------
 

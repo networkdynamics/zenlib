@@ -139,6 +139,47 @@ class RandomizeTestCase(unittest.TestCase):
 		
 		for v1,v2 in zip(d1,d2):
 			self.assertEquals(v1,v2)
-			
+	
+	def test_dg_shuffle_one_node_network_mix_iodegrees(self):
+		G = DiGraph()
+		G.add_node(5)
+		
+		G2 = shuffle(G,keep_degree=True,link_iodegrees=False)
+		
+		self.assertEqual(G.nodes(),G2.nodes())
+		
+		# if we got here, we win!
+	
+	def test_dg_shuffle_keep_degree_mix_iodegrees(self):
+		G = DiGraph()
+		G.add_edge(1,2)
+		G.add_edge(1,3)
+		G.add_edge(1,4)
+		G.add_edge(2,3)
+		G.add_edge(4,5)
+		G.add_edge(4,6)
+		G.add_edge(5,1)
+		G.add_edge(5,2)
+		G.add_edge(5,3)
+		G.add_edge(5,4)
+		
+		# 1 has out-degree = 3
+		# 2 has out-degree = 1
+		# 3 has out-degree = 0
+		# 4 has out-degree = 2
+		# 5 has out-degree = 4
+		out_degree = [G.out_degree(i) for i in range(1,7)] #[3,1,0,2,4,0]
+		self.assertEquals(out_degree,[3,1,0,2,4,0])
+		
+		G2 = shuffle(G,keep_degree=True)
+		G3 = shuffle(G,keep_degree=True,link_iodegrees=False)
+		
+		out_degree2 = [G2.out_degree(i) for i in range(1,7)]
+		out_degree3 = [G3.out_degree(i) for i in range(1,7)]
+		
+		self.assertEquals(out_degree,out_degree2)
+		self.assertNotEquals(out_degree,out_degree3)
+		self.assertEquals(set(out_degree),set(out_degree3))
+		
 if __name__ == '__main__':
 	unittest.main()

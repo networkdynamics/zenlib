@@ -42,10 +42,15 @@ cdef class Graph:
 	
 	cdef readonly int edge_list_capacity
 	
+	cdef readonly bint num_graph_listeners
+	cdef readonly graph_listeners
+	
 	# methods
 	cdef inner_validate(self,bint validate)
 	
 	cpdef copy(Graph self)
+	
+	cdef __copy_graph_self_into(Graph self, Graph G)
 	
 	cpdef np.ndarray[np.float_t] matrix(self)
 	

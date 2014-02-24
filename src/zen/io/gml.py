@@ -39,7 +39,6 @@ __all__ = ['read','write']
 DIGITS = tuple(['%d' % x for x in range(10)]) + ('+','-')
 DIGITS_AND_QUOTES = DIGITS + ('"',)
 
-
 # TODO add Creator attribute
 # TODO handle > double precision floats
 # TODO add Encoder
@@ -334,7 +333,6 @@ def build_graph(graph_tree, weight_fxn):
 
 	else:
 		G = Graph()
-
 
 	# Build the nodes
 	if 'node' in graph_tree:

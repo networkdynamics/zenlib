@@ -79,6 +79,21 @@ cdef class Graph:
 		* ``node_grow_factor`` (int): the multiple by which the node storage array will grow when its capacity is exceeded.
 		* ``edge_grow_factor`` (int): the multiple by which the edge storage array will grow when its capacity is exceeded.
 		* ``edge_list_grow_factor`` (int): the multiple by which the a node's edge list storage array will grow when its capacity is exceeded.
+		
+	**Graph Listeners**:
+	
+	Instances of a graph can notify one or more listeners of changes to it.  Listeners should support the following methods:
+	
+		* ``node_added(nidx,nobj,data)``
+		* ``node_removed(nidx,nobj)``
+		* ``edge_added(eidx,uidx,vidx,data,weight)``
+		* ``edge_removed(eidx,uidx,vidx)``
+		
+	Other event notifications are possible (changes to data, etc...).  These will be supported in future versions.
+	
+	It is noteworthy that adding listeners imposes a serious speed limitation on graph building functions.  If no listeners
+	are present in the graph, then node/edge addition/removal proceed as fast as possible.  Notifying listeners requires 
+	these functions to follow non-optimal code paths.
 	"""
 	
 	def __init__(Graph self,**kwargs):
@@ -129,6 +144,9 @@ cdef class Graph:
 		self.edge_data_lookup = {}
 		
 		self.edge_list_capacity = edge_list_capacity
+		
+		self.num_graph_listeners = 0
+		self.graph_listeners = set()
 	
 	def __dealloc__(Graph self):
 		cdef int i
@@ -411,14 +429,31 @@ cdef class Graph:
 	cpdef copy(Graph self):
 		"""
 		Create a copy of this graph.  
-		
+
 		.. note:: that node and edge indices are preserved in this copy.
-		
+
 		**Returns**: 
 			:py:class:`zen.Graph`. A new graph object that contains an independent copy of the connectivity of this graph.  
 			Node objects and node/edge data in the new graph reference the same objects as in the old graph.
 		"""
 		cdef Graph G = Graph()
+		self.__copy_graph_self_into(G)
+
+		return G
+
+	cdef __copy_graph_self_into(Graph self,Graph G):
+		"""
+		A helper method for copy functions of Graph and subclasses.  This method copies the graph itself into
+		the graph provided.  This method doesn't return anything since the graph is modified in place.
+
+		.. note:: per the contract of the :py:meth:`Graph.copy` method, the node and edge indices are preserved
+		          in this copy.
+
+		**Args**:
+
+			* ``G`` (Graph): the graph that will be populated with all content.  Note that this graph should be empty.
+
+		"""
 		cdef int i,j,eidx,eidx2
 		cdef double weight
 
@@ -426,22 +461,22 @@ cdef class Graph:
 			if self.node_info[i].exists:
 				nobj = self.node_object(i)
 				ndata = self.node_data_(i)
-			
+
 				# this will preserve node index
 				G.add_node_x(i,G.edge_list_capacity,nobj,ndata)
-	
+
 		for eidx in range(self.next_edge_idx):
 			if self.edge_info[eidx].exists:
 				i = self.edge_info[eidx].u
 				j = self.edge_info[eidx].v
 				edata = self.edge_data_(eidx)
 				weight = self.weight_(eidx)
-			
+
 				# this will preserve edge index
 				G.add_edge_x(eidx,i,j,edata,weight)
-				
+
 		return G
-		
+	
 	cpdef bint is_directed(Graph self):
 		"""
 		Return ``True`` if this graph is directed (which it is not).
@@ -611,6 +646,20 @@ cdef class Graph:
 		self.next_edge_idx = self.max_edge_idx + 1
 		
 		return
+	
+	def add_listener(self,listener):
+		"""
+		Add a listener to the graph that will be notified of all changes to the graph.
+		"""
+		self.graph_listeners.add(listener)
+		self.num_graph_listeners = len(self.graph_listeners)
+		
+	def rm_listener(self,listener):
+		"""
+		Remove a listener so it will no longer be updated with changes to the graph.
+		"""
+		self.graph_listeners.remove(listener)
+		self.num_graph_listeners = len(self.graph_listeners)
 	
 	cpdef np.ndarray[np.double_t] matrix(self):
 		"""
@@ -816,6 +865,9 @@ cdef class Graph:
 		self.num_changes += 1
 		
 		if nobj is not None:
+			if nobj in self.node_idx_lookup:
+				raise ZenException, 'Node object "%s" is already in use' % str(nobj)
+				
 			self.node_idx_lookup[nobj] = node_idx
 			self.node_obj_lookup[node_idx] = nobj
 			
@@ -847,6 +899,11 @@ cdef class Graph:
 		self.node_info[node_idx].capacity = self.edge_list_capacity
 		
 		self.num_nodes += 1
+		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.node_added(node_idx,nobj,data)
 		
 		return
 		
@@ -1143,6 +1200,7 @@ cdef class Graph:
 		if nidx in self.node_data_lookup:
 			del self.node_data_lookup[nidx]
 			
+		nobj = None	
 		if nidx in self.node_obj_lookup:
 			nobj = self.node_obj_lookup[nidx]
 			del self.node_obj_lookup[nidx]
@@ -1158,6 +1216,12 @@ cdef class Graph:
 		
 		# update the node count						
 		self.num_nodes -= 1
+		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.node_removed(nidx,nobj)
+				
 	
 	cpdef degree(Graph self,nobj):
 		"""
@@ -1414,6 +1478,11 @@ cdef class Graph:
 		# Done
 		self.num_edges += 1
 		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.edge_added(eidx,u,v,data,weight)
+		
 		return
 	
 	cdef __insert_edge_into_edgelist(Graph self, int u, int eidx, int v):
@@ -1531,6 +1600,11 @@ cdef class Graph:
 		
 		self.num_edges -= 1
 		
+		# notify listeners if necessary
+		if self.num_graph_listeners > 0:
+			for listener in self.graph_listeners:
+				listener.edge_removed(eidx,u,v)
+				
 		return
 	
 	cdef __remove_edge_from_edgelist(Graph self, int u, int eidx, int v):

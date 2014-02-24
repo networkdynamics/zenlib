@@ -281,6 +281,16 @@ class GraphPickleTestCase(unittest.TestCase):
 
 class GraphTestCase(unittest.TestCase):
 		
+	def test_add_bad_nobjs(self):
+		G = Graph()
+		G.add_node("x")
+		
+		try:
+			G.add_node("x")
+			self.fail('adding a second node with the same node object should have raised an exception')
+		except ZenException:
+			pass
+		
 	def test_add_nodes(self):
 		G = Graph()
 		G.add_nodes(10)
@@ -846,7 +856,7 @@ class GraphTestCase(unittest.TestCase):
 			pass
 
 		n1 = G.add_node()
-		n2 = G.add_node(3)
+		n2 = G.add_node()
 		G.add_edge_(n1,n2)
 
 		success = True
@@ -949,6 +959,15 @@ class GraphTestCase(unittest.TestCase):
 			self.fail('No error should be thrown')
 		
 		G.validate()
+		
+	def test_edges_no_data(self):
+		G = Graph()
+		G.add_edge(1,2,data=None)
+
+		for e in G.edges_(G.node_idx(1),data=True):
+			pass
+
+		# if we made it here, we won
 
 if __name__ == '__main__':
 	unittest.main()

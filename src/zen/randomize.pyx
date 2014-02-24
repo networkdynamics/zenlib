@@ -219,6 +219,9 @@ def shuffle(G,**kwargs):
 	**KwArgs**:
 	  	* ``keep_degree [=False]`` (``boolean``). Indicates whether the degree 
 		  of each node in the original network should be retained in the shuffled version.
+		* ``link_iodegrees [=True]`` (``boolean``). Indicates whether, when shuffling
+		  a directed graph, the in- and out-degrees should remain linked to one another.
+		  This parameter can only be specified for directed graphs.
 		* ``self_loops [=False]`` (``boolean``). Indicates whether self-loops 
 		  should be permitted in the shuffled version of the network.
 	  	* ``seed [=-1]`` (int): specify the seed that is used by the random number generator.
@@ -226,6 +229,7 @@ def shuffle(G,**kwargs):
 	
 	# parse parameters
 	keep_degree = kwargs.pop('keep_degree',False)
+	link_iodegrees = kwargs.pop('link_iodegrees',None)
 	self_loops = kwargs.pop('self_loops',False)
 	seed = kwargs.pop('seed',-1)
 	
@@ -234,9 +238,14 @@ def shuffle(G,**kwargs):
 		
 	# call the appropriate function
 	if type(G) == Graph:
+		if link_iodegrees != None:
+			raise ZenException, 'Argument "link_iodegrees" can only be used with a directed graph'
+			
 		return ug_shuffle(<Graph>G,keep_degree,self_loops,seed)
 	elif type(G) == DiGraph:
-		return dg_shuffle(<DiGraph>G,keep_degree,self_loops,seed)
+		if link_iodegrees == None:
+			link_iodegrees = True
+		return dg_shuffle(<DiGraph>G,keep_degree,link_iodegrees,self_loops,seed)
 	else:
 		raise InvalidGraphTypeException, 'Unknown graph type %s' % str(type(G))
 	
@@ -312,7 +321,7 @@ cdef Graph ug_shuffle(Graph G,bool keep_degree,bool self_loops,int seed):
 					
 	return dG
 	
-cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool self_loops,int seed):
+cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool link_iodegrees,bool self_loops,int seed):
 
 	if seed >= 0:
 		srand(seed)
@@ -378,5 +387,32 @@ cdef DiGraph dg_shuffle(DiGraph G,bool keep_degree,bool self_loops,int seed):
 					dG.set_weight_(e,e1[3])
 					e = dG.add_edge(u2,v2,e2[2])
 					dG.set_weight_(e,e2[3])
+					
+		# next swap every node's out-degree with another node in order to break
+		# the io degree linkage (if requested)
+		# Note that we can't de-link the in and out degrees of nodes if there's only
+		# one node. Our job is trivially done if the graph is one node.
+		if not link_iodegrees and len(dG) > 1:
+			for i in dG.nodes_():
+				j = i
+				while j == i:
+					j = choose_node_(dG)
+				
+				iout_neighbors = []
+				for e,d,w in dG.out_edges_(i,True,True):
+					it = dG.endpoint_(e,i)
+					iout_neighbors.append( (it,d,w) )
+					dG.rm_edge_(e)
+					
+				jout_neighbors = []
+				for e,d,w in dG.out_edges_(j,True,True):
+					jt = dG.endpoint_(e,j)
+					jout_neighbors.append( (jt,d,w) )
+					dG.rm_edge_(e)
+					
+				for it,d,w in iout_neighbors:
+					e = dG.add_edge_(j,it,d,w)
+				for jt,d,w in jout_neighbors:
+					e = dG.add_edge_(i,jt,d,w)
 
 	return dG
