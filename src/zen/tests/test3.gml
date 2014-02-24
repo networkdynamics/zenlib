@@ -12,12 +12,12 @@ graph [
 	node [
 		id 2
 		label "N2" 
-		sample2 42.1
+		sampleTwo 42.1
 	]
 	node [
 		id 3
 		label "N3" 
-		sample3 "HELLO WORLD"
+		sampleThree "HELLO WORLD"
 	]
 	
 	edge [
