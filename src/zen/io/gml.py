@@ -39,9 +39,6 @@ __all__ = ['read','write']
 DIGITS = tuple(['%d' % x for x in range(10)]) + ('+','-')
 DIGITS_AND_QUOTES = DIGITS + ('"',)
 
-# TODO add Creator attribute
-# TODO handle > double precision floats
-# TODO add Encoder
 def write(G, filename, **kwargs):
 	"""
 	Writes graph to file using Graph Modeling Language (gml).  Node / Edge / 
@@ -202,8 +199,6 @@ def format_zen_data(keyname, data, tab_depth, encoder, strict=True):
 					'see <http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf>. \n Use '\
 					'gml.write(..., strict=False) to force writing.')
 
-		#TODO: floats should be tested to be within double precision
-
 		# The encoded data is legal for gml. Append extras.
 		formatted_data = tabs + keyname + ' ' + encoded_data + '\n'
 
@@ -317,9 +312,6 @@ def read_all(fname, **kwargs):
 
 
 def build_graph(graph_tree, weight_fxn):
-
-	# TODO: Load graph attributes
-	# TODO: support Bipartite Graphs
 
 	# What kind of graph is being built?
 	is_bipartite = bool('bipartite' in graph_tree and graph_tree['bipartite'])
