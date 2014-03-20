@@ -448,6 +448,26 @@ cdef class DiGraph:
 
 		assert (num_free_edges + num_existing_edges) == self.next_edge_idx, '(# free edges) + (# existing edges) != self.next_edge_idx (%d + %d != %d)' % (num_free_edges,num_existing_edges,self.next_edge_idx)
 
+	def __getattr__(self,name):
+		# TODO: Make num_sources and num_sinks native properties of DiGraph.
+		if name == 'num_sources':
+			num_sources = 0
+			# count number of sources
+			for i in range(self.next_node_idx):
+				if self.node_info[i].exists:
+					if self.node_info[i].indegree == 0:
+						num_sources += 1
+			return num_sources
+			
+		elif name == 'num_sinks':
+			num_sinks = 0
+			# count number of sources
+			for i in range(self.next_node_idx):
+				if self.node_info[i].exists:
+					if self.node_info[i].outdegree == 0:
+						num_sinks += 1
+			return num_sinks
+
 	def add_listener(self,listener):
 		"""
 		Add a listener to the graph that will be notified of all changes to the graph.

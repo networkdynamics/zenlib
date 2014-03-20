@@ -14,8 +14,10 @@ benchmark:
 build_inplace:
 	python setup.py build_ext --inplace
 
+# Set argument test to the name to run a specific test
+#  e.g. make test_inplace test="zen.tests.control.ProfileTestCase"
 test_inplace:
-	export PYTHONPATH=.:${PYTHONPATH}; python -m zen.test
+	export PYTHONPATH=.:${PYTHONPATH}; python -m zen.test $(test)
 
 benchmark_inplace:
 	export PYTHONPATH=.:${PYTHONPATH}; python -m zen.benchmark

@@ -58,6 +58,9 @@ from io import *
 # import algorithms
 from algorithms import *
 
+# import control functionality
+import control
+
 # import visual stuff
 import layout
 from drawing import *

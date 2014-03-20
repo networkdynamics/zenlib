@@ -46,6 +46,10 @@ from tests.randomize import *
  
 # spanning algorithms
 from tests.spanning import *
+
+# control stuff
+from tests.profiles import *
+from tests.reachability import *
  
 # utilities
 from tests.fiboheap import *

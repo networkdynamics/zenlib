@@ -2,6 +2,9 @@
 This module implements functions surrounding the calculation of control profiles for networks.
 """
 from zen.digraph import DiGraph
+from zen.exceptions import type_check
+
+from reachability import num_min_controls
 
 def profile(G,**kwargs):
 	"""
@@ -20,14 +23,25 @@ def profile(G,**kwargs):
 	type_check(G,DiGraph,'Only directed graphs are supported')
 
 	# load keyword arguments
-	normalized = kwargs.pop('normalize',True)
+	normalized = kwargs.pop('normalized',True)
 	type_check(normalized,bool)
 	
-	Nc = float(generic_rank(G))
+	Nc = float(num_min_controls(G))
+	
+	# source dilations
 	Ns = float(G.num_sources)
+	
+	# external dilations
 	Nsink = float(G.num_sinks)
 	Ne = max([0.0,Nsink - Ns])
-	Ni = Nc - Ns - Ne
+	
+	# internal dilations
+	if Nc == 1 and Ns == 0 and Nsink == 0:
+		# this condition handles the case where the network consists of one or more cycles
+		# thereby requiring only one control to drive all of them.
+		Ni = 0
+	else:
+		Ni = Nc - Ns - Ne
 	
 	if normalized:
 		return (Ns/Nc, Ne/Nc, Ni/Nc)

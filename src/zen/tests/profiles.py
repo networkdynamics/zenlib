@@ -31,7 +31,7 @@ class ProfileTestCase(TestCase):
 		G = zen.DiGraph()
 		G.add_edge(1,2)
 		G.add_edge(2,3)
-		G.add_edge(2,4)
+		G.add_edge(3,4)
 		G.add_edge(2,5)
 		G.add_edge(5,4)
 
