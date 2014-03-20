@@ -1,5 +1,10 @@
 """
 This module implements functions surrounding the calculation of control profiles for networks.
+
+.. seealso::
+
+	J. Ruths and D. Ruths (2014). Control Profiles of Complex Networks. Science, 343(6177), 1373-1376.
+
 """
 from zen.digraph import DiGraph
 from zen.exceptions import type_check

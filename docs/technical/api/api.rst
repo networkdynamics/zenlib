@@ -8,6 +8,7 @@ Zen Library Reference
 	
 	Graph types <graphs.rst>
 	Algorithms <algorithms/index.rst>
+	Control Theory <control.rst>
 	Loading and storing graph data <io/index.rst>
 	Graph randomization routines <randomize.rst>
 	Converting to and from other graph library objects <thirdparty.rst>
