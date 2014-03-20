@@ -8,3 +8,5 @@ from properties import *
 from shortest_path import *
 from spanning import *
 
+import control
+

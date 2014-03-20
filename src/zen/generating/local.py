@@ -100,3 +100,4 @@ if __name__ == '__main__':
 	ur = UbigraphRenderer('http://localhost:20738/RPC2',event_delay=0.5,graph=G)
 
 	G = local_attachment(100, 6, 4, graph=G)		
+

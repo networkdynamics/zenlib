@@ -121,7 +121,7 @@ class RandomizeTestCase(unittest.TestCase):
 		d2 = ddist(G2)
 
 		for v1,v2 in zip(d1,d2):
-			self.assertEquals(v1,v2)
+			self.assertEquals(v1,v2)	
 		
 	def test_dg_shuffle_keep_degree(self):
 		G = DiGraph()

@@ -46,3 +46,17 @@ class LocalAttachmentTestCase(unittest.TestCase):
 			self.fail('a non-empty graph should not be accepted')
 		except zen.ZenException,e:
 			pass
+
+	def test_min_r(self):
+		try:
+			zen.generating.local_attachment(10,3,0)
+			self.fail('r=0 should not be accepted')
+		except zen.ZenException,e:
+			pass
+		
+	def test_same_num_edges(self):
+		G1 = zen.generating.local_attachment(50,10,2)
+		G2 = zen.generating.local_attachment(50,10,2)
+
+		self.assertEqual(G1.size(),G2.size())
+		self.assertEqual(len(G1),len(G2))

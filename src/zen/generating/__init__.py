@@ -19,9 +19,11 @@ which will be the first positional arguments.  Optional keyword arguments may in
 Random graph models
 -------------------
 
-.. autofunction:: zen.generating.rgm.erdos_renyi(n,p[,directed=False,self_loops=False,seed=-1])
+.. autofunction:: zen.generating.erdos_renyi(n,p[,directed=False,self_loops=False,seed=-1])
 
-.. autofunction:: zen.generating.rgm.barabasi_albert(n,m[,directed=False,seed=-1])
+.. autofunction:: zen.generating.barabasi_albert(n,m[,directed=False,seed=-1])
+
+.. autofunction:: zen.generating.local_attachment(n,m,r[,seed=-1])
 
 .. autofunction:: zen.generating.local_attachment(n,m,r[,seed=-1,graph=None])
 
