@@ -2,7 +2,7 @@
 The ``zen.control`` package provides functions and classes for analyzing the control structure of a network.  In particular, much of the
 functionality currently implemented focuses on the perspective and machinery provided by structural controllability.
 
-*This package is currently under active development and current functions provide only a subset of targeted functionality.*
+*This package is currently under active development and will be regularly updated, though the API specified will remain stable.*
 
 Reachability
 ------------
@@ -19,6 +19,10 @@ Control Profiles
 Control profiles were devised as a measure for quantifying the structures responsible for dictating how many
 controls a network requires and where these controls much attach to the network.
 
+.. seealso::
+
+	J. Ruths and D. Ruths (2014). Control Profiles of Complex Networks. Science, 343(6177), 1373-1376.
+
 .. autofunction:: profile(G,...)
 
 Visualizing control profile plots can be particularly helpful when comparing the control profiles of different
@@ -27,10 +31,6 @@ networks.  Two functions are provided for this purpose.
 .. autofunction:: profile_plot(G,...)
 
 .. autofunction:: profile_heatmap(G,...)
-
-.. seealso::
-
-	J. Ruths and D. Ruths (2014). Control Profiles of Complex Networks. Science, 343(6177), 1373-1376.
 
 """
 

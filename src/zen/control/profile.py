@@ -13,7 +13,7 @@ from reachability import num_min_controls
 
 def profile(G,**kwargs):
 	"""
-	Compute the control profile for the directed network ``G``.  THe 
+	Compute the control profile for the directed network ``G``.
 	
 	**KwArgs**:
 	  	* ``normalized [=True]`` (``boolean``). Indicates whether each element in the control

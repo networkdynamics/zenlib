@@ -168,9 +168,21 @@ def _heatmap_scatter(pts, steps, cmap_name=None):
 
 def profile_heatmap(items, **kwargs):
 	"""
-	If the heatmap=True flag is set, a heatmap will be generated instead of a scatter plot. The resolution of the mesh
-	can be controlled using num_steps. If no matplotlib color map name or color map is supplied (cmap), one will be
+	Plots a set of control profiles as a heatmap on a triangular control profile plot. Each of the ``items`` specified
+	can be either a control profile 3-tuple, 3-list, or :py:class:`zen.DiGraph` (in which case the control profile of the
+	graph will be computed and then plotted).
+	
+	The resolution of the mesh can be controlled using ``num_steps``. If no matplotlib color map name or color map is supplied (``cmap``), one will be
 	generated using a gradient between white and color.
+	
+	**KwArgs**:
+	
+		* ``num_steps [=15]`` (``int``). The resolution of the heatmap mesh.
+		* ``cmap [=None]`` (``colormap``). The colormap that will be used when producing the heatmap.
+		
+	**Returns**:
+		A dictionary with boundaries for the individual regions being rendered in the heatmap.
+		
 	"""
 	######
 	# Handle relevant arguments
@@ -187,10 +199,21 @@ def profile_heatmap(items, **kwargs):
 	
 def profile_plot(items,**kwargs):
 	"""
-	Plots the control profiles on a ternary plot. Specific points can be passed as 2- or 3-tuples or 2- or 3-lists.
-	The points should obey x+y+z=1. Alternately, a DiGraph can be passed and the points will be calculated.
-	Lists of these same components (or mixtures) can be accepted. Most of the usual matplotlib plotting features are 
-	supported:   [color, marker, markersize, mfc, mec, mew, label, picker]
+	Plots a set of control profiles on a triangular control profile plot. Each of the ``items`` specified
+	can be either a control profile 3-tuple, 3-list, or :py:class:`zen.DiGraph` (in which case the control profile of the
+	graph will be computed and then plotted).
+	
+	Most of the usual matplotlib plotting features are supported (see keyword arguments supported below).
+	
+	**KwArgs**:
+	
+		* ``color [='b']`` (any matplotlib-supported color). The color of the markers.
+		* ``marker [='o']`` (any matplotlib-supported marker). The marker that will be used for each control profile.
+		* ``markersize [=8.0]`` (``float``).  The size of the marker.
+		* ``mfc [='none']`` (any matplotlib-supported color). The color of the marker face.
+		* ``mec [=None]`` (any matplotlib-supported color). The color of the marker edge face.
+		* ``mew [=1.0]`` (``float``). The weight of the marker edge.
+		
 	"""
 	######
 	# Handle relevant arguments
@@ -203,6 +226,8 @@ def profile_plot(items,**kwargs):
 	mfc = kwargs.pop('mfc','none')
 	mec = kwargs.pop('mec',None)
 	mew = kwargs.pop('mew',1.0)
+	
+	# currently undocumented features
 	label = kwargs.pop('label',None)
 	picker = kwargs.pop('picker',None)
 	
