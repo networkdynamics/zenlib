@@ -108,7 +108,7 @@ cdef class DiGraph:
 		* ``node_grow_factor`` (int): the multiple by which the node storage array will grow when its capacity is exceeded.
 		* ``edge_grow_factor`` (int): the multiple by which the edge storage array will grow when its capacity is exceeded.
 		* ``edge_list_grow_factor`` (int): the multiple by which the a node's in/out edge list storage array will grow when its capacity is exceeded.
-		
+
 	**Graph Listeners**:
 
 	Instances of a graph can notify one or more listeners of changes to it.  Listeners should support the following methods:

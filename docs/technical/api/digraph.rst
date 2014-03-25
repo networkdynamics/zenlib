@@ -15,6 +15,8 @@ Graph construction
 
 .. automethod:: zen.DiGraph.skeleton([data_merge_fxn=NO_NONE_LIST_OF_DATA, weight_merge_fxn=AVG_OF_WEIGHTS])
 
+.. automethod:: zen.DiGraph.from_adj_matrix(M,...)
+
 Basic graph properties
 ----------------------
 

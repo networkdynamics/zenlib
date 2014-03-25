@@ -11,6 +11,8 @@ Graph construction
 
 .. automethod:: zen.Graph.copy()
 
+.. automethod:: zen.Graph.from_adj_matrix(M,...)
+
 Basic graph properties
 ----------------------
 
