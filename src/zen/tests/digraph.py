@@ -5,6 +5,43 @@ import pickle
 
 from zen import *
 
+class DiGraphBuildFromTestCase(unittest.TestCase):
+
+	def test_bad_argument(self):
+		import numpy as np
+
+		A = np.ones((10,10))
+		
+		with self.assertRaises(ValueError):
+			DiGraph.from_adj_matrix(A,bad_argument=3)
+
+
+	def test_ndarray_ekman(self):
+		import numpy as np
+
+		A = np.ones((10,10))
+		G = DiGraph.from_adj_matrix(A)
+
+		self.assertEquals(len(G),10)
+		self.assertEquals(G.size(),100)
+
+		# done
+
+	def test_ndarray_ekman2(self):
+		import numpy as np
+
+		A = np.ones((10,10))
+		G = DiGraph.from_adj_matrix(A,node_obj_fxn=None)
+		
+		self.assertEquals(len(G),10)
+		self.assertEquals(G.size(),100)
+
+		with self.assertRaises(ZenException):
+			G.nodes()
+
+		# done
+
+
 class DiGraphRelabelTestCase(unittest.TestCase):
 
 	def test_change_node_obj(self):

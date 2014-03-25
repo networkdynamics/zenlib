@@ -5,6 +5,42 @@ import pickle
 
 from zen import *
 
+class GraphBuildFromTestCase(unittest.TestCase):
+
+	def test_bad_argument(self):
+		import numpy as np
+
+		A = np.ones((10,10))
+		
+		with self.assertRaises(ValueError):
+			Graph.from_adj_matrix(A,bad_argument=3)
+
+	def test_ndarray_ekman(self):
+		import numpy as np
+
+		A = np.ones((10,10))
+		G = Graph.from_adj_matrix(A)
+
+		self.assertEquals(len(G),10)
+		self.assertEquals(G.size(),55)
+
+		# done
+
+	def test_ndarray_ekman2(self):
+		import numpy as np
+
+		A = np.ones((10,10))
+		G = Graph.from_adj_matrix(A,node_obj_fxn=None)
+		
+		self.assertEquals(len(G),10)
+		self.assertEquals(G.size(),55)
+
+		with self.assertRaises(ZenException):
+			G.nodes()
+
+		# done
+
+
 class GraphCompact(unittest.TestCase):
 	
 	def test_compact_nodes(self):

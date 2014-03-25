@@ -76,6 +76,26 @@ Version 1.0:
 """
 CURRENT_PICKLE_VERSION = 1.0
 
+# static cython methods
+cpdef DiGraph DiGraph_from_adj_matrix_np_ndarray(np.ndarray[np.float_t, ndim=2] M,
+												node_obj_fxn):
+	cdef DiGraph G = DiGraph()
+	cdef int i
+	cdef int rows = M.shape[0]
+	cdef int cols = M.shape[1]
+
+	# add nodes
+	G.add_nodes(rows,node_obj_fxn)
+
+	# add edges
+	for i in range(rows):
+		for j in range(cols):
+			if M[i,j] != 0:
+				G.add_edge_(i,j,None,M[i,j])
+
+	return G
+
+
 cdef class DiGraph:
 	"""
 	This class provides a highly-optimized implementation of a `directed graph <http://en.wikipedia.org/wiki/Directed_graph>`_.  Duplicate edges are not allowed.
@@ -105,10 +125,34 @@ cdef class DiGraph:
 	these functions to follow non-optimal code paths.
 	"""
 
+	@staticmethod
+	def from_adj_matrix(M,**kwargs):
+		"""
+		Create a new :py:class:`DiGraph` from adjacency matrix information
+		contained in ``M``.  ``M`` can be a ``numpy.matrix`` or
+		``numpy.ndarray`` with 2 dimensions.
+
+		**Keyword Args**:
+
+		  * ``node_obj_fxn [=int]`` (python function): The function that will be used to create
+		    node objects from the node indices.  If ``None``, then no node objects will be created.
+	
+		"""
+		# parse arguments
+		node_obj_fxn = kwargs.pop('node_obj_fxn',int)
+
+		if len(kwargs) > 0:
+			raise ValueError, 'Keyword arguments not supported: %s' % ','.join(kwargs.keys())
+
+		if type(M) == numpy.ndarray:
+			return DiGraph_from_adj_matrix_np_ndarray(<np.ndarray[np.float_t,ndim=2]> M,node_obj_fxn)
+		else:
+			raise TypeError, 'Objects of type %s cannot be handled as adjancency matrices' % type(M)
+
 	def __init__(DiGraph self,**kwargs):
 		"""
 		Create a new :py:class:`DiGraph` object.
-
+	
 		**Keyword Args**:
 
 		  * ``node_capacity [=100]`` (int): the initial number of nodes this graph has space to hold.
