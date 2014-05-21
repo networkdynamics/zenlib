@@ -29,15 +29,65 @@ def compute_community_vector(eigenvec):
 		if(eigenvec[i] > 0):
 			comm_vec[i] = 1
 		else:
-			comm_vec[i] = 0
+			comm_vec[i] = -1
 
 	return comm_vec
 
-# Compute the modularity of the graph with the given community vector.
-# Return True if the modularity is non-negative, False otherwise.
-def check_modularity_sign(mod_matrix, comm_vector):
-	q = np.dot(comm_vector, np.dot(mod_matrix, comm_vector))
-	return (q > 0)
+def modularity(mod_mtx, comm_vec, num_edges):
+	return (1.0 / (4 * num_edges)) * np.dot(comm_vec, np.dot(mod_mtx, comm_vec))
+
+def fine_tune_modularity(mod_matrix, comm_vector, initial_mod, num_edges):
+	prev_mod = initial_mod
+
+	while True:
+		next_comm_vector = comm_vector.copy()
+		to_move = set(range(len(comm_vector)))
+		current_mod = prev_mod
+		movements = []
+
+		while len(to_move) > 0:
+			max_mod_delta = -2
+			max_idx = -1
+	
+			for i in to_move:
+				# Move to the other community, compute modularity			
+				next_comm_vector[i] *= -1
+				mod_delta = (modularity(mod_matrix, next_comm_vector, num_edges)
+							- prev_mod)
+	
+				# Record if we have better modularity with this node 
+				if(mod_delta >= max_mod_delta):
+					max_idx = i
+					max_mod_delta = mod_delta
+
+				# Move back to test the next node
+				next_comm_vector[i] *= -1
+		
+			# Move the node that gives the biggest increase / smallest decrease
+			to_move.remove(max_idx)
+			next_comm_vector[max_idx] *= 1
+
+			# Record this in the movement list
+			current_mod += max_mod_delta
+			movements.append((max_idx, current_mod))
+
+		# Now that all nodes have been moved, select the state which had the
+		# best modularity.
+		best_mod_idx = 0
+		for i in range(1, len(movements)):
+			if(movements[i][1] > movements[best_mod_idx][1]):
+				best_mod_idx = i
+
+		# If we could not improve our overall modularity, we're done
+		if movements[best_mod_idx][1] < prev_mod:
+			break
+		
+		# Otherwise replicate all the given movements on the community vector
+		prev_mod = movements[best_mod_idx][1]
+		for i in range(best_mod_idx + 1):
+			comm_vector[movements[i][0]] *= -1
+
+	#Nothing to return, we modified the community vector in-place
 
 # Modifies the adjacency matrix to make it a modularity matrix.
 def as_modularity_matrix(adj_mat, G):
@@ -48,18 +98,18 @@ def as_modularity_matrix(adj_mat, G):
 
 # Compute a modularity matrix for a part of the graph
 def group_modularity_matrix(mod, group):
-	mod_g = np.empty((len(group), len(group)))
+	mod_mtx_g = np.empty((len(group), len(group)))
 	
 	for i in range(len(group)):
 		for j in range(len(group)):
-			mod_g[i,j] = mod[group[i],group[j]]
+			mod_mtx_g[i,j] = mod[group[i],group[j]]
 
 	for i in range(len(group)):
-		mod_g[i,i] -= np.sum(mod_g[:,i])
+		mod_mtx_g[i,i] -= np.sum(mod_mtx_g[:,i])
 
-	return mod_g
+	return mod_mtx_g
 
-def spectral_modularity(G):
+def spectral_modularity(G, **kwargs):
 
 	if G.is_directed():
 		raise ZenException("This algorithm only supports undirected graphs.")
@@ -67,24 +117,31 @@ def spectral_modularity(G):
 		raise ZenException("The graph must be compact.")
 	# TODO This does not support weighted networks, prevent it
 
-	mod = G.matrix()
-	as_modularity_matrix(mod, G)
+	fine_tune = kwargs.pop("fine_tune", False);
 
-	max_eigen = get_max_eigen(mod)
+	mod_mtx = G.matrix()
+	as_modularity_matrix(mod_mtx, G)
+
+	max_eigen = get_max_eigen(mod_mtx)
 	if max_eigen is None or max_eigen[0] <= 0:
 		# A nonpositive maximal eigenvalue indicates an indivisible network
 		return cs.CommunitySet(G, np.zeros(G.max_node_index + 1))
 
 	community_vector = compute_community_vector(max_eigen[1])
+	mod = modularity(mod_mtx, community_vector, G.size())
 	#If modularity is not positive, network is indivisible
-	if not check_modularity_sign(mod, community_vector):
+	if mod <= 0:
 		return cs.CommunitySet(G, np.zeros(G.max_node_index + 1))
+
+	if fine_tune:
+		fine_tune_modularity(mod_mtx, community_vector, mod, G.size())
 
 	comm0 = []
 	comm1 = []
 
 	for i in range(len(community_vector)):
-		if community_vector[i] == 0:
+		if community_vector[i] == -1:
+			community_vector[i] = 0
 			comm0.append(i)
 		else:
 			comm1.append(i)
@@ -94,21 +151,25 @@ def spectral_modularity(G):
 	while len(subdivision_queue) > 0:
 		members = subdivision_queue.popleft()
 		
-		mod_g = group_modularity_matrix(mod, members)
+		mod_mtx_g = group_modularity_matrix(mod_mtx, members)
 
-		max_eigen = get_max_eigen(mod_g)
+		max_eigen = get_max_eigen(mod_mtx_g)
 		if max_eigen is None or max_eigen[0] <= 0:
 			continue;
 
-		subcommunity_vector = compute_community_vector(max_eigen[1])
-		if not check_modularity_sign(mod_g, subcommunity_vector):
+		subcommunity_vec = compute_community_vector(max_eigen[1])
+		mod_g = modularity(mod_mtx_g, subcommunity_vec, G.size())
+		if mod_g <= 0:
 			continue;
+
+		if fine_tune:
+			fine_tune_modularity(mod_mtx_g, subcommunity_vec, mod_g, G.size())
 
 		new_comm_0 = []
 		new_comm_1 = []
 
-		for i in range(len(subcommunity_vector)):
-			if subcommunity_vector[i] == 0:
+		for i in range(len(subcommunity_vec)):
+			if subcommunity_vec[i] == -1:
 				community_vector[members[i]] = max_cidx + 1
 				new_comm_0.append(members[i])
 			else:
