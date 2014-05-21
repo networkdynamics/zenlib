@@ -110,12 +110,35 @@ def group_modularity_matrix(mod, group):
 	return mod_mtx_g
 
 def spectral_modularity(G, **kwargs):
+	"""
+	Detect communities in a graph using the method described in [Newman, 2006].
+	It repeatedly divides the graph in two, using the leading eigenvector of
+	the graph's modularity matrix to make the division. A sub-graph is
+	considered indivisible if dividing it would result in negative modularity.
+	This algorithm only supports undirected, unweighted graphs. In addition,
+	the graph must be compact.
 
+	** Keyword Args **
+
+		* ``fine_tune [=False]`` (boolean): Whether to fine-tune the results at
+		each step. If ``True``, the algorithm will manually move nodes from
+		one community to the other after dividing a sub-graph in two, in order
+		to maximize the modularity of the sub-graph. Hence, the detected
+		communities should be of higher quality, but this comes at the expense
+		of additional processing time.
+
+	** Raises **
+		``ZenException``: If the graph is directed, weighted or not compact.
+	"""
 	if G.is_directed():
 		raise ZenException("This algorithm only supports undirected graphs.")
 	if not G.is_compact():
 		raise ZenException("The graph must be compact.")
-	# TODO This does not support weighted networks, prevent it
+
+	edges = G.edges_(weight=True)
+	for i in range(len(edges)):
+		if edges[i,1] != 1:
+			raise ZenException("This algorithm only supports unweighted graphs.")
 
 	fine_tune = kwargs.pop("fine_tune", False);
 
