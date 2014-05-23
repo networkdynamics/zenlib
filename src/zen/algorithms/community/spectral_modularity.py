@@ -142,19 +142,23 @@ def spectral_modularity(G, **kwargs):
 
 	fine_tune = kwargs.pop("fine_tune", False);
 
+	# Empty graph: no communities
+	if len(G) == 0:
+		return cs.CommunitySet(G, [])
+
 	mod_mtx = G.matrix()
 	as_modularity_matrix(mod_mtx, G)
 
 	max_eigen = get_max_eigen(mod_mtx)
-	if max_eigen is None or max_eigen[0] <= 0:
+	if max_eigen is None or max_eigen[0] <= np.finfo(np.single).eps:
 		# A nonpositive maximal eigenvalue indicates an indivisible network
-		return cs.CommunitySet(G, np.zeros(G.max_node_index + 1))
+		return cs.CommunitySet(G, np.zeros(G.max_node_idx + 1))
 
 	community_vector = compute_community_vector(max_eigen[1])
 	mod = modularity(mod_mtx, community_vector, G.size())
 	#If modularity is not positive, network is indivisible
-	if mod <= 0:
-		return cs.CommunitySet(G, np.zeros(G.max_node_index + 1))
+	if mod <= np.finfo(np.single).eps:
+		return cs.CommunitySet(G, np.zeros(G.max_node_idx + 1))
 
 	if fine_tune:
 		fine_tune_modularity(mod_mtx, community_vector, mod, G.size())
@@ -162,6 +166,7 @@ def spectral_modularity(G, **kwargs):
 	comm0 = []
 	comm1 = []
 
+	# Create lists of indices in both communities
 	for i in range(len(community_vector)):
 		if community_vector[i] == -1:
 			community_vector[i] = 0
@@ -172,17 +177,20 @@ def spectral_modularity(G, **kwargs):
 	subdivision_queue = deque([comm0, comm1])
 	max_cidx = 1
 	while len(subdivision_queue) > 0:
+		# Repeat the above procedure repeatedly on each new community.
+		# The main difference is that here we use a smaller modularity matrix,
+		# defined only on the group at hand.
 		members = subdivision_queue.popleft()
 		
 		mod_mtx_g = group_modularity_matrix(mod_mtx, members)
 
 		max_eigen = get_max_eigen(mod_mtx_g)
-		if max_eigen is None or max_eigen[0] <= 0:
+		if max_eigen is None or max_eigen[0] <= np.finfo(np.single).eps:
 			continue;
 
 		subcommunity_vec = compute_community_vector(max_eigen[1])
 		mod_g = modularity(mod_mtx_g, subcommunity_vec, G.size())
-		if mod_g <= 0:
+		if mod_g <= np.finfo(np.single).eps:
 			continue;
 
 		if fine_tune:

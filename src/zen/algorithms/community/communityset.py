@@ -86,7 +86,7 @@ class CommunitySet:
 		Return the community associated with node having index ``nidx``.
 		"""
 		self.__raise_if_invalid_nidx(nidx)
-		return __build_community(self._communities[nidx])
+		return self.__build_community(self._communities[nidx])
 
 	def community(self, nobj):
 		"""
