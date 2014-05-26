@@ -111,16 +111,22 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 			example, with ``max_num_changes = 5``, the algorithm will stop
 			if it detects that some number of updates occured 5 times.
 
+        ## TODO: Switch -1 to None/Infinity
 		* ``max_iterations [=-1]`` (int): if lgreater than or equal to zero, the
 			algorithm will run at most this many iterations. Negative values
 			indicate that the algorithm will run until normal completion.
 
+    ## TODO: Add links to CommunitySet, etc..
 	**Returns**
-		A CommunitySet containing the communities detected in the graph. This
+		A :py:module:?CommunitySet containing the communities detected in the graph. This
 		is done by taking the label with maximal probability and assigning it to
 		the node (in case of a tie, the first maximal label in the table is 
 		used). Then, the communities are formed by groups of nodes with the same
 		label.		
+        
+    ..seealso::
+        Cite the paper here.
+        
 	"""
 	max_iterations = kwargs.pop('max_iterations', -1)
 	max_num_changes = kwargs.pop('max_num_changes', 5)

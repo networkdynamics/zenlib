@@ -1,7 +1,12 @@
 from zen import Graph, ZenException
 import numpy as np
 
+## TODO: Add significant documentation here
+## Enforce policy that all community numbers are continguous from [0-M].
+
 class Community:
+    ## TODO: Consider changing list to a set - faster for lookup
+    
 	def __init__(self, idx, G, node_list):
 		self._graph = G
 		self.nodes = np.sort(node_list)
@@ -17,6 +22,7 @@ class Community:
 		idx = np.searchsorted(self.nodes, nidx)
 		return self.nodes[idx] == nidx
 
+    ## TODO: __contains__ is a pythonic way of handling "has"
 	def has_node(self, nobj):
 		"""
 		Return ``True`` if this community contains the node with node object
@@ -41,6 +47,7 @@ class CommunitySet:
 		self._communities = communities
 
 	def __raise_if_invalid_nidx(self, nidx):
+        ## TODO: This is a very expensive way of checking validity. Maybe add a method to Graph/DiGraph
 		if self._graph.node_object(nidx) is None:
 			raise ZenException, 'Invalid node idx %d' % nidx
 

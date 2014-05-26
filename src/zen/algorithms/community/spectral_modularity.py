@@ -129,6 +129,10 @@ def spectral_modularity(G, **kwargs):
 
 	** Raises **
 		``ZenException``: If the graph is directed, weighted or not compact.
+        
+    ..seealso::
+        Newman 2006...
+        
 	"""
 	if G.is_directed():
 		raise ZenException("This algorithm only supports undirected graphs.")
