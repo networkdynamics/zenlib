@@ -2,6 +2,7 @@ from zen import Graph, ZenException
 from collections import deque
 import communityset as cs
 import numpy as np
+import community_common as common
 
 # Obtain the max eigenvalue and its associated eigenvector
 # from a real symmetric matrix
@@ -23,7 +24,7 @@ def get_max_eigen(mat):
 # signs, the community vector entries are either 1 (first community) or -1
 # (second community)
 def compute_community_vector(eigenvec):
-	comm_vec = np.empty(eigenvec.shape[0])
+	comm_vec = np.empty(eigenvec.shape[0], np.int)
 
 	for i in range(eigenvec.shape[0]):
 		if(eigenvec[i] > 0):
@@ -148,7 +149,7 @@ def spectral_modularity(G, **kwargs):
 
 	# Empty graph: no communities
 	if len(G) == 0:
-		return cs.CommunitySet(G, [])
+		return cs.CommunitySet(G, [], [])
 
 	mod_mtx = G.matrix()
 	as_modularity_matrix(mod_mtx, G)
@@ -156,13 +157,15 @@ def spectral_modularity(G, **kwargs):
 	max_eigen = get_max_eigen(mod_mtx)
 	if max_eigen is None or max_eigen[0] <= np.finfo(np.single).eps:
 		# A nonpositive maximal eigenvalue indicates an indivisible network
-		return cs.CommunitySet(G, np.zeros(G.max_node_idx + 1))
+		num_elems = G.max_node_idx + 1
+		return cs.CommunitySet(G, np.zeros(num_elems, np.int), [num_elems])
 
 	community_vector = compute_community_vector(max_eigen[1])
 	mod = modularity(mod_mtx, community_vector, G.size())
 	#If modularity is not positive, network is indivisible
 	if mod <= np.finfo(np.single).eps:
-		return cs.CommunitySet(G, np.zeros(G.max_node_idx + 1))
+		num_elems = G.max_node_idx + 1
+		return cs.CommunitySet(G, np.zeros(num_elems, np.int), [num_elems])
 
 	if fine_tune:
 		fine_tune_modularity(mod_mtx, community_vector, mod, G.size())
@@ -215,4 +218,5 @@ def spectral_modularity(G, **kwargs):
 		subdivision_queue.append(new_comm_1)
 		max_cidx += 2
 
-	return cs.CommunitySet(G, community_vector)
+	community_sizes = common.normalize_communities(community_vector)
+	return cs.CommunitySet(G, community_vector, community_sizes)

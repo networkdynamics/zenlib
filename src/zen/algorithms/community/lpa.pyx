@@ -3,7 +3,7 @@ import communityset as cs
 import numpy as np
 cimport numpy as np
 from cpython cimport bool
-from community_common import keys_of_max_value
+import community_common as common
 
 # Return a map containing the number of occurences of labels
 # among the neighbors of a node
@@ -35,7 +35,7 @@ cdef should_stop_lpa(Graph G, np.ndarray[np.int_t] labels, bool use_weights):
 	cdef np.ndarray[np.int_t] nodes = G.nodes_()
 	for node in nodes:
 		neighbor_lbl_counts = count_neighbor_lbls(G, node, labels, use_weights)
-		keys = keys_of_max_value(neighbor_lbl_counts)
+		keys = common.keys_of_max_value(neighbor_lbl_counts)
 
 		if labels[node] not in keys:
 			return False
@@ -61,7 +61,8 @@ def label_propagation(G, **kwargs):
 			indicate that the algorithm will run until normal completion.
 			
 	**Returns**:
-		A CommunitySet containing the communities detected in the graph.
+		A :py:class:`CommunitySet` containing the communities detected in the 
+		graph.
 	"""
 	
 	use_weights = kwargs.pop('use_weights', False)
@@ -86,7 +87,7 @@ def label_propagation(G, **kwargs):
 			lbl_counts = count_neighbor_lbls(G, node, label_table, use_weights)
 			
 			# Select new label randomly among those that have maximal count
-			keys = keys_of_max_value(lbl_counts)
+			keys = common.keys_of_max_value(lbl_counts)
 			if not keys is None:
 				label_table[node] = keys[np.random.randint(len(keys))]
 
@@ -95,4 +96,5 @@ def label_propagation(G, **kwargs):
 
 		i += 1
 
-	return cs.CommunitySet(G, label_table)
+	comm_sizes = common.normalize_communities(label_table)
+	return cs.CommunitySet(G, label_table, comm_sizes)

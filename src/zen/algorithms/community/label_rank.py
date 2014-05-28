@@ -1,7 +1,7 @@
 import numpy as np
 from zen.graph import Graph
 import communityset as cs
-from community_common import keys_of_max_value
+import community_common as common
 
 def propagate(G, label_ptable):
 	new_label_ptable = [{} for i in range(G.max_node_idx + 1)]	
@@ -75,7 +75,7 @@ def create_community_list(G, label_ptable):
 	communities = np.empty(len(label_ptable), np.int)
 	for node in G.nodes_():
 		# If we somehow have a tie, always pick the first community
-		communities[node] = keys_of_max_value(label_ptable[node])[0]
+		communities[node] = common.keys_of_max_value(label_ptable[node])[0]
 
 	return communities
 
@@ -125,7 +125,7 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 		label.		
         
     ..seealso::
-        Cite the paper here.
+        TODO Cite the paper here.
         
 	"""
 	max_iterations = kwargs.pop('max_iterations', -1)
@@ -162,13 +162,13 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 		num_changes = 0
 		for node in G.nodes_():
 			sum_subsets = 0
-			ci = keys_of_max_value(label_ptable[node])
+			ci = common.keys_of_max_value(label_ptable[node])
 			for nghbr in G.neighbors_(node):
 				# Do not consider ourselves when checking neighbors
 				if nghbr == node: 
 					continue			
 
-				cj = keys_of_max_value(label_ptable[nghbr])
+				cj = common.keys_of_max_value(label_ptable[nghbr])
 				sum_subsets += is_subset(ci, cj)
 
 			if sum_subsets < (cond_update * len(G.neighbors_(node))):
@@ -198,4 +198,6 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 	for node in added_selfloop:
 		G.rm_edge_(G.edge_idx_(node, node))
 	
-	return cs.CommunitySet(G, create_community_list(G, label_ptable))
+	communities = create_community_list(G, label_ptable)
+	community_sizes = common.normalize_communities(communities)
+	return cs.CommunitySet(G, communities, community_sizes)
