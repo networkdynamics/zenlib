@@ -45,8 +45,8 @@ cdef should_stop_lpa(Graph G, np.ndarray[np.int_t] labels, bool use_weights):
 def label_propagation(G, **kwargs):
 	"""
 	Detect communities in a graph using the Label-Propagation Algorithm (LPA)
-	described in [Raghavan et al. 2007]. It assigns a unique label to each node,
-	then propagates the labels by assigning to each node the label shared by the
+	described in [RAG2007]_. It assigns a unique label to each node, then 
+	propagates the labels by assigning to each node the label shared by the
 	majority of its neighbors (ties are broken randomly). This continues until
 	each node's label agrees with its neighbors'. Communities are the groups of
 	nodes with the same label.
@@ -56,17 +56,27 @@ def label_propagation(G, **kwargs):
 		* ``use_weights [=False]`` (boolean): if ``True``, then the weights of
 			the graph are taken into consideration when detecting communities.
 		
-		* ``max_iterations [=-1]`` (int): if greater than or equal to zero, the
-			algorithm will run at most this many iterations. Negative values
-			indicate that the algorithm will run until normal completion.
+		* ``max_iterations [=None]`` (int): if greater than or equal to zero, 
+			the algorithm will run at most this many iterations. Negative values
+			and ``None`` indicate that the algorithm will run until normal 
+			completion.
 			
 	**Returns**:
 		A :py:class:`CommunitySet` containing the communities detected in the 
 		graph.
+
+	..[RAG2007] 
+		Raghavan, U. N., Albert, R. and Kumara, S. 2007. Near linear time 
+			algorithm to detect community structures in large-scale networks. 
+			Physical Review E, Vol. 76, No. 3.
+
 	"""
 	
 	use_weights = kwargs.pop('use_weights', False)
-	max_iterations = kwargs.pop('max_iterations', -1)
+	max_iterations = kwargs.pop('max_iterations', None)
+	if max_iterations is None:
+		max_iterations = -1
+
 	cdef int i = 0
 
 	cdef np.ndarray[np.int_t] nodes = G.nodes_()
@@ -96,5 +106,5 @@ def label_propagation(G, **kwargs):
 
 		i += 1
 
-	comm_sizes = common.normalize_communities(label_table)
-	return cs.CommunitySet(G, label_table, comm_sizes)
+	num_communities = common.normalize_communities(label_table)
+	return cs.CommunitySet(G, label_table, num_communities)

@@ -15,11 +15,9 @@ class Community:
 		* ``community_idx``: the index of this community in the 
 		:py:class:`CommunitySet` it originates from.
 	"""
-    ## TODO: Consider changing list to a set - faster for lookup
-    
-	def __init__(self, idx, G, node_list):
+	def __init__(self, idx, G, node_set):
 		self._graph = G
-		self.nodes = np.sort(node_list)
+		self.nodes = node_set
 		self.community_idx = idx
 
 	def	has_node_index(self, nidx):
@@ -27,10 +25,7 @@ class Community:
 		Return ``True`` if this community contains the node with node index
 		``nidx`` 
 		"""
-		# searchsorted returns the index where we should insert the value nidx. 
-		# So if nidx is already present in the array, idx will be its index.
-		idx = np.searchsorted(self.nodes, nidx)
-		return self.nodes[idx] == nidx
+		return nidx in self.nodes
 
 	def __contains__(self, nobj):
 		"""
@@ -50,7 +45,7 @@ class CommunitySet:
 	class should not be instantiated directly but rather obtained from the
 	algorithms in the `zen.algorithms.community` package.
 	"""
-	def __init__(self, G, communities, community_sizes):
+	def __init__(self, G, communities, num_communities):
 		self._graph = G
 
 		# Array of communities, indexed by node indices (i.e. A[i] is the
@@ -58,7 +53,7 @@ class CommunitySet:
 		self._communities = communities
 
 		# Array of community sizes, indexed by community indices
-		self._community_sizes = community_sizes
+		self._num_communities = num_communities
 
 	def __raise_if_invalid_nidx(self, nidx):
         ## TODO: This is a very expensive way of checking validity. Maybe add a method to Graph/DiGraph
@@ -66,21 +61,19 @@ class CommunitySet:
 			raise ZenException, 'Invalid node idx %d' % nidx
 
 	def __build_community(self, cidx):
-		c_nodes = np.empty(self._community_sizes[cidx])
-		i = 0
+		nodes = set()
 		for nidx in self._graph.nodes_():
 			if self._communities[nidx] == cidx:
-				c_nodes[i] = nidx
-				i += 1
+				nodes.add(nidx)
 
-		return Community(cidx, self._graph, np.array(c_nodes))
+		return Community(cidx, self._graph, nodes)
 
 	def __build_all_communities(self):
-		communities = [[] for i in range(len(self))]
+		communities = [set() for i in range(len(self))]
 
 		for nidx in self._graph.nodes_():
 			cidx = self._communities[nidx]
-			communities[cidx].append(nidx)
+			communities[cidx].add(nidx)
 
 		
 		for i in range(len(self)):
@@ -92,7 +85,7 @@ class CommunitySet:
 		"""
 		Returns the number of communities in this set
 		"""
-		return len(self._community_sizes)
+		return self._num_communities
 
 	def communities(self):
 		"""

@@ -52,10 +52,14 @@ def cutoff(G, label_ptable, cutoff):
 		for label, prob in label_ptable[node].iteritems():
 			if prob < cutoff:
 				to_delete.append(label)
-
-		for label in to_delete:
-			del label_ptable[node][label]
-	#TODO Nodes might become unlabeled in this process. This needs to be fixed.
+		
+		# If we are about to delete all the labels, keep the highest valued
+		if len(to_delete) == len(label_ptable):
+			max_lbl = comm.keys_of_max_value(label_ptable[node])
+			label_ptable[node] = { max_lbl[0]: label_ptable[max_lbl[0]] }
+		else: # Otherwise, remove nodes as usual
+			for label in to_delete:
+				del label_ptable[node][label]
 
 # Returns 1 if a is a subset of b, 0 otherwise
 def is_subset(a, b):
@@ -82,14 +86,14 @@ def create_community_list(G, label_ptable):
 def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 	"""
 	Detect communities in a graph using the LabelRank algorithm described in
-	[Xie, Szymanski 2013]. It assigns a table to each node, containing the
-	probabilities that this node has a certain label. At each step, this table
-	is propagated to the node's neighbors. Then, it is inflated (raised to a
-	certain power, which increases the differences between high and low
-	probabilities). Entries below a given threshold are removed from the table.
-	Finally, a node's table is only updated if it disagrees enough with its
-	neighbors. The algorithm stops either when there have been no changes or
-	when the same number of changes happened too many times.
+	[XIE2013]_. It assigns a table to each node, containing the probabilities 
+	that this node has a certain label. At each step, this table is propagated 
+	to the node's neighbors. Then, it is inflated (raised to a certain power, 
+	which increases the differences between high and low probabilities). Entries
+	below a given threshold are removed from the table.	Finally, a node's table 
+	is only updated if it disagrees enough with its neighbors. The algorithm 
+	stops either when there have been no changes or	when the same number of 
+	changes happened too many times.
 
 	**Args**
 
@@ -111,24 +115,28 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 			example, with ``max_num_changes = 5``, the algorithm will stop
 			if it detects that some number of updates occured 5 times.
 
-        ## TODO: Switch -1 to None/Infinity
-		* ``max_iterations [=-1]`` (int): if lgreater than or equal to zero, the
-			algorithm will run at most this many iterations. Negative values
-			indicate that the algorithm will run until normal completion.
+		* ``max_iterations [=None]`` (int): if greater than or equal to zero, 
+			the algorithm will run at most this many iterations. Negative values
+			and ``None`` indicate that the algorithm will run until normal 
+			completion.
 
-    ## TODO: Add links to CommunitySet, etc..
 	**Returns**
-		A :py:module:?CommunitySet containing the communities detected in the graph. This
-		is done by taking the label with maximal probability and assigning it to
-		the node (in case of a tie, the first maximal label in the table is 
-		used). Then, the communities are formed by groups of nodes with the same
-		label.		
+		A :py:module:?CommunitySet containing the communities detected in the 
+		graph. This is done by taking the label with maximal probability and 
+		assigning it to the node (in case of a tie, the first maximal label in 
+		the table is used). Then, the communities are formed by groups of nodes 
+		with the same label.		
         
-    ..seealso::
-        TODO Cite the paper here.
+    ..[XIE2013]
+        Xie, J. and Szymanski, B. K. 2013. LabelRank: A stabilized label
+			propagation algorithm for community detection in networks. Proc.
+			IEEE Network Science Workshop, West Point, NY, 2013.
         
 	"""
-	max_iterations = kwargs.pop('max_iterations', -1)
+	max_iterations = kwargs.pop('max_iterations', None)
+	if max_iterations is None:
+		max_iterations = -1
+
 	max_num_changes = kwargs.pop('max_num_changes', 5)
 	
 	label_ptable = [{} for i in range(G.max_node_idx + 1)]
@@ -199,5 +207,5 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 		G.rm_edge_(G.edge_idx_(node, node))
 	
 	communities = create_community_list(G, label_ptable)
-	community_sizes = common.normalize_communities(communities)
-	return cs.CommunitySet(G, communities, community_sizes)
+	num_communities = common.normalize_communities(communities)
+	return cs.CommunitySet(G, communities, num_communities)

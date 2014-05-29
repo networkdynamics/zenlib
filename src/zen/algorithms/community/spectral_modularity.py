@@ -112,7 +112,7 @@ def group_modularity_matrix(mod, group):
 
 def spectral_modularity(G, **kwargs):
 	"""
-	Detect communities in a graph using the method described in [Newman, 2006].
+	Detect communities in a graph using the algorithm described in [NEW2006]_.
 	It repeatedly divides the graph in two, using the leading eigenvector of
 	the graph's modularity matrix to make the division. A sub-graph is
 	considered indivisible if dividing it would result in negative modularity.
@@ -131,8 +131,9 @@ def spectral_modularity(G, **kwargs):
 	** Raises **
 		``ZenException``: If the graph is directed, weighted or not compact.
         
-    ..seealso::
-        Newman 2006...
+    ..[NEW2006] 
+        Newman, M. E. J. 2006. Modularity and community structure in networks.
+			Proc. National Academy of Sciences, Vol. 103, No. 23.
         
 	"""
 	if G.is_directed():
@@ -149,7 +150,7 @@ def spectral_modularity(G, **kwargs):
 
 	# Empty graph: no communities
 	if len(G) == 0:
-		return cs.CommunitySet(G, [], [])
+		return cs.CommunitySet(G, [], 0)
 
 	mod_mtx = G.matrix()
 	as_modularity_matrix(mod_mtx, G)
@@ -158,14 +159,14 @@ def spectral_modularity(G, **kwargs):
 	if max_eigen is None or max_eigen[0] <= np.finfo(np.single).eps:
 		# A nonpositive maximal eigenvalue indicates an indivisible network
 		num_elems = G.max_node_idx + 1
-		return cs.CommunitySet(G, np.zeros(num_elems, np.int), [num_elems])
+		return cs.CommunitySet(G, np.zeros(num_elems, np.int), 1)
 
 	community_vector = compute_community_vector(max_eigen[1])
 	mod = modularity(mod_mtx, community_vector, G.size())
 	#If modularity is not positive, network is indivisible
 	if mod <= np.finfo(np.single).eps:
 		num_elems = G.max_node_idx + 1
-		return cs.CommunitySet(G, np.zeros(num_elems, np.int), [num_elems])
+		return cs.CommunitySet(G, np.zeros(num_elems, np.int), 1)
 
 	if fine_tune:
 		fine_tune_modularity(mod_mtx, community_vector, mod, G.size())
@@ -218,5 +219,5 @@ def spectral_modularity(G, **kwargs):
 		subdivision_queue.append(new_comm_1)
 		max_cidx += 2
 
-	community_sizes = common.normalize_communities(community_vector)
-	return cs.CommunitySet(G, community_vector, community_sizes)
+	num_communities = common.normalize_communities(community_vector)
+	return cs.CommunitySet(G, community_vector, num_communities)
