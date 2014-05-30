@@ -40,7 +40,7 @@ Extension('zen.algorithms.modularity', ['zen/algorithms/modularity.pyx'], includ
 Extension('zen.algorithms.spanning', ['zen/algorithms/spanning.pyx'], include_dirs=[numpy_include_dir, fiboheap_include_dir]),
 Extension('zen.algorithms.matching', ['zen/algorithms/matching.pyx'], include_dirs=[numpy_include_dir]),
 Extension('zen.generating.rgm', ['zen/generating/rgm.pyx'], include_dirs=[numpy_include_dir]),
-Extension('zen.algorithms.community.label_propagation', ['zen/algorithms/community/label_propagation.pyx'], include_dirs=[numpy_include_dir])]
+Extension('zen.algorithms.community', ['zen/algorithms/community/lpa.pyx'], include_dirs=[numpy_include_dir])]
 
 
 setup(

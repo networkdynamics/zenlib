@@ -77,7 +77,9 @@ cdef class DiGraph:
 	cdef remove_from_free_node_list(self,int nidx)
 	
 	cpdef add_node_x(DiGraph self,int node_idx,int in_edge_list_capacity,int out_edge_list_capacity,nobj,data)
-	
+
+	cpdef is_valid_node_idx(DiGraph self, int nidx)	
+
 	cpdef int node_idx(DiGraph self,nobj) except -1
 	
 	cpdef node_object(DiGraph self,int nidx)

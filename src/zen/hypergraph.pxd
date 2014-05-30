@@ -44,6 +44,8 @@ cdef class HyperGraph:
 	
 	cpdef int add_node(HyperGraph self,nobj=*,data=*)
 
+	cpdef is_valid_node_idx(HyperGraph self, int nidx)
+
 	cpdef int node_idx(HyperGraph self,nobj)
 
 	cpdef node_object(HyperGraph self,int nidx)

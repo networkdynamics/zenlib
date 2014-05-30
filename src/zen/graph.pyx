@@ -958,6 +958,14 @@ cdef class Graph:
 		"""
 		return nobj in self.node_idx_lookup
 	
+	cpdef is_valid_node_idx(Graph self, int nidx):
+		"""
+		Return ``True`` if ``nidx`` is the index of a node in this graph.
+		"""
+		if nidx < 0 or nidx >= self.node_capacity:
+			return False
+		return self.node_info[nidx].exists
+
 	cpdef int node_idx(Graph self,nobj) except -1:
 		"""
 		Return the index of the node with node object ``nobj``.

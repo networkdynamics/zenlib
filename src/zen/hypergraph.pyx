@@ -136,6 +136,14 @@ cdef class HyperGraph:
 		"""
 		return nobj in self.node_idx_lookup
 
+	cpdef is_valid_node_idx(HyperGraph self, int nidx):
+		"""
+		Return ``True`` if ``nidx`` is the index of a node in this graph.
+		"""
+		if nidx < 0 or nidx >= self.node_capacity:
+			return False
+		return self.node_info[nidx].exists
+
 	cpdef int node_idx(HyperGraph self,nobj):
 		return self.node_idx_lookup[nobj]
 

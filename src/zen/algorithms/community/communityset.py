@@ -1,8 +1,6 @@
 from zen import Graph, ZenException
 import numpy as np
 
-## Enforce policy that all community numbers are continguous from [0-M].
-
 class Community:
 	"""
 	This class represents a community that was discovered in a :py:class:`Graph` 
@@ -56,8 +54,7 @@ class CommunitySet:
 		self._num_communities = num_communities
 
 	def __raise_if_invalid_nidx(self, nidx):
-        ## TODO: This is a very expensive way of checking validity. Maybe add a method to Graph/DiGraph
-		if self._graph.node_object(nidx) is None:
+		if not self._graph.is_valid_node_idx(nidx):
 			raise ZenException, 'Invalid node idx %d' % nidx
 
 	def __build_community(self, cidx):
