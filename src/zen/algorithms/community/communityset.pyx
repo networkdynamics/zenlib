@@ -165,4 +165,6 @@ cdef class CommunitySet:
 			return False
 		return self.community_idx(u_idx) == self.community_idx(v_idx)
 
+	def __str__(CommunitySet self):
+		return self._communities.__str__()
 	
