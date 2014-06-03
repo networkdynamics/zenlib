@@ -150,7 +150,7 @@ def spectral_modularity(G, **kwargs):
 
 	# Empty graph: no communities
 	if len(G) == 0:
-		return cs.CommunitySet(G, [], 0)
+		return cs.CommunitySet(G, np.empty(0, dtype=np.int32), 0)
 
 	mod_mtx = G.matrix()
 	as_modularity_matrix(mod_mtx, G)

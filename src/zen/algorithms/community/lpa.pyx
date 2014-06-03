@@ -1,9 +1,13 @@
+__all__ = [ 'label_propagation' ]
+
 from zen.graph cimport Graph
 import communityset as cs
 import numpy as np
 cimport numpy as np
 from cpython cimport bool
 import community_common as common
+
+
 
 # Return a map containing the number of occurences of labels
 # among the neighbors of a node

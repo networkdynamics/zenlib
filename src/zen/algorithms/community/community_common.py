@@ -22,7 +22,7 @@ def keys_of_max_value(dct):
 	return candidates
 
 # Modifies a community table so that the community indices range from 0 to 
-# N - 1. Returns the number of communities
+# N - 1. Returns the number of communities.
 def normalize_communities(comm_table):
 	old_to_new_comms = {}
 	max_cidx = 0
