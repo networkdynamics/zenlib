@@ -1,7 +1,9 @@
-import numpy as np
-from zen.graph import Graph
-import communityset as cs
+from zen.graph cimport Graph
+cimport communityset as cs
 import community_common as common
+
+import numpy as np
+cimport numpy as np
 
 def propagate(G, label_ptable):
 	new_label_ptable = [{} for i in range(G.max_node_idx + 1)]	
@@ -55,7 +57,7 @@ def cutoff(G, label_ptable, cutoff):
 		
 		# If we are about to delete all the labels, keep the highest valued
 		if len(to_delete) == len(label_ptable):
-			max_lbl = comm.keys_of_max_value(label_ptable[node])
+			max_lbl = common.keys_of_max_value(label_ptable[node])
 			label_ptable[node] = { max_lbl[0]: label_ptable[max_lbl[0]] }
 		else: # Otherwise, remove nodes as usual
 			for label in to_delete:
@@ -142,6 +144,14 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 	label_ptable = [{} for i in range(G.max_node_idx + 1)]
 	added_selfloop = []
 
+	cdef:
+		int node # node iterator for various loops
+		int i = 0 # iteration counter
+		int num_changes # Number of node updates in the current iteration
+		int sum_subsets # Number of neighbors that agree on a label
+		int nghbr # Node iterator for neighbors of a node
+	
+
 	for node in G.nodes_():
 		# The LabelRank paper suggests adding a self-loop to every node to
 		# improve detection quality
@@ -154,7 +164,6 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 			label_ptable[node][nghbr] = initial_prob
 
 	num_changes_table = {}
-	i = 0
 	while True:
 		if max_iterations >= 0 and i == max_iterations:
 			break

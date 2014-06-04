@@ -1,6 +1,6 @@
 from zen.graph cimport Graph
 from zen.graph import ZenException
-import communityset as cs
+cimport communityset as cs
 import community_common as common
 
 cimport numpy as np
@@ -185,7 +185,7 @@ def spectral_modularity(G, **kwargs):
 
 	# Empty graph: no communities
 	if len(G) == 0:
-		return cs.CommunitySet(G, [], 0)
+		return cs.CommunitySet(G, np.empty(0, dtype=np.int_), 0)
 
 	# TODO This whole algorithm is nearly repeated twice - once out of the loop
 	# and once in. Could it be possible to refactor this?
