@@ -1,6 +1,9 @@
 __all__ = [ 'label_propagation' ]
 
 from zen.graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen import ZenException
+
 cimport communityset as cs
 import community_common as common
 
@@ -12,7 +15,7 @@ from cpython cimport bool
 
 # Return a map containing the number of occurences of labels
 # among the neighbors of a node
-cdef count_neighbor_lbls(Graph G, int node, np.ndarray[np.int_t] labels,
+cdef count_neighbor_lbls(G, int node, np.ndarray[np.int_t] labels,
 						bool use_weights):
 
 	# TODO: Can we ditch the dictionary in favor of np arrays here?
@@ -36,7 +39,7 @@ cdef count_neighbor_lbls(Graph G, int node, np.ndarray[np.int_t] labels,
 
 # Checks if the LPA should be stopped given the found label. This is the case 
 # if every node's label is shared by the majority of its neighbors.
-cdef should_stop_lpa(Graph G, np.ndarray[np.int_t] labels, bool use_weights):
+cdef should_stop_lpa(G, np.ndarray[np.int_t] labels, bool use_weights):
 	cdef np.ndarray[np.int_t] nodes = G.nodes_()
 	for node in nodes:
 		neighbor_lbl_counts = count_neighbor_lbls(G, node, labels, use_weights)
@@ -77,6 +80,9 @@ def label_propagation(G, **kwargs):
 
 	"""
 	
+	if type(G) != Graph and type(G) != DiGraph:
+		raise ZenException, 'Unknown graph type: %s' % type(G)
+
 	use_weights = kwargs.pop('use_weights', False)
 	max_iterations = kwargs.pop('max_iterations', None)
 	if max_iterations is None:

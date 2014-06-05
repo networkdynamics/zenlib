@@ -1,4 +1,7 @@
 from zen.graph cimport Graph
+from zen.digraph cimport DiGraph
+from zen import ZenException
+
 cimport communityset as cs
 import community_common as common
 
@@ -135,6 +138,10 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 			IEEE Network Science Workshop, West Point, NY, 2013.
         
 	"""
+
+	if type(G) != Graph and type(G) != DiGraph:
+		raise ZenException, 'Unknown graph type: %s' % type(G)
+
 	max_iterations = kwargs.pop('max_iterations', None)
 	if max_iterations is None:
 		max_iterations = -1

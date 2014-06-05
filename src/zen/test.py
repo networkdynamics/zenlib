@@ -69,5 +69,8 @@ from tests.drawing import *
 # built-in data
 from tests.data import *
 
+# community detection
+from tests.community import *
+
 if __name__ == '__main__':
 	unittest.main()

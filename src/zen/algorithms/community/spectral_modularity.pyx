@@ -169,7 +169,7 @@ def spectral_modularity(G, **kwargs):
 			Proc. National Academy of Sciences, Vol. 103, No. 23.
         
 	"""
-	if G.is_directed():
+	if type(G) != Graph:
 		raise ZenException("This algorithm only supports undirected graphs.")
 	if not G.is_compact():
 		raise ZenException("The graph must be compact.")

@@ -1,4 +1,5 @@
 from zen.graph cimport Graph
+from zen.digraph cimport DiGraph
 from zen import ZenException
 
 cimport numpy as np
@@ -17,7 +18,11 @@ cdef class Community:
 		:py:class:`CommunitySet` it originates from.
 	"""
 
-	def __init__(Community self, int idx, Graph G, set node_set):
+	def __init__(Community self, int idx, G, set node_set):
+
+		if type(G) != Graph and type(G) != DiGraph:
+			raise ZenException, 'Unknown graph type: %s' % type(G)
+
 		self._graph = G
 		self._nodes = node_set
 		self.community_idx = idx
@@ -52,8 +57,12 @@ cdef class CommunitySet:
 	class should not be instantiated directly but rather obtained from the
 	algorithms in the `zen.algorithms.community` package.
 	"""
-	def __init__(CommunitySet self, Graph G, np.ndarray communities, 
+	def __init__(CommunitySet self, G, np.ndarray communities, 
 					int num_communities):
+
+		if type(G) != Graph and type(G) != DiGraph:
+			raise ZenException, 'Unknown graph type: %s' % type(G)
+
 		self._graph = G
 		self._num_communities = num_communities
 
