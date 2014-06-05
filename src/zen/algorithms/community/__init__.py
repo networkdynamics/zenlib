@@ -34,6 +34,7 @@ specifically designed to contain communities (every community being contained in
 
 """
 
+from communityset import *
 from lpa import label_propagation
 from label_rank import label_rank
 from spectral_modularity import spectral_modularity

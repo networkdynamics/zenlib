@@ -2,7 +2,7 @@ __all__ = [ 'label_propagation' ]
 
 from zen.graph cimport Graph
 cimport communityset as cs
-cimport community_common as common
+import community_common as common
 
 import numpy as np
 cimport numpy as np
