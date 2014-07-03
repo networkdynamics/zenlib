@@ -126,9 +126,15 @@ class CommunitySetTestCase(unittest.TestCase):
 class CommunityDetectionTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.algorithms = [ label_propagation, label_rank, spectral_modularity ]
+		self.algorithms = [ label_propagation, 
+							label_rank, 
+							spectral_modularity, 
+							louvain ]
 		#Algorithms that are supposed to work on graphs that were not compacted
-		self.noncontiguous_algorithms = [ label_propagation, label_rank ]
+		self.noncontiguous_algorithms = [	label_propagation, 
+											label_rank, 
+											louvain ]
+
 		self.empty = Graph()
 
 		self.disconnected = Graph()

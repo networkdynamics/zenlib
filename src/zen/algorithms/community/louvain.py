@@ -177,8 +177,40 @@ def create_metagraph(old_graph, communities, assignments, weighted):
 	return G
 
 def louvain(G, **kwargs):
+	"""
+	Detect communities in a network using the Louvain algorithm described in
+	[BLO2008]_. It assigns every node to its own community, and then tries to
+	improve the modularity of the network by moving each node to the communities
+	of its neighbors. Once no more increase is possible, a meta-network is built
+	from these communities (the nodes being the communities themselves and the
+	edges being the sum of the edges between members of these communities) and
+	the process is repeated. This continues until no improvement in modularity
+	is possible.
+
+	**Keyword Args**
+
+		* ``use_weights [=False]`` (bool): whether to take the weights of the
+		network into account.
+
+		* ``num_iterations [=None]`` (int): if not ``None``, the algorithm will
+		stop after this many iterations of building meta-networks. This can be
+		used to examine a community structure at different levels of resolution
+		(i.e. a low number will return fine-grained communities, while a large
+		number will return more general communities).
+
+	**Returns**
+
+		A :py:module:?CommunitySet containing the communities detected in the 
+		graph.
+
+	..[BLO2008]
+		Blondel, V. et al 2008. Fast unfolding of communities in large networks.
+			Journal of Statistical Mechanics, Vol. 2008, Issue 10.
+
+	"""
 
 	weighted = kwargs.pop("use_weights", False)
+	num_iterations = kwargs.pop("num_iterations", None)
 
 	sum_edges = 0.0
 	if weighted:
@@ -193,11 +225,12 @@ def louvain(G, **kwargs):
 
 	improved = optimize_modularity(G, sum_edges, communities, assignments, weighted)
 	
+	count_iter = 1
 	# Initial "meta" values
 	meta_assignments = assignments
 	meta_communities = communities
 	meta = G
-	while improved:
+	while improved and (num_iterations is None or num_iterations < count_iter):
 		meta = create_metagraph(meta, meta_communities, meta_assignments, weighted)
 		weighted = True # The weight in metagraphs is always significant
 
@@ -216,7 +249,8 @@ def louvain(G, **kwargs):
 			meta_idx = meta.node_idx(comm)
 			assignments[nidx] = meta_assignments[meta_idx]
 
+		count_iter += 1
+
 	num_communities = common.normalize_communities(assignments)
-	
 	return cs.CommunitySet(G, np.asarray(assignments), num_communities)
 

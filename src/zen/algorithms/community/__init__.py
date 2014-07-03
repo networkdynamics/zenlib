@@ -13,7 +13,7 @@ rest of the network. The following algorithms are implemented:
 	a single community for the entire network).
 
 	- **LabelRank** is a stabilized (deterministic) version of LPA, which also 
-	adds parameters to control the propagation of the labels. Like LPA, it has a
+	has parameters to control the propagation of the labels. Like LPA, it has a
 	linear runtime in terms of edges. Depending on the given parameters, its 
 	memory requirements may be higher than LPA (since it needs to maintain a 
 	table of labels for each node).
@@ -23,6 +23,12 @@ rest of the network. The following algorithms are implemented:
 	complexity, where n is the number of nodes in the network. This is worse 
 	than linear complexity in terms of edges. The algorithm only supports 
 	undirected, unweighted networks.
+
+	- The **Louvain** algorithm is also a modularity-maximizing algorithm. It
+	assigns each node to its own community then repeatedly moves nodes to their
+	neighbors' communities in order to increase the modularity. Its complexity
+	is linear in terms of nodes.
+	
 
 *Details and citations are available in the documentation for each algorithm.*
 
@@ -38,3 +44,4 @@ from communityset import *
 from lpa import label_propagation
 from label_rank import label_rank
 from spectral_modularity import spectral_modularity
+from louvain import louvain
