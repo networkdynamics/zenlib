@@ -43,7 +43,8 @@ Extension('zen.generating.rgm', ['zen/generating/rgm.pyx'], include_dirs=[numpy_
 Extension('zen.algorithms.community.communityset', ['zen/algorithms/community/communityset.pyx'], include_dirs=[numpy_include_dir]),
 Extension('zen.algorithms.community.lpa', ['zen/algorithms/community/lpa.pyx'], include_dirs=[numpy_include_dir]),
 Extension('zen.algorithms.community.label_rank', ['zen/algorithms/community/label_rank.pyx'], include_dirs=[numpy_include_dir]),
-Extension('zen.algorithms.community.spectral_modularity', ['zen/algorithms/community/spectral_modularity.pyx'], include_dirs=[numpy_include_dir])]
+Extension('zen.algorithms.community.spectral_modularity', ['zen/algorithms/community/spectral_modularity.pyx'], include_dirs=[numpy_include_dir]),
+Extension('zen.algorithms.community.louvain', ['zen/algorithms/community/louvain.pyx'], include_dirs=[numpy_include_dir])]
 
 
 setup(

@@ -1,5 +1,3 @@
-__all__ = [ 'label_propagation' ]
-
 from zen.graph cimport Graph
 from zen.digraph cimport DiGraph
 from zen import ZenException
@@ -50,7 +48,7 @@ cdef should_stop_lpa(G, np.ndarray[np.int_t] labels, bool use_weights):
 
 	return True
 
-def label_propagation(G, **kwargs):
+def lpa(G, **kwargs):
 	"""
 	Detect communities in a graph using the Label-Propagation Algorithm (LPA)
 	described in [RAG2007]_. It assigns a unique label to each node, then 
