@@ -43,6 +43,9 @@ cdef class Community:
 			return False
 		return self.has_node_index(nidx)
 
+	def __iter__(Community self):
+		return iter(self._nodes)
+
 
 	cpdef bool has_node_index(Community self, int nidx):
 		"""
