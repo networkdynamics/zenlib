@@ -8,3 +8,6 @@
 
 # Mac oddities
 .DS_Store
+
+# Build directory
+src/build

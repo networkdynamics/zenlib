@@ -4,7 +4,7 @@ def keys_of_max_value(dct):
 	try:
 		key, val = it.next()
 	except:
-		return None
+		return []
 	max_val = val
 	candidates = [key]
 

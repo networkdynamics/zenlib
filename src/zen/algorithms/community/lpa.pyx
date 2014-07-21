@@ -43,7 +43,7 @@ cdef should_stop_lpa(G, np.ndarray[np.int_t] labels, bool use_weights):
 		neighbor_lbl_counts = count_neighbor_lbls(G, node, labels, use_weights)
 		keys = common.keys_of_max_value(neighbor_lbl_counts)
 
-		if labels[node] not in keys:
+		if len(keys) > 0 and labels[node] not in keys:
 			return False
 
 	return True
@@ -107,7 +107,7 @@ def lpa(G, **kwargs):
 			
 			# Select new label randomly among those that have maximal count
 			keys = common.keys_of_max_value(lbl_counts)
-			if not keys is None:
+			if not len(keys) == 0:
 				label_table[node] = keys[np.random.randint(len(keys))]
 
 		if should_stop_lpa(G, label_table, use_weights):

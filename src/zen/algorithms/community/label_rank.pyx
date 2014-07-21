@@ -59,9 +59,9 @@ def cutoff(G, label_ptable, cutoff):
 				to_delete.append(label)
 		
 		# If we are about to delete all the labels, keep the highest valued
-		if len(to_delete) == len(label_ptable):
+		if len(to_delete) == len(label_ptable[node]):
 			max_lbl = common.keys_of_max_value(label_ptable[node])
-			label_ptable[node] = { max_lbl[0]: label_ptable[max_lbl[0]] }
+			label_ptable[node] = { max_lbl[0]: label_ptable[node][max_lbl[0]] }
 		else: # Otherwise, remove nodes as usual
 			for label in to_delete:
 				del label_ptable[node][label]
