@@ -41,6 +41,7 @@ specifically designed to contain communities (every community being contained in
 """
 
 from communityset import *
+from overlapping_communityset import *
 from lpa import lpa
 from label_rank import label_rank
 from spectral_modularity import spectral_modularity

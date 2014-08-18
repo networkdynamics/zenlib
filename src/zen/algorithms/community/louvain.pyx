@@ -63,7 +63,7 @@ cdef float mod_gain(G, int node, int new_comm, float sum_edges, bool weighted,
 		float denom, a, b, c, d, e
 
 	denom = 2.0 * sum_edges
-	a = (counts[new_comm,0] + sum_incident(G, node, weighted, comms, new_comm)) / denom
+	a = (counts[new_comm,0] + 2.0 * sum_incident(G, node, weighted, comms, new_comm)) / denom
 	b = (counts[new_comm,1] + k) / denom
 	c = counts[new_comm,0] / denom
 	d = counts[new_comm,1] / denom

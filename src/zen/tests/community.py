@@ -1,4 +1,5 @@
 import unittest
+import sys
 
 from zen import *
 from zen.algorithms.community import *
@@ -48,12 +49,12 @@ class CommunitySetTestCase(unittest.TestCase):
 
 		# Test that the nodes belong to the expected community
 		for i in range(self.NUM_NODES):
-			self.assertEqual(i / 2, self.cmnties.community_idx(i))
-			self.assertEqual(i / 2, self.cmnties.community_idx_(i))
+			self.assertEqual(i / 2, self.cmnties.node_community_indices(i)[0])
+			self.assertEqual(i / 2, self.cmnties.node_community_indices_(i)[0])
 
 		# Test that an exception is raised for nodes that are not in the set
-		self.assertRaises(ZenException, self.cmnties.community_idx_, self.NUM_NODES)
-		self.assertRaises(KeyError, self.cmnties.community_idx, self.NUM_NODES)
+		self.assertRaises(ZenException, self.cmnties.node_community_indices_, self.NUM_NODES)
+		self.assertRaises(KeyError, self.cmnties.node_community_indices, self.NUM_NODES)
 
 	def test_share_community(self):
 
@@ -87,8 +88,8 @@ class CommunitySetTestCase(unittest.TestCase):
 	def test_community(self):
 		for i in range(self.NUM_NODES):
 
-			com_idx = self.cmnties.community_(i)
-			com_obj = self.cmnties.community(i)
+			com_idx = self.cmnties.node_communities_(i)[0]
+			com_obj = self.cmnties.node_communities(i)[0]
 
 			# Test that the communities returned contain the objects they are
 			# supposed to
@@ -104,8 +105,8 @@ class CommunitySetTestCase(unittest.TestCase):
 			self.assertTrue(other in com_idx)
 
 			# Test that the given community indices are as expected
-			self.assertEqual(com_idx.community_idx, self.cmnties.community_idx_(i))
-			self.assertEqual(com_obj.community_idx, self.cmnties.community_idx(i))
+			self.assertEqual(com_idx.community_idx, self.cmnties.node_community_indices_(i)[0])
+			self.assertEqual(com_obj.community_idx, self.cmnties.node_community_indices(i)[0])
 
 			# Test that the communities contain only the expected nodes
 			self.assertEqual(len(com_idx), 2)
@@ -126,12 +127,12 @@ class CommunitySetTestCase(unittest.TestCase):
 class CommunityDetectionTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.algorithms = [ label_propagation, 
+		self.algorithms = [ lpa, 
 							label_rank, 
 							spectral_modularity, 
 							louvain ]
 		#Algorithms that are supposed to work on graphs that were not compacted
-		self.noncontiguous_algorithms = [	label_propagation, 
+		self.noncontiguous_algorithms = [	lpa, 
 											label_rank, 
 											louvain ]
 
@@ -155,6 +156,20 @@ class CommunityDetectionTestCase(unittest.TestCase):
 		self.noncontiguous.add_edge(2, 3)
 		self.noncontiguous.rm_node(1)
 
+		self.isolated = Graph()
+		self.isolated.add_node(0)
+		self.isolated.add_node(1)
+		self.isolated.add_node(2)
+		self.isolated.add_edge(1, 2)
+
+		self.selfloop = Graph()
+		self.selfloop.add_node(0)
+		self.selfloop.add_node(1)
+		self.selfloop.add_node(2)
+		self.selfloop.add_edge(0, 1)
+		self.selfloop.add_edge(0, 2)
+		self.selfloop.add_edge(1, 2)
+		self.selfloop.add_edge(0, 0)
 
 	def __algorithm_test_empty(self, algorithm):
 		# Test that no communities are detected on an empty graph
@@ -181,13 +196,36 @@ class CommunityDetectionTestCase(unittest.TestCase):
 			self.fail("Noncontiguous test failed with " + e.__class__.__name__ + 
 						": \"" + str(e) + "\"")
 
+	def __algorithm_test_selfloop(self, algorithm):
+		# Test that the algorithm doesn't fail on graphs containing self-loops		
+		try:
+			algorithm(self.selfloop)
+		except Exception as e:
+			self.fail("Self-loop test failed with " + e.__class__.__name__ + 
+						": \"" + str(e) + "\"")
+
+	def __algorithm_test_isolated(self, algorithm):
+		# Test that the algorithm doesn't fail on graphs containing isolated nodes
+		try:
+			algorithm(self.isolated)
+		except Exception as e:
+			self.fail("Isolated node test failed with " + e.__class__.__name__ + 
+						": \"" + str(e) + "\"")
+
 	def test_sanity_algorithms(self):
 		# Some simple graphs with obvious answers
 		for alg in self.algorithms:
 
-			self.__algorithm_test_empty(alg)
-			self.__algorithm_test_disconnected(alg)
-			self.__algorithm_test_k3(alg)
+			try:
+				self.__algorithm_test_empty(alg)
+				self.__algorithm_test_disconnected(alg)
+				self.__algorithm_test_k3(alg)
+				self.__algorithm_test_selfloop(alg)
+				self.__algorithm_test_isolated(alg)
+			except Exception as e:
+				e.args = () + (e.args[0] + " (in algorithm " + alg.__name__ + ")",)
+				e.args += e.args[1:]
+				raise
 
 		for alg in self.noncontiguous_algorithms:
 			self.__algorithm_test_noncontiguous_nidc(alg)

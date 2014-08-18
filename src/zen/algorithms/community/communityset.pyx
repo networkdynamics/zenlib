@@ -18,7 +18,7 @@ cdef class Community:
 		:py:class:`CommunitySet` it originates from.
 	"""
 
-	def __init__(Community self, int idx, G, set node_set):
+	def __init__(Community self, int idx, G, set node_set, dict probs=None):
 
 		if type(G) != Graph and type(G) != DiGraph:
 			raise ZenException, 'Unknown graph type: %s' % type(G)
@@ -26,6 +26,7 @@ cdef class Community:
 		self._graph = G
 		self._nodes = node_set
 		self.community_idx = idx
+		self._probabilities = probs
 
 	def __len__(Community self):
 		return len(self._nodes)
@@ -44,8 +45,30 @@ cdef class Community:
 		return self.has_node_index(nidx)
 
 	def __iter__(Community self):
+		"""
+		Iterate over the nodes of this community
+		"""
 		return iter(self._nodes)
 
+	def assoc_prob_(Community self, int nidx):
+		"""
+		Returns the probability that the given node index belongs to this
+		community, as given by the community detection algorithm.
+		"""
+		return 1.0 if self._probabilities is None else self._probabilities[nidx]
+	
+	def assoc_prob(Community self, nobj):
+		"""
+		Returns the probability that the given node object belongs to this
+		community, as given by the community detection algorithm. If the node
+		object does not belong to the graph, 0 will be returned.
+		"""
+		cdef int nidx
+		try:
+			nidx = self._graph.node_idx(nobj)
+		except KeyError:
+			return 0.0
+		return self.assoc_prob_(nidx)
 
 	cpdef bool has_node_index(Community self, int nidx):
 		"""
@@ -123,36 +146,36 @@ cdef class CommunitySet:
 		for cidx in range(len(self)):
 			yield self.__build_community(cidx)
 
-	cpdef Community community_(CommunitySet self, int nidx):
+	cpdef list node_communities_(CommunitySet self, int nidx):
 		"""
 		Return the community associated with node having index ``nidx``.
 		"""
 		self.__raise_if_invalid_nidx(nidx)
-		return self.__build_community(self._communities[nidx])
+		return [self.__build_community(self._communities[nidx])]
 
-	def community(CommunitySet self, nobj):
+	def node_communities(CommunitySet self, nobj):
 		"""
 		Return the community associated with the node having object identifier
 		``nobj``.
 		"""
 		cdef int nidx = self._graph.node_idx(nobj)
-		return self.community_(nidx)
+		return self.node_communities_(nidx)
 
-	cpdef int community_idx_(CommunitySet self, int nidx) except -1:
+	cpdef list node_community_indices_(CommunitySet self, int nidx):
 		"""
 		Return the index of the community associated with node having index 
 		``nidx``.
 		"""
 		self.__raise_if_invalid_nidx(nidx)
-		return self._communities[nidx]	
+		return [self._communities[nidx]]
 
-	def community_idx(CommunitySet self, nobj):
+	def node_community_indices(CommunitySet self, nobj):
 		"""
 		Return the community index associated with the node having object 
 		identifier ``nobj``.
 		"""
 		cdef int nidx = self._graph.node_idx(nobj)
-		return self.community_idx_(nidx)
+		return self.node_community_indices_(nidx)
 
 	cpdef bool share_community_(CommunitySet self, int u_idx, int v_idx):
 		"""
@@ -161,7 +184,11 @@ cdef class CommunitySet:
 		"""
 		self.__raise_if_invalid_nidx(u_idx)
 		self.__raise_if_invalid_nidx(v_idx)
-		return self.community_idx_(u_idx) == self.community_idx_(v_idx)
+
+		# Written in this way to prevent a cast error between np.bool and bool
+		if self.node_community_indices_(u_idx)[0] == self.node_community_indices_(v_idx)[0]:
+			return True
+		return False
 
 	def share_community(CommunitySet self, u_obj, v_obj):
 		"""
@@ -175,7 +202,7 @@ cdef class CommunitySet:
 			v_idx = self._graph.node_idx(v_obj)
 		except:
 			return False
-		return self.community_idx(u_idx) == self.community_idx(v_idx)
+		return self.share_community_(u_idx, v_idx)
 
 	def __str__(CommunitySet self):
 		return self._communities.__str__()
