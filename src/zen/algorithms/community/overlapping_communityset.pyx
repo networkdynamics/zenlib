@@ -66,7 +66,7 @@ cdef class OverlappingCommunitySet:
 
 	cpdef list node_communities_(OverlappingCommunitySet self, int nidx):
 		"""
-		Return the community associated with node having index ``nidx``.
+		Return the communities associated with node having index ``nidx``.
 		"""
 		self.__raise_if_invalid_nidx(nidx)
 		comms = []
@@ -77,7 +77,7 @@ cdef class OverlappingCommunitySet:
 
 	def node_communities(OverlappingCommunitySet self, nobj):
 		"""
-		Return the community associated with the node having object identifier
+		Return the communities associated with the node having object identifier
 		``nobj``.
 		"""
 		cdef int nidx = self._graph.node_idx(nobj)
@@ -85,7 +85,7 @@ cdef class OverlappingCommunitySet:
 
 	cpdef list node_community_indices_(OverlappingCommunitySet self, int nidx):
 		"""
-		Return the index of the community associated with node having index 
+		Return the index of the communities associated with node having index 
 		``nidx``.
 		"""
 		self.__raise_if_invalid_nidx(nidx)
@@ -93,7 +93,7 @@ cdef class OverlappingCommunitySet:
 
 	def node_community_indices(OverlappingCommunitySet self, nobj):
 		"""
-		Return the community index associated with the node having object 
+		Return the community indices associated with the node having object 
 		identifier ``nobj``.
 		"""
 		cdef int nidx = self._graph.node_idx(nobj)

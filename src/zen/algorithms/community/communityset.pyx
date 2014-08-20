@@ -55,7 +55,10 @@ cdef class Community:
 		Returns the probability that the given node index belongs to this
 		community, as given by the community detection algorithm.
 		"""
-		return 1.0 if self._probabilities is None else self._probabilities[nidx]
+		if self._probabilities is None:
+			return 1.0 if self.has_node_index(nidx) else 0.0
+		
+		return self._probabilities[nidx] if nidx in self._probabilities else 0.0
 	
 	def assoc_prob(Community self, nobj):
 		"""
