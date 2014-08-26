@@ -263,7 +263,8 @@ class CommunityDetectionTestCase(unittest.TestCase):
 		#Algorithms that are supposed to work on graphs that were not compacted
 		self.noncontiguous_algorithms = [	lpa, 
 											label_rank, 
-											louvain ]
+											louvain,
+											slpa ]
 
 		self.empty = Graph()
 
