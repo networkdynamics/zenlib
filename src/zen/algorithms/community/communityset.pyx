@@ -141,6 +141,12 @@ cdef class CommunitySet:
 		"""
 		return self.__build_all_communities()
 
+	def community(CommunitySet self, int cidx):
+		"""
+		Return the community with index ``cidx``
+		"""
+		return self.__build_community(cidx)
+
 	def __iter__(CommunitySet self):
 		"""
 		Iterate through communities in this set.
