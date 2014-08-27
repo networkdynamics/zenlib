@@ -161,6 +161,9 @@ def spectral_modularity(G, **kwargs):
 		communities should be of higher quality, but this comes at the expense
 		of additional processing time.
 
+	** Returns **
+	# TODO
+
 	** Raises **
 		``ZenException``: If the graph is directed, weighted or not compact.
         
@@ -181,7 +184,9 @@ def spectral_modularity(G, **kwargs):
 		if edges[i,1] != 1:
 			raise ZenException("This algorithm only supports unweighted graphs.")
 
-	fine_tune = kwargs.pop("fine_tune", False);
+	fine_tune = kwargs.pop("fine_tune", False)
+
+	# TODO: Check for extra kwargs
 
 	# Empty graph: no communities
 	if len(G) == 0:
@@ -256,4 +261,5 @@ def spectral_modularity(G, **kwargs):
 		max_cidx += 2
 
 	num_communities = common.normalize_communities(community_vector)
+
 	return cs.CommunitySet(G, community_vector, num_communities)

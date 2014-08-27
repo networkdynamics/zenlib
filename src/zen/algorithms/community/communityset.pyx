@@ -47,8 +47,16 @@ cdef class Community:
 	def __iter__(Community self):
 		"""
 		Iterate over the nodes of this community
+
+		TODO: This should iterate over node objects
 		"""
 		return iter(self._nodes)
+
+	def iter_(Community self):
+		"""
+		TODO: This should iterate over node indexes
+		"""
+		raise NotImplemented
 
 	def assoc_prob_(Community self, int nidx):
 		"""
@@ -138,18 +146,24 @@ cdef class CommunitySet:
 	def communities(CommunitySet self):
 		"""
 		Return a list of the communities contained in this community set.
+
+		TODO: This should only build the communities on the first call.  Cached otherwise.
 		"""
 		return self.__build_all_communities()
 
 	def community(CommunitySet self, int cidx):
 		"""
 		Return the community with index ``cidx``
+
+		TODO: Build the community only once (and don't build all other communities).  Cached otherwise.
 		"""
 		return self.__build_community(cidx)
 
 	def __iter__(CommunitySet self):
 		"""
 		Iterate through communities in this set.
+
+		TODO: See self.communities() method changes.  Cache when possible.
 		"""
 		cdef int cidx
 		for cidx in range(len(self)):
@@ -158,6 +172,8 @@ cdef class CommunitySet:
 	cpdef list node_communities_(CommunitySet self, int nidx):
 		"""
 		Return the community associated with node having index ``nidx``.
+
+		TODO: Cache when possible.
 		"""
 		self.__raise_if_invalid_nidx(nidx)
 		return [self.__build_community(self._communities[nidx])]
@@ -169,6 +185,10 @@ cdef class CommunitySet:
 		"""
 		cdef int nidx = self._graph.node_idx(nobj)
 		return self.node_communities_(nidx)
+
+	"""
+	TODO: Implement node_community, node_community_, node_community_index, and node_community_index_
+	"""
 
 	cpdef list node_community_indices_(CommunitySet self, int nidx):
 		"""
@@ -190,6 +210,8 @@ cdef class CommunitySet:
 		"""
 		Return ``True`` if nodes u and v (node indices) are in the same 
 		community.
+
+		TODO: check_sharing_
 		"""
 		self.__raise_if_invalid_nidx(u_idx)
 		self.__raise_if_invalid_nidx(v_idx)
@@ -203,6 +225,8 @@ cdef class CommunitySet:
 		"""
 		Return ``True`` if nodes u and v (node objects) are in the same 
 		community.
+
+		TODO: Rename to check_sharing
 		"""
 		cdef int u_idx
 		cdef int v_idx

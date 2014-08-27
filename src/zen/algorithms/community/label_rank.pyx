@@ -91,7 +91,10 @@ def create_community_list(G, label_ptable):
 def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 	"""
 	Detect communities in a graph using the LabelRank algorithm described in
-	[XIE2013]_. It assigns a table to each node, containing the probabilities 
+	[XIE2013]_. # TODO: add a brief word about very basic idea. 
+	
+	# TODO: Make an "implementation" section	
+	It assigns a table to each node, containing the probabilities 
 	that this node has a certain label. At each step, this table is propagated 
 	to the node's neighbors. Then, it is inflated (raised to a certain power, 
 	which increases the differences between high and low probabilities). Entries
@@ -126,7 +129,7 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 			completion.
 
 	**Returns**
-		A :py:module:?CommunitySet containing the communities detected in the 
+		A :py:module:CommunitySet containing the communities detected in the 
 		graph. This is done by taking the label with maximal probability and 
 		assigning it to the node (in case of a tie, the first maximal label in 
 		the table is used). Then, the communities are formed by groups of nodes 
@@ -147,6 +150,8 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 		max_iterations = -1
 
 	max_num_changes = kwargs.pop('max_num_changes', 5)
+
+	# TODO: Add check for extra kwargs
 	
 	label_ptable = [{} for i in range(G.max_node_idx + 1)]
 	added_selfloop = []
@@ -224,4 +229,5 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 	
 	communities = create_community_list(G, label_ptable)
 	num_communities = common.normalize_communities(communities)
+
 	return cs.CommunitySet(G, communities, num_communities)

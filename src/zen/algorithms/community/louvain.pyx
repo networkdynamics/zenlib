@@ -216,7 +216,7 @@ def louvain(G, **kwargs):
 
 	**Returns**
 
-		A :py:module:?CommunitySet containing the communities detected in the 
+		A :py:module:CommunitySet containing the communities detected in the 
 		graph.
 
 	..[BLO2008]
@@ -243,6 +243,8 @@ def louvain(G, **kwargs):
 
 	weighted = kwargs.pop("use_weights", False)
 	num_iterations_arg = kwargs.pop("num_iterations", None)
+
+	# TODO: Make sure there aren't any extra args.
 
 	if num_iterations_arg is not None:
 		num_iterations = num_iterations_arg
@@ -293,5 +295,6 @@ def louvain(G, **kwargs):
 		count_iter += 1
 
 	num_communities = common.normalize_communities(comms)
+
 	return cs.CommunitySet(G, comms, num_communities)
 

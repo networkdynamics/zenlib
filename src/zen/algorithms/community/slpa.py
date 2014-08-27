@@ -91,6 +91,7 @@ def build_community_set(G, memories):
 										len(communities), probs)
 
 def slpa(G, num_iterations=25, cutoff=0.1):
+	# TODO: Fix up and comment
 
 	rnge = G.max_node_idx + 1
 

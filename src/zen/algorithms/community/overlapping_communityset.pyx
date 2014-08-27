@@ -8,6 +8,8 @@ cimport numpy as np
 
 from cpython cimport bool
 
+# TODO: Cache constructed communities whenever possible
+
 cdef class OverlappingCommunitySet:
 	"""
 	A set of overlapping communities detected in a :py:class:`Graph`. This 
@@ -108,6 +110,8 @@ cdef class OverlappingCommunitySet:
 	cpdef bool share_community_(OverlappingCommunitySet self, int u_idx, int v_idx):
 		"""
 		Return ``True`` if nodes u and v (node indices) share a community
+
+		TODO: Rename to check_sharing
 		"""
 		self.__raise_if_invalid_nidx(u_idx)
 		self.__raise_if_invalid_nidx(v_idx)
@@ -119,6 +123,8 @@ cdef class OverlappingCommunitySet:
 	def share_community(OverlappingCommunitySet self, u_obj, v_obj):
 		"""
 		Return ``True`` if nodes u and v (node objects) share a community
+
+		TODO: Rename to check_sharing
 		"""
 		cdef int u_idx
 		cdef int v_idx
@@ -129,3 +135,8 @@ cdef class OverlappingCommunitySet:
 			return False
 		return self.share_community_(u_idx, v_idx)
 	
+	# TODO: Add a filter(self,threshold) method that assigns zero assoc. probability to 
+	# node assignments with an association below the threshold.
+
+	# TODO: Add a set_threshold(self,threshold) method that ignores any associations =< the
+	# threshold.

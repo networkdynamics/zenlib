@@ -86,6 +86,8 @@ def lpa(G, **kwargs):
 	if max_iterations is None:
 		max_iterations = -1
 
+	# TODO: Check for extra kwargs
+
 	cdef int i = 0
 
 	cdef np.ndarray[np.int_t] nodes = G.nodes_()
@@ -116,4 +118,5 @@ def lpa(G, **kwargs):
 		i += 1
 
 	num_communities = common.normalize_communities(label_table)
+
 	return cs.CommunitySet(G, label_table, num_communities)

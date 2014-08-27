@@ -1,4 +1,6 @@
 """
+# TODO: Wherever you mention a class, actually provide the link (rather than just naming it)
+
 The ``zen.algorithms.community`` package provides functions for detecting 
 communities of nodes present within a network. Intuitively, a community is 
 defined as a group of nodes which are more connected to each other than to the 
@@ -30,13 +32,13 @@ rest of the network. The following algorithms are implemented:
 	is linear in terms of nodes.
 	
 
-*Details and citations are available in the documentation for each algorithm.*
+== Representing and working with communities ==
+
+# TODO: Talk more extensively about the CommunitySet class and approach to using them.
 
 All community detection algorithms return a ``CommunitySet``, which is an object
 specifically designed to contain communities (every community being contained in a 
 ``Community`` object). Please see the class documentation for more details.
-
-*This package is currently under active development.*
 
 """
 
