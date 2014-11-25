@@ -13,7 +13,7 @@ def duplication_divergence_iky(n, s, **kwargs):
 	**Args**:
 	
 		* ``n`` (int): the target size of the network.
-		* ``s`` (int): the probability that a link connected to a newly duplicated node will exist
+		* ``s`` (float): the probability that a link connected to a newly duplicated node will exist
 	
 	**KwArgs**:
 		* ``directed [=False]`` (boolean): whether to build the graph directed.  If ``True``, then the ``m`` edges created
