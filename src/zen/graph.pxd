@@ -70,6 +70,8 @@ cdef class Graph:
 	
 	cpdef add_node_x(Graph self,int node_idx,int edge_list_capacity,nobj,data)
 	
+	cpdef is_valid_node_idx(Graph self, int nidx)
+
 	cpdef int node_idx(Graph self,nobj) except -1
 	
 	cpdef node_object(Graph self,int nidx)
