@@ -59,7 +59,7 @@ cdef class OverlappingCommunitySet:
 			lst.append(self.__build_community(cidx))
 		return lst
 
-	def community(CommunitySet self, int cidx):
+	def community(OverlappingCommunitySet self, int cidx):
 		"""
 		Return the community with index ``cidx``
 		"""

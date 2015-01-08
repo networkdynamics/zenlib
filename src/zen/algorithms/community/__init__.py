@@ -21,7 +21,7 @@ rest of the network. The following algorithms are implemented:
 	table of labels for each node).
 
 	- The **spectral modularity** approach maximizes the modularity of the 
-	network using properties of its adjacency matrix. It has a O(n²log n) 
+	network using properties of its adjacency matrix. It has a O(n^2 log n) 
 	complexity, where n is the number of nodes in the network. This is worse 
 	than linear complexity in terms of edges. The algorithm only supports 
 	undirected, unweighted networks.
