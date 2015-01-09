@@ -71,6 +71,7 @@ from tests.data import *
 
 # community detection
 from tests.community import *
+from tests.communityset import *
 
 if __name__ == '__main__':
 	unittest.main()

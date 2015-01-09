@@ -4,7 +4,7 @@ from numpy cimport ndarray
 from cpython cimport bool
 
 cdef class Community:
-	cdef Graph _graph
+	cdef object _graph
 	cdef set _nodes
 	cdef readonly int community_idx
 	cdef dict _probabilities
@@ -12,7 +12,7 @@ cdef class Community:
 	cpdef bool has_node_index(Community self, int nidx)
 
 cdef class CommunitySet:
-	cdef Graph _graph
+	cdef object _graph
 	cdef int _num_communities
 	cdef ndarray _communities
 
