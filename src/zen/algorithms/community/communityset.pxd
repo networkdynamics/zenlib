@@ -9,7 +9,7 @@ cdef class Community:
 	cdef readonly int community_idx
 	cdef dict _probabilities
 
-	cpdef bool has_node_index(Community self, int nidx)
+	cpdef bool has_node_(Community self, int nidx)
 
 cdef class CommunitySet:
 	cdef object _graph
@@ -19,7 +19,7 @@ cdef class CommunitySet:
 	cdef void __raise_if_invalid_nidx(CommunitySet self, int nidx) except *
 	cdef Community __build_community(CommunitySet self, int cidx)
 	cdef list __build_all_communities(CommunitySet self)
-	cpdef list node_communities_(CommunitySet self, int nidx)
-	cpdef list node_community_indices_(CommunitySet self, int nidx)
-	cpdef bool share_community_(CommunitySet self, int u_idx, int v_idx)
+	cpdef node_community_(CommunitySet self, int nidx)
+	cpdef int node_community_index_(CommunitySet self, int nidx)
+	cpdef bool check_sharing_(CommunitySet self, int u_idx, int v_idx)
 
