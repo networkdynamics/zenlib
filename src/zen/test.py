@@ -57,9 +57,6 @@ from tests.fiboheap import *
 # modularity
 from tests.modularity import *
 
-# label propagation for community detection
-#from tests.label_propagation import *
-
 #layout
 from tests.layout import *
 
@@ -72,6 +69,7 @@ from tests.data import *
 # community detection
 from tests.community import *
 from tests.communityset import *
+from tests.lpa import *
 
 if __name__ == '__main__':
 	unittest.main()
