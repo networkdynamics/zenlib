@@ -97,34 +97,35 @@ def _colormapper(x, a=0, b=1, cmap=None):
 	hex_ = matplotlib.colors.rgb2hex(rgba)
 	return hex_
 
-def _triangle_coordinates(i, j, alt=False):
+def _triangle_coordinates(i, j, steps, alt=False):
 	"""Returns the ordered coordinates of the triangle vertices for i + j + k = N. Alt refers to the averaged triangles; the ordinary triangles are those with base parallel to the axis on the lower end (rather than the upper end)"""
+	steps = float(steps)
 	# N = i + j + k
 	if not alt:
-		return [(i/2. + j, i * _SQRT3OVER2), (i/2. + j + 1, i * _SQRT3OVER2), (i/2. + j + 0.5, (i + 1) * _SQRT3OVER2)]
+		return [((i/2. + j)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 1)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 0.5)/steps, (i + 1) * _SQRT3OVER2/steps)]
 	else:
 		# Alt refers to the inner triangles not covered by the default case
-		return [(i/2. + j + 1, i * _SQRT3OVER2), (i/2. + j + 1.5, (i + 1) * _SQRT3OVER2), (i/2. + j + 0.5, (i + 1) * _SQRT3OVER2)]
+		return [((i/2. + j + 1)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 1.5)/steps, (i + 1) * _SQRT3OVER2/steps), ((i/2. + j + 0.5)/steps, (i + 1) * _SQRT3OVER2/steps)]
 
 def _heatmap(d, steps, cmap_name=None):
 	"""Plots counts in the dictionary d as a heatmap. d is a dictionary of (i,j) --> c pairs where N = i + j + k."""
 	if not cmap_name:
-		cmap = cmap = _white2colorcmap('#000000')
+		cmap =  _white2colorcmap('#0000FF')
 	else:
 		cmap = pyplot.get_cmap(cmap_name)
 	# Colorbar hack -- make fake figure and throw it away.
 	Z = [[0,0],[0,0]]
 	levels = [v for v in d.values()]
 	levels.sort()
-	CS3 = pyplot.contourf(Z, levels, cmap=cmap)
+	#CS3 = pyplot.contourf(Z, levels, cmap=cmap)
 	# Plot polygons
-	pyplot.clf()
+	#pyplot.clf()
 	a = min(d.values())
 	b = max(d.values())
 	# Color data triangles.
 	for k, v in d.items():
 		i, j = k
-		vertices = _triangle_coordinates(i,j)
+		vertices = _triangle_coordinates(i,j,steps)
 		x,y = _unzip(vertices)
 		color = _colormapper(d[i,j],a,b,cmap=cmap)
 		pyplot.fill(x, y, facecolor=color, edgecolor=color)
@@ -134,14 +135,14 @@ def _heatmap(d, steps, cmap_name=None):
 			try:
 				alt_color = (d[i,j] + d[i, j + 1] + d[i + 1, j])/3.
 				color = _colormapper(alt_color, a, b, cmap=cmap)
-				vertices = _triangle_coordinates(i,j, alt=True)
+				vertices = _triangle_coordinates(i,j,steps, alt=True)
 				x,y = _unzip(vertices)
 				pyplot.fill(x, y, facecolor=color, edgecolor=color)
 			except KeyError:
 				# Allow for some portions to have no color, such as the boundary
 				pass
 	#Colorbar hack continued.
-	pyplot.colorbar(CS3)
+	#pyplot.colorbar(CS3)
 
 def _white2colorcmap(arg):
 	CC = matplotlib.colors.ColorConverter()
@@ -194,7 +195,7 @@ def profile_heatmap(items, **kwargs):
 	
 	return _plot_profiles(	items,
 							heatmap = True,
-							num_steps = 15,
+							num_steps = num_steps,
 							cmap = cmap)
 	
 def profile_plot(items,**kwargs):
@@ -333,7 +334,8 @@ def _plot_profiles(items, **kwargs): # heatmap=False, color='b', marker='o', mar
 		pyplot.axis('equal')
 		pyplot.xticks([])
 		pyplot.yticks([])
-		_draw_boundary(scale=num_steps)
+		_draw_boundary()#scale=num_steps)
+		pyplot.gca().set_frame_on(False)
 		return d
 	else:
 		for p in pts:
@@ -343,6 +345,7 @@ def _plot_profiles(items, **kwargs): # heatmap=False, color='b', marker='o', mar
 		pyplot.xticks([])
 		pyplot.yticks([])
 		_draw_boundary()
+		pyplot.gca().set_frame_on(False)
 		return None
 
 def plot_aggregate_heatmap_profiles(items, color='b', num_steps=15, cmap=None):
@@ -369,5 +372,6 @@ def plot_aggregate_heatmap_profiles(items, color='b', num_steps=15, cmap=None):
 	pyplot.axis('equal')
 	pyplot.xticks([])
 	pyplot.yticks([])
-	_draw_boundary(scale=num_steps)
+	_draw_boundary()#scale=num_steps)
+	pyplot.gca().set_frame_on(False)
 	return D
