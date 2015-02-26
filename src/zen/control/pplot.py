@@ -19,7 +19,7 @@ from types import TupleType, ListType
 from zen import DiGraph
 from zen.control import profile as control_profile
 
-__all__ = ['profile_plot','profile_heatmap']
+__all__ = ['profile_plot','profile_heatmap','profile_heatmap_weighted']
 
 ## Constants ##
 
@@ -97,15 +97,23 @@ def _colormapper(x, a=0, b=1, cmap=None):
 	hex_ = matplotlib.colors.rgb2hex(rgba)
 	return hex_
 
-def _triangle_coordinates(i, j, steps, alt=False):
-	"""Returns the ordered coordinates of the triangle vertices for i + j + k = N. Alt refers to the averaged triangles; the ordinary triangles are those with base parallel to the axis on the lower end (rather than the upper end)"""
+def _triangle_coordinates(i, j, steps):
+	"""Returns the ordered coordinates of the triangle vertices for i + j + k = 1."""
 	steps = float(steps)
-	# N = i + j + k
-	if not alt:
-		return [((i/2. + j)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 1)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 0.5)/steps, (i + 1) * _SQRT3OVER2/steps)]
-	else:
-		# Alt refers to the inner triangles not covered by the default case
-		return [((i/2. + j + 1)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 1.5)/steps, (i + 1) * _SQRT3OVER2/steps), ((i/2. + j + 0.5)/steps, (i + 1) * _SQRT3OVER2/steps)]
+	if j % 2 == 0: # j is even, triangle with point at top
+		return [ ( (i+j+1)/steps/2., (i+1)/steps*_SQRT3OVER2 ), ( (i+j)/steps/2., i/steps*_SQRT3OVER2 ), ( (i+j+2)/steps/2., i/steps*_SQRT3OVER2 ) ]
+	else: # j is odd, triangle with point at bottom
+		return [ ( (i+j+1)/steps/2., i/steps*_SQRT3OVER2 ), ( (i+j)/steps/2., (i+1)/steps*_SQRT3OVER2 ), ( (i+j+2)/steps/2., (i+1)/steps*_SQRT3OVER2 ) ]
+
+# def _triangle_coordinates(i, j, steps, alt=False):
+# 	"""Returns the ordered coordinates of the triangle vertices for i + j + k = N. Alt refers to the averaged triangles; the ordinary triangles are those with base parallel to the axis on the lower end (rather than the upper end)"""
+# 	steps = float(steps)
+# 	# N = i + j + k
+# 	if not alt:
+# 		return [((i/2. + j)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 1)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 0.5)/steps, (i + 1) * _SQRT3OVER2/steps)]
+# 	else:
+# 		# Alt refers to the inner triangles not covered by the default case
+# 		return [((i/2. + j + 1)/steps, i * _SQRT3OVER2/steps), ((i/2. + j + 1.5)/steps, (i + 1) * _SQRT3OVER2/steps), ((i/2. + j + 0.5)/steps, (i + 1) * _SQRT3OVER2/steps)]
 
 def _heatmap(d, steps, cmap_name=None):
 	"""Plots counts in the dictionary d as a heatmap. d is a dictionary of (i,j) --> c pairs where N = i + j + k."""
@@ -114,9 +122,9 @@ def _heatmap(d, steps, cmap_name=None):
 	else:
 		cmap = pyplot.get_cmap(cmap_name)
 	# Colorbar hack -- make fake figure and throw it away.
-	Z = [[0,0],[0,0]]
-	levels = [v for v in d.values()]
-	levels.sort()
+	#Z = [[0,0],[0,0]]
+	#levels = [v for v in d.values()]
+	#levels.sort()
 	#CS3 = pyplot.contourf(Z, levels, cmap=cmap)
 	# Plot polygons
 	#pyplot.clf()
@@ -128,19 +136,19 @@ def _heatmap(d, steps, cmap_name=None):
 		vertices = _triangle_coordinates(i,j,steps)
 		x,y = _unzip(vertices)
 		color = _colormapper(d[i,j],a,b,cmap=cmap)
-		pyplot.fill(x, y, facecolor=color, edgecolor=color)
+		pyplot.fill(x, y, facecolor=color, edgecolor='none')
 	# Color smoothing triangles.
-	for i in range(steps+1):
-		for j in range(steps - i):
-			try:
-				alt_color = (d[i,j] + d[i, j + 1] + d[i + 1, j])/3.
-				color = _colormapper(alt_color, a, b, cmap=cmap)
-				vertices = _triangle_coordinates(i,j,steps, alt=True)
-				x,y = _unzip(vertices)
-				pyplot.fill(x, y, facecolor=color, edgecolor=color)
-			except KeyError:
-				# Allow for some portions to have no color, such as the boundary
-				pass
+	#for i in range(steps+1):
+	#	for j in range(steps - i):
+	#		try:
+	#			alt_color = (d[i,j] + d[i, j + 1] + d[i + 1, j])/3.
+	#			color = _colormapper(alt_color, a, b, cmap=cmap)
+	#			vertices = _triangle_coordinates(i,j,steps, alt=True)
+	#			x,y = _unzip(vertices)
+	#			pyplot.fill(x, y, facecolor=color, edgecolor=color)
+	#		except KeyError:
+	#			# Allow for some portions to have no color, such as the boundary
+	#			pass
 	#Colorbar hack continued.
 	#pyplot.colorbar(CS3)
 
@@ -152,19 +160,50 @@ def _white2colorcmap(arg):
 			  'blue': ((0.0,1.0,1.0),(1.0,b,b))}
 	return matplotlib.colors.LinearSegmentedColormap('mycustom',cmap,256)
 
-def _heatmap_scatter(pts, steps, cmap_name=None):
-	h = [[0]*steps for x in xrange(steps)]
-	sz = 1.0/steps
-	for (x,y,z) in pts:
-		if x==1: x=1-sz/2
-		if y==1: y=1-sz/2
-		h[ int(math.trunc(x/sz)) ][ int(math.trunc(y/sz)) ] += 1
-	
+def _heatmap_scatter(pts, steps):
 	d = dict()
-	for x1, x2, x3 in _simplex_points(steps=steps):
-		d[(x1, x2)] = h[x3][x2]
+	for i in range(steps):
+		for j in range(2*(steps-i)-1):
+			d[(i,j)] = 0
 	
-	_heatmap(d, steps, cmap_name)
+	for (x,y,z) in pts:
+		# find projection into the simplex
+		(xt,yt) = _project((x,y,z))
+		# print '(%1.2f, %1.2f, %1.2f) projects to (%1.2f, %1.2f)' % (x,y,z,xt,yt)
+		# vertical index
+		i = math.trunc((yt/_SQRT3OVER2)*steps)
+		# the very tip of the triangle should go in the top subtriangle
+		if i == steps:
+			i = steps-1
+		# print 'vertical index i = %i' % i
+		
+		if i == steps-1:
+			j = 0
+		else:
+			# horizontal index
+			k = math.trunc((xt - float(i)*(1./steps/2.))*steps*2) # 'divide' by half the width of a subtriangle
+			# print 'horizontal half widths: k = %i' % k
+			if k == 0:
+				j = k
+			elif k >= 2*(steps-i)-1:
+				j = 2*(steps-i)-2
+			else:
+				xtt = ( xt - float(k)*(1./steps/2.) )/(1./steps/2.) # find the part of xt to the right of the k-th triangle half-width, normalized
+				ytt = ( yt - float(i)*(_SQRT3OVER2/steps) )/(_SQRT3OVER2/steps)  # find height within the i-th row, normalized
+				# print 'point in normalized area: (%1.2f, %1.2f)' % (xtt,ytt)
+				if k % 2 == 1:  # k is odd, so triangle boundary goes down-right
+					if ytt <= -xtt + 1: # point is left of the triangle boundary
+						j = k-1
+					else: # point is right of the triangle boundary
+						j = k
+				else:  # k is even, so triangle boundary goes up-right
+					if ytt <= xtt: # point is left of the triangle boundary
+						j = k-1
+					else: # point is right of the triangle boundary
+						j = k
+		# print 'dictionary index: (%i, %i)' % (i,j)
+		d[(i,j)] += 1
+	
 	return d
 
 def profile_heatmap(items, **kwargs):
@@ -180,7 +219,8 @@ def profile_heatmap(items, **kwargs):
 	
 		* ``num_steps [=15]`` (``int``). The resolution of the heatmap mesh.
 		* ``cmap [=None]`` (``colormap``). The colormap that will be used when producing the heatmap.
-		
+		* ``color [='b']`` (any matplotlib-supported color). Specify a color instead of a colormap for ease.
+	
 	**Returns**:
 		A dictionary with boundaries for the individual regions being rendered in the heatmap.
 		
@@ -192,11 +232,13 @@ def profile_heatmap(items, **kwargs):
 		
 	num_steps = kwargs.pop('num_steps',15)
 	cmap = kwargs.pop('cmap',None)
+	color = kwargs.pop('color','b')
 	
 	return _plot_profiles(	items,
 							heatmap = True,
 							num_steps = num_steps,
-							cmap = cmap)
+							cmap = cmap,
+							color = color)
 	
 def profile_plot(items,**kwargs):
 	"""
@@ -308,6 +350,9 @@ def _plot_profiles(items, **kwargs): # heatmap=False, color='b', marker='o', mar
 	
 	# color map (heatmap only)
 	cmap = kwargs.pop('cmap',None)
+
+	# actually make heatmap plot or not
+	plot_heatmap = kwargs.pop('plot_heatmap',True)
 	
 	#####
 	# Collect the control profiles to plot
@@ -329,13 +374,15 @@ def _plot_profiles(items, **kwargs): # heatmap=False, color='b', marker='o', mar
 	if heatmap:
 		if cmap is None:
 			cmap = _white2colorcmap(color)
-		d = _heatmap_scatter(pts,num_steps,cmap)
+		d = _heatmap_scatter(pts,num_steps)
 		
-		pyplot.axis('equal')
-		pyplot.xticks([])
-		pyplot.yticks([])
-		_draw_boundary()#scale=num_steps)
-		pyplot.gca().set_frame_on(False)
+		if plot_heatmap:
+			_heatmap(d,num_steps,cmap)
+			pyplot.axis('equal')
+			pyplot.xticks([])
+			pyplot.yticks([])
+			_draw_boundary()
+			pyplot.gca().set_frame_on(False)
 		return d
 	else:
 		for p in pts:
@@ -348,30 +395,57 @@ def _plot_profiles(items, **kwargs): # heatmap=False, color='b', marker='o', mar
 		pyplot.gca().set_frame_on(False)
 		return None
 
-def plot_aggregate_heatmap_profiles(items, color='b', num_steps=15, cmap=None):
+def profile_heatmap_weighted(items, weights=None, **kwargs):
 	"""
-	Overlays several heatmaps to show an equitable combination of the heatmaps in case one heatmap has more/less data
-	points than the other. Input should be a list of items, each one is passed to plot_profiles.
+	Plots a weighted combination of control profiles as a heatmap on a triangular control profile plot. ``items`` is a list 
+	of other lists composed of: control profile 3-tuple, 3-list, or :py:class:`zen.DiGraph` (in which case the control 
+	profile of the graph will be computed and then plotted). A ``weights'' parameter can be specified to weight the 
+	combination.
+	
+	The resolution of the mesh can be controlled using ``num_steps``. If no matplotlib color map name or color map is 
+	supplied (``cmap``), one will be generated using a gradient between white and color.
+	
+	**KwArgs**:
+	
+		* ``num_steps [=15]`` (``int``). The resolution of the heatmap mesh.
+		* ``cmap [=None]`` (``colormap``). The colormap that will be used when producing the heatmap.
+		* ``color [='b']`` (any matplotlib-supported color). Specify a color instead of a colormap for ease.
+		
+	**Returns**:
+		A dictionary with boundaries for the individual regions being rendered in the heatmap.
+		
 	"""
-	N = float(len(items))
+	######
+	# Handle relevant arguments
+	if type(items) is not ListType:
+		items = [items]
+		
+	num_steps = kwargs.pop('num_steps',15)
+	cmap = kwargs.pop('cmap',None)
+	color = kwargs.pop('color','b')
+
 	D = None
-	for item in items:
-		d = plot_profiles(item, heatmap=True, color=color, num_steps=num_steps, cmap=cmap)
+	if weights is None: # if no weights are given make them weighted equally
+		weights = [1.0/float(len(items)) for i in range(len(items))]
+	if len(weights) != len(items):
+		raise Exception, 'weights parameter must be the same length as items.'
+	
+	for i,item in enumerate(items):
+		d = _plot_profiles(item, heatmap=True, color=color, num_steps=num_steps, cmap=cmap, plot_heatmap=False)
 		if D is None:
 			D = dict()
 			for point in d.keys():
-				D[point] =0
+				D[point] = 0
 		for point, val in d.items():
-			D[point] += float(val)/N
+			D[point] += float(val)*weights[i]/float(sum(weights))
 	
 	if cmap is None:
 		cmap = _white2colorcmap(color)
 	
-	pyplot.close()
 	_heatmap(D, num_steps, cmap)
 	pyplot.axis('equal')
 	pyplot.xticks([])
 	pyplot.yticks([])
-	_draw_boundary()#scale=num_steps)
+	_draw_boundary()
 	pyplot.gca().set_frame_on(False)
 	return D

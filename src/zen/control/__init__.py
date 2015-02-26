@@ -34,6 +34,7 @@ networks.  Two functions are provided for this purpose.
 
 """
 
+from cacti import Cacti
 from profile import profile
-from reachability import num_min_controls
-from pplot import profile_plot, profile_heatmap
+from reachability import num_min_controls, kalman_generic_rank
+from pplot import profile_plot, profile_heatmap, profile_heatmap_weighted
