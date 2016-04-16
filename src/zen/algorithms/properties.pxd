@@ -1,1 +1,1 @@
-cpdef diameter(G)
+cpdef diameter(G,ignore_weights=*)

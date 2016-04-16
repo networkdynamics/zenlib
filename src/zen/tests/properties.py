@@ -38,6 +38,17 @@ class PropertiesTestCase(unittest.TestCase):
 
 		self.assertEqual(diameter(G),3)
 
+	def test_diameter_with_weights(self):
+		G = DiGraph()
+		n1 = G.add_edge('x','y',weight=0.1)
+		n2 = G.add_edge('y','z')
+		n3 = G.add_edge('z','a')
+		G.add_edge('z','y')
+
+		print G.edges(weight=True)
+
+		self.assertTrue(2.09999 < diameter(G,ignore_weights=False) <= 2.1)
+
 	def test_ddist_u1(self):
 		G = Graph()
 		G.add_edge('x','y')
