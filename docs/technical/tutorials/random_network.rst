@@ -74,6 +74,6 @@ It is also possible to create random graphs using generator functions that are a
 
 For example, to create an `Erdos-Renyi graph <http://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93R%C3%A9nyi_model>`_, we call the following::
 
-	G = zen.erdos_renyi(10,0.1)
+	G = zen.generating.erdos_renyi(10,0.1)
 	
 See the :ref:`api-top` documentation for a complete list of the generators provided in Zen.
