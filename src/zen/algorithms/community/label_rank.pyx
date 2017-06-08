@@ -228,6 +228,6 @@ def label_rank(G, inflation=4.0, cutoff_thresh=0.1, cond_update=0.7, **kwargs):
 		G.rm_edge_(G.edge_idx_(node, node))
 	
 	communities = create_community_list(G, label_ptable)
-	num_communities = common.normalize_communities(communities)
+	num_communities = common.normalize_communities(G,communities)
 
 	return cs.CommunitySet(G, communities, num_communities)

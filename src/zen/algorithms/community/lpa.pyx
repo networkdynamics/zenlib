@@ -117,6 +117,6 @@ def lpa(G, **kwargs):
 
 		i += 1
 
-	num_communities = common.normalize_communities(label_table)
+	num_communities = common.normalize_communities(G,label_table)
 
 	return cs.CommunitySet(G, label_table, num_communities)

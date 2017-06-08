@@ -25,11 +25,11 @@ def keys_of_max_value(dct):
 
 # Modifies a community table so that the community indices range from 0 to 
 # N - 1. Returns the number of communities.
-def normalize_communities(comm_table):
+def normalize_communities(G,comm_table):
 	old_to_new_comms = {}
 	max_cidx = 0
 
-	for i in range(len(comm_table)):
+        for i in G.nodes_(): #range(len(comm_table)):
 		cidx = comm_table[i]
 		if cidx in old_to_new_comms:
 			new_cidx = old_to_new_comms[cidx]

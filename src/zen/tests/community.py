@@ -235,7 +235,7 @@ class OverlappingCommunitySetTestCase(unittest.TestCase):
 			# Test that the communities returned contain the objects they are
 			# supposed to, and that the given community indices are as expected
 			for comm in comms_idx:
-				self.assertTrue(comm.has_node_index(i))
+				self.assertTrue(comm.has_node_(i))
 				self.assertTrue(comm.community_idx in self.cmnties.node_community_indices_(i))
 
 			for comm in comms_obj:

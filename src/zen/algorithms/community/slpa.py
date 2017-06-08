@@ -53,6 +53,10 @@ def forget(memories, cutoff):
 	# cutoff
 	for i, memory in enumerate(memories):
 
+		# skip this node as it doesn't exist in the graph
+		if memory is None:
+			continue
+
 		# Find which elements are below the cutoff
 		freqs = freq_table_from_memory(memory)
 		to_delete = []
@@ -77,6 +81,11 @@ def build_community_set(G, memories):
 	communities = []
 	probs = {}
 	for node, memory in enumerate(memories):
+
+		# skip nodes that don't exist in the graph
+		if memory is None:
+			continue
+
 		freqs = freq_table_from_memory(memory)
 		for i, (label, frequency) in enumerate(memory):
 			if label not in labels_to_cidx:
@@ -97,8 +106,10 @@ def slpa(G, num_iterations=25, cutoff=0.1):
 
 	# A[i] is the memory of node i: a list of tuples (j, k) such that node j
 	# has been "heard" k times.
-	memories = [[(i, 1)] for i in range(rnge)]
-	node_order = np.arange(rnge)
+	# TODO: This list representation is inefficient if the graph isn't
+	# compact
+	node_order = G.nodes_()
+	memories = [[(i, 1)] if G.is_valid_node_idx(i) else None for i in range(rnge)]
 
 	for iter_count in range(num_iterations):
 		# Look at nodes in a random order

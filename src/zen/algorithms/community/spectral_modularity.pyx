@@ -260,6 +260,6 @@ def spectral_modularity(G, **kwargs):
 		subdivision_queue.append(new_comm_1)
 		max_cidx += 2
 
-	num_communities = common.normalize_communities(community_vector)
+	num_communities = common.normalize_communities(G,community_vector)
 
 	return cs.CommunitySet(G, community_vector, num_communities)
