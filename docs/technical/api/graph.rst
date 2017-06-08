@@ -28,6 +28,8 @@ Basic graph properties
 
 .. automethod:: zen.Graph.matrix()
 
+.. automethod:: zen.Graph.components()
+
 Modifying the graph
 -------------------
 
