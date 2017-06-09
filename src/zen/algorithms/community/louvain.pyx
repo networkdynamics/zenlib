@@ -7,14 +7,20 @@ import numpy as np
 cimport numpy as np
 from cpython cimport bool
 
-cdef sum_in_out(G, int n, np.ndarray counts, np.ndarray comms, bool weighted):
+cdef sum_in_out(Graph G, int n, np.ndarray counts, np.ndarray comms, bool weighted):
     cdef:
         float sum_in = 0.0, sum_out = 0.0, amt = 0.0
-        int m
+        int j,eidx,m
 
-    for m in G.neighbors_(n):
+    for j in range(G.node_info[n].degree):
+        eidx = G.node_info[n].elist[j]
+        if n == G.edge_info[eidx].u:
+            m = G.edge_info[eidx].v
+        else:
+            m = G.edge_info[eidx].u
+
         if weighted:
-            amt = G.weight_(G.edge_idx_(n, m))
+            amt = G.edge_info[eidx].weight
         else:
             amt = 1.0
 
@@ -25,14 +31,17 @@ cdef sum_in_out(G, int n, np.ndarray counts, np.ndarray comms, bool weighted):
 
     return (sum_in, sum_out)
 
-cdef void initialize_counts(G, np.ndarray counts, np.ndarray comms, bool weighted):
+cdef void initialize_counts(Graph G, np.ndarray counts, np.ndarray comms, bool weighted):
     cdef int n
-    for n in G.nodes_():
+    for n in range(G.next_node_idx):
+        if not G.node_info[n].exists:
+            continue
+
         in_out = sum_in_out(G, n, counts, comms, weighted)
         counts[n,0] += (in_out[0] / 2.0)
         counts[n,1] += (counts[n,0] + in_out[1])
 
-cdef void comm_add_node(G, int comm, int n, np.ndarray counts, np.ndarray comms,
+cdef void comm_add_node(Graph G, int comm, int n, np.ndarray counts, np.ndarray comms,
                     bool weighted):
     comms[n] = comm
 
@@ -41,7 +50,7 @@ cdef void comm_add_node(G, int comm, int n, np.ndarray counts, np.ndarray comms,
     counts[comm,0] += (in_out[0] / 2.0)
     counts[comm,1] += (counts[comm,0] + in_out[1])
 
-cdef void comm_remove_node(G, int n, np.ndarray counts, np.ndarray comms, 
+cdef void comm_remove_node(Graph G, int n, np.ndarray counts, np.ndarray comms, 
                             bool weighted):
 
     cdef int comm = comms[n]    
@@ -52,7 +61,7 @@ cdef void comm_remove_node(G, int n, np.ndarray counts, np.ndarray comms,
 
     comms[n] = -1
 
-cdef float mod_gain(G, int node, int new_comm, float sum_edges, bool weighted, 
+cdef float mod_gain(Graph G, int node, int new_comm, float sum_edges, bool weighted, 
             k, np.ndarray counts, np.ndarray comms):
     # Compute the modularity gain obtained by adding ``node`` to ``new_comm``.
     # For this, we used some cached values: the number of edges in the graph,
@@ -71,7 +80,7 @@ cdef float mod_gain(G, int node, int new_comm, float sum_edges, bool weighted,
 
     return ((a - (b * b)) - (c - (d * d) - (e * e)))
 
-cdef float sum_incident(G, int node, bool weighted, np.ndarray comms, 
+cdef float sum_incident(Graph G, int node, bool weighted, np.ndarray comms, 
                         int in_community=-1):
     # Sum of the edges (or edge weights) incident to a node. If in_community is
     # not -1, only account for neighbors which are part of that community.
@@ -80,20 +89,26 @@ cdef float sum_incident(G, int node, bool weighted, np.ndarray comms,
         float total = 0.0
         float amt
 
-        int m
+        int j,eidx,m
 
-    for m in G.neighbors_(node):
+    for j in range(G.node_info[node].degree):
+        eidx = G.node_info[node].elist[j]
+        if node == G.edge_info[eidx].u:
+            m = G.edge_info[eidx].v
+        else:
+            m = G.edge_info[eidx].u
+
         if in_community != -1 and comms[m] != in_community:
             continue        
 
         amt = 1.0
         if weighted:
-            amt = G.weight_(G.edge_idx_(node, m))
+            amt = G.edge_info[eidx].weight 
         total += amt
 
     return total
 
-cdef bool optimize_modularity(G, float sum_edges, np.ndarray counts, 
+cdef bool optimize_modularity(Graph G, float sum_edges, np.ndarray counts, 
                                 np.ndarray comms, bool weighted):
     # Optimize the modularity of the communities over the graph by moving nodes
     # to the neighbor's community which provides the greatest increase. This
@@ -108,13 +123,16 @@ cdef bool optimize_modularity(G, float sum_edges, np.ndarray counts,
         float k # Sum of incident edges to a node
 
         # Node iterators
-        int n, m
+        int n, eidx, j, m
 
         int best_community, old_community, comm_m
 
     while moved:
         moved = False
-        for n in G.nodes_():
+        for n in range(G.next_node_idx):
+            if not G.node_info[n].exists:
+                continue
+
             best_community = comms[n] # Best by default: no change
             old_community = comms[n]
             max_delta_mod = 0.0 # Minimal delta accepted: no change
@@ -122,7 +140,13 @@ cdef bool optimize_modularity(G, float sum_edges, np.ndarray counts,
             k = sum_incident(G, n, weighted, comms)
 
             comm_remove_node(G, n, counts, comms, weighted)
-            for m in G.neighbors_(n):
+            for j in range(G.node_info[n].degree): #G.neighbors_(n):
+                eidx = G.node_info[n].elist[j]
+                if n == G.edge_info[eidx].u:
+                    m = G.edge_info[eidx].v
+                else:
+                    m = G.edge_info[eidx].u
+
                 if m == n: #Ignore self-loops
                     continue
 
@@ -143,11 +167,13 @@ cdef bool optimize_modularity(G, float sum_edges, np.ndarray counts,
 
     return improvement
 
-cdef Graph create_metagraph(old_graph, np.ndarray comms, bool weighted):
+cdef Graph create_metagraph(Graph old_graph, np.ndarray comms, bool weighted):
     # In the metagraph, nodes are communities from the old graph. Edges connect
     # communities whose nodes are connected in the old graph ; internal edges
     # in the old graph correspond to self-loops in the metagraph. Edges are
     # weighted by the sum of the edge weights they represent in the old graph.
+
+    # TODO: This can be further optimized
 
     community_dict = {}
 
@@ -157,9 +183,13 @@ cdef Graph create_metagraph(old_graph, np.ndarray comms, bool weighted):
         int cidx
         int neigh_cidx
         float amt
+        int j,eidx
         Graph G = Graph()
 
-    for n in old_graph.nodes_():
+    for n in range(old_graph.next_node_idx): 
+        if not old_graph.node_info[n].exists:
+            continue
+
         cidx = comms[n]
         if cidx not in community_dict:
             community_dict[cidx] = [n]
@@ -171,10 +201,16 @@ cdef Graph create_metagraph(old_graph, np.ndarray comms, bool weighted):
         if cidx not in G:
             G.add_node(cidx)
         for n in comm:
-            for neigh in old_graph.neighbors_(n):
+            for j in range(old_graph.node_info[n].degree): #old_graph.neighbors_(n):
+                eidx = old_graph.node_info[n].elist[j]
+                if n == old_graph.edge_info[eidx].u:
+                    neigh = old_graph.edge_info[eidx].v
+                else:
+                    neigh = old_graph.edge_info[eidx].u
+
                 amt = 1.0
                 if weighted:
-                    amt = old_graph.weight_(old_graph.edge_idx_(n, neigh))
+                    amt = old_graph.edge_info[old_graph.edge_idx_(n, neigh)].weight
                 neigh_cidx = comms[neigh]
 
                 if neigh_cidx not in G:
@@ -186,9 +222,14 @@ cdef Graph create_metagraph(old_graph, np.ndarray comms, bool weighted):
                     G.set_weight(cidx, neigh_cidx, G.weight(cidx, neigh_cidx) + amt)
 
     # Only self-loops count double
-    for edge in G.edges_(-1, False, True):
-        if G.endpoints_(edge[0])[0] != G.endpoints_(edge[0])[1]:
-            G.set_weight_(edge[0], edge[1] / 2.0)
+    for edge in range(G.next_edge_idx): #G.edges_(-1, False, True):
+        if not G.edge_info[edge].exists:
+            continue
+
+        if G.edge_info[edge].u != G.edge_info[edge].v:
+            G.edge_info[edge].weight = G.edge_info[edge].weight / 2.0
+        #if G.endpoints_(edge[0])[0] != G.endpoints_(edge[0])[1]:
+            #G.set_weight_(edge[0], edge[1] / 2.0)
 
     return G
 
@@ -224,10 +265,22 @@ def louvain(G, **kwargs):
             Journal of Statistical Mechanics, Vol. 2008, Issue 10.
 
     """
+    use_weights = kwargs.pop("use_weights", False)
+    num_iterations = kwargs.pop("num_iterations", -1)
+
+    # handle extra arguments
+    if len(kwargs) > 0:
+        raise ValueError, 'Arguments not supported: %s' % ','.join(kwargs.keys())
+
+    if type(G) == Graph:
+        return louvain_undirected(<Graph>G,use_weights,num_iterations)
+    else:
+        raise ValueError, 'Graph type %s not supported' % type(G).__name__
+
+cdef louvain_undirected(Graph G,bool weighted,int num_iterations):
 
     cdef:
-        bool weighted
-        int num_iterations = -1, count_iter = 1, i, length, num_communities
+        int count_iter = 1, i, length, num_communities
 
         # Used for indirection in the 
         int n, comm, meta_idx
@@ -240,19 +293,13 @@ def louvain(G, **kwargs):
 
         Graph meta
 
-
-    weighted = kwargs.pop("use_weights", False)
-    num_iterations_arg = kwargs.pop("num_iterations", None)
-
-    # TODO: Make sure there aren't any extra args.
-
-    if num_iterations_arg is not None:
-        num_iterations = num_iterations_arg
-
     sum_edges = 0.0
     if weighted:
-        for e in G.edges_(weight=True):
-            sum_edges += e[1]
+        for i in G.next_edge_idx:
+            if not G.edge_info[i].exists:
+                continue
+
+            sum_edges += G.edge_info[i].weight
     else:
         sum_edges = len(G.edges())
 
@@ -281,13 +328,18 @@ def louvain(G, **kwargs):
         initialize_counts(meta, meta_counts, meta_comms, weighted)
 
         sum_edges = 0.0
-        for e in meta.edges_(-1, False, True):
-            sum_edges += e[1]
+        for i in range(meta.next_edge_idx):
+            if not meta.edge_info[i].exists:
+                continue
+            sum_edges += meta.edge_info[i].weight
 
         improved = optimize_modularity(meta, sum_edges, meta_counts,
                                         meta_comms, weighted)
 
-        for n in G.nodes_():
+        for n in range(G.next_node_idx): 
+            if not G.node_info[n].exists:
+                continue
+
             comm = comms[n]
             meta_idx = meta.node_idx(comm)
             comms[n] = meta_comms[meta_idx]
